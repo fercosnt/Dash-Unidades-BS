@@ -1,0 +1,49 @@
+# Dependencias
+node_modules/
+.pnp
+.pnp.js
+
+# Build
+.next/
+out/
+dist/
+build/
+
+# Testes
+coverage/
+playwright-report/
+test-results/
+
+# Ambiente
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Export de conversa / contexto (pode conter dados sensíveis)
+contexto.txt
+
+# Claude Code (pessoal — nao commitar)
+.claude/settings.local.json
+CLAUDE.local.md
+
+# Sistema
+.DS_Store
+*.pem
+*.log
+npm-debug.log*
+
+# IDEs
+.vscode/settings.json
+.idea/
+
+# Supabase (local)
+supabase/.temp/
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
