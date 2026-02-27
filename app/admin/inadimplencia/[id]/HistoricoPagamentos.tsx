@@ -55,37 +55,37 @@ export function HistoricoPagamentos({
   }
 
   if (loading) {
-    return <p className="text-slate-500 text-sm">Carregando pagamentos...</p>;
+    return <p className="text-neutral-500 text-sm">Carregando pagamentos...</p>;
   }
 
   return (
     <div className="space-y-2">
-      <h4 className="text-sm font-semibold text-slate-900">Histórico de pagamentos</h4>
+      <h4 className="text-sm font-semibold text-neutral-900">Histórico de pagamentos</h4>
       {pagamentos.length === 0 ? (
-        <p className="text-slate-500 text-sm">Nenhum pagamento registrado.</p>
+        <p className="text-neutral-500 text-sm">Nenhum pagamento registrado.</p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-slate-200">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50">
+        <div className="overflow-x-auto rounded-lg border border-neutral-200">
+          <table className="min-w-full divide-y divide-neutral-200 text-sm">
+            <thead className="bg-neutral-50">
               <tr>
-                <th className="px-4 py-2 text-left font-medium text-slate-700">Data</th>
-                <th className="px-4 py-2 text-right font-medium text-slate-700">Valor</th>
-                <th className="px-4 py-2 text-left font-medium text-slate-700">Forma</th>
-                <th className="px-4 py-2 text-center font-medium text-slate-700">Parcelas</th>
+                <th className="px-4 py-2 text-left font-medium text-neutral-700">Data</th>
+                <th className="px-4 py-2 text-right font-medium text-neutral-700">Valor</th>
+                <th className="px-4 py-2 text-left font-medium text-neutral-700">Forma</th>
+                <th className="px-4 py-2 text-center font-medium text-neutral-700">Parcelas</th>
                 {!readOnly && (
-                  <th className="px-4 py-2 text-left font-medium text-slate-700">Ação</th>
+                  <th className="px-4 py-2 text-left font-medium text-neutral-700">Ação</th>
                 )}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 bg-white">
+            <tbody className="divide-y divide-neutral-200 bg-white">
               {pagamentos.map((p) => (
                 <tr key={p.id}>
-                  <td className="px-4 py-2 text-slate-700">{formatDate(p.data_pagamento)}</td>
-                  <td className="px-4 py-2 text-right font-medium text-slate-900">
+                  <td className="px-4 py-2 text-neutral-700">{formatDate(p.data_pagamento)}</td>
+                  <td className="px-4 py-2 text-right font-medium text-neutral-900">
                     {formatCurrency(p.valor)}
                   </td>
-                  <td className="px-4 py-2 text-slate-700">{formatForma(p.forma)}</td>
-                  <td className="px-4 py-2 text-center text-slate-600">
+                  <td className="px-4 py-2 text-neutral-700">{formatForma(p.forma)}</td>
+                  <td className="px-4 py-2 text-center text-neutral-600">
                     {p.parcelas > 1 ? `${p.parcelas}x` : "—"}
                   </td>
                   {!readOnly && (

@@ -19,6 +19,7 @@ export type InadimplenciaFilters = {
   clinica_id?: string;
   valor_min?: number;
   dias_min?: number;
+  status?: "em_aberto" | "parcial";
 };
 
 export async function listInadimplentes(
@@ -37,6 +38,9 @@ export async function listInadimplentes(
   }
   if (filters.dias_min != null) {
     rows = rows.filter((r) => (r.dias_em_aberto ?? 0) >= filters.dias_min!);
+  }
+  if (filters.status) {
+    rows = rows.filter((r) => r.status === filters.status);
   }
   rows.sort((a, b) => Number(b.valor_em_aberto) - Number(a.valor_em_aberto));
   return rows;

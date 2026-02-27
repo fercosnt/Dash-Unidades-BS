@@ -77,42 +77,42 @@ export function FinanceiroClient({
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-xl font-bold text-[#0A2463]">Configurações financeiras</h2>
-        <p className="text-slate-600 text-sm mt-1">Parâmetros vigentes e histórico de alterações.</p>
+        <h2 className="text-xl font-semibold text-neutral-800">Configurações financeiras</h2>
+        <p className="text-neutral-600 text-sm mt-1">Parâmetros vigentes e histórico de alterações.</p>
       </div>
 
-      <div className="rounded-lg border border-slate-200 bg-white p-6 mb-8">
-        <h3 className="text-lg font-semibold text-slate-900 mb-2">Parâmetros vigentes</h3>
+      <div className="rounded-lg border border-neutral-200 bg-white p-6 mb-8">
+        <h3 className="text-lg font-semibold text-neutral-900 mb-2">Parâmetros vigentes</h3>
         {vigente && (
-          <p className="text-slate-500 text-sm mb-4">
+          <p className="text-neutral-500 text-sm mb-4">
             Vigência desde <strong>{formatDate(vigente.vigencia_inicio)}</strong>
           </p>
         )}
         <form onSubmit={handleSubmit} className="space-y-4 max-w-sm">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Taxa cartão (%)</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Taxa cartão (%)</label>
             <input
               type="number"
               min={0}
               step={0.01}
               value={form.taxa_cartao_percentual}
               onChange={(e) => setForm((f) => ({ ...f, taxa_cartao_percentual: Number(e.target.value) || 0 }))}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 focus:border-[#0A2463] focus:ring-1 focus:ring-[#0A2463]"
+              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-neutral-900 focus:border-primary-600 focus:ring-1 focus:ring-primary-600"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Imposto NF (%)</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Imposto NF (%)</label>
             <input
               type="number"
               min={0}
               step={0.01}
               value={form.imposto_nf_percentual}
               onChange={(e) => setForm((f) => ({ ...f, imposto_nf_percentual: Number(e.target.value) || 0 }))}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 focus:border-[#0A2463] focus:ring-1 focus:ring-[#0A2463]"
+              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-neutral-900 focus:border-primary-600 focus:ring-1 focus:ring-primary-600"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Percentual Beauty Smile (%)</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Percentual Beauty Smile (%)</label>
             <input
               type="number"
               min={0}
@@ -120,48 +120,48 @@ export function FinanceiroClient({
               step={0.01}
               value={form.percentual_beauty_smile}
               onChange={(e) => setForm((f) => ({ ...f, percentual_beauty_smile: Number(e.target.value) || 0 }))}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 focus:border-[#0A2463] focus:ring-1 focus:ring-[#0A2463]"
+              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-neutral-900 focus:border-primary-600 focus:ring-1 focus:ring-primary-600"
             />
           </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
           <button
             type="submit"
             disabled={saving}
-            className="rounded-md bg-[#0A2463] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+            className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
           >
             {saving ? "Salvando…" : "Salvar nova configuração"}
           </button>
         </form>
-        <p className="text-slate-500 text-xs mt-3">
+        <p className="text-neutral-500 text-xs mt-3">
           Ao salvar, a configuração anterior será encerrada (vigência até ontem) e esta passará a valer a partir de hoje.
         </p>
       </div>
 
-      <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
-        <h3 className="text-lg font-semibold text-slate-900 p-4 border-b border-slate-200">Histórico</h3>
-        <table className="min-w-full divide-y divide-slate-200">
+      <div className="rounded-lg border border-neutral-200 bg-white overflow-hidden">
+        <h3 className="text-lg font-semibold text-neutral-900 p-4 border-b border-neutral-200">Histórico</h3>
+        <table className="min-w-full divide-y divide-neutral-200">
           <thead>
-            <tr className="bg-slate-50">
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-slate-600">Vigência início</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-slate-600">Vigência fim</th>
-              <th className="px-4 py-3 text-right text-xs font-medium uppercase text-slate-600">Taxa cartão</th>
-              <th className="px-4 py-3 text-right text-xs font-medium uppercase text-slate-600">Imposto NF</th>
-              <th className="px-4 py-3 text-right text-xs font-medium uppercase text-slate-600">% Beauty Smile</th>
+            <tr className="bg-neutral-50">
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-neutral-600">Vigência início</th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-neutral-600">Vigência fim</th>
+              <th className="px-4 py-3 text-right text-xs font-medium uppercase text-neutral-600">Taxa cartão</th>
+              <th className="px-4 py-3 text-right text-xs font-medium uppercase text-neutral-600">Imposto NF</th>
+              <th className="px-4 py-3 text-right text-xs font-medium uppercase text-neutral-600">% Beauty Smile</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-200">
+          <tbody className="divide-y divide-neutral-200">
             {historico.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-slate-500">Nenhuma configuração registrada.</td>
+                <td colSpan={5} className="px-4 py-8 text-center text-neutral-500">Nenhuma configuração registrada.</td>
               </tr>
             ) : (
               historico.map((row) => (
-                <tr key={row.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 text-sm text-slate-900">{formatDate(row.vigencia_inicio)}</td>
-                  <td className="px-4 py-3 text-sm text-slate-600">{formatDate(row.vigencia_fim ?? "")}</td>
-                  <td className="px-4 py-3 text-right text-sm text-slate-600">{formatPercent(row.taxa_cartao_percentual)}</td>
-                  <td className="px-4 py-3 text-right text-sm text-slate-600">{formatPercent(row.imposto_nf_percentual)}</td>
-                  <td className="px-4 py-3 text-right text-sm text-slate-600">{formatPercent(row.percentual_beauty_smile)}</td>
+                <tr key={row.id} className="hover:bg-neutral-50">
+                  <td className="px-4 py-3 text-sm text-neutral-900">{formatDate(row.vigencia_inicio)}</td>
+                  <td className="px-4 py-3 text-sm text-neutral-600">{formatDate(row.vigencia_fim ?? "")}</td>
+                  <td className="px-4 py-3 text-right text-sm text-neutral-600">{formatPercent(row.taxa_cartao_percentual)}</td>
+                  <td className="px-4 py-3 text-right text-sm text-neutral-600">{formatPercent(row.imposto_nf_percentual)}</td>
+                  <td className="px-4 py-3 text-right text-sm text-neutral-600">{formatPercent(row.percentual_beauty_smile)}</td>
                 </tr>
               ))
             )}

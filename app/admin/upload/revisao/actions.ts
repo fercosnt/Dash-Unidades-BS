@@ -139,6 +139,26 @@ export async function countPendentesRevisao(): Promise<number> {
   return count ?? 0;
 }
 
+/** Vincula múltiplos tratamentos ao mesmo procedimento (bulk) */
+export async function vincularProcedimentoBulk(
+  tratamentoIds: string[],
+  procedimentoId: string
+): Promise<{ ok: boolean; vinculados: number; error?: string }> {
+  if (tratamentoIds.length === 0) return { ok: true, vinculados: 0 };
+  const supabase = createSupabaseServerClient();
+  const { data: proc } = await supabase.from("procedimentos").select("nome").eq("id", procedimentoId).single();
+  let vinculados = 0;
+  for (const id of tratamentoIds) {
+    const { error } = await supabase
+      .from("tratamentos_executados")
+      .update({ procedimento_id: procedimentoId, procedimento_nome: proc?.nome ?? null })
+      .eq("id", id);
+    if (!error) vinculados++;
+  }
+  revalidatePath("/admin/upload/revisao");
+  return { ok: true, vinculados };
+}
+
 export type VincularAutomaticamenteResult = {
   vinculados: number;
   restantes: number;

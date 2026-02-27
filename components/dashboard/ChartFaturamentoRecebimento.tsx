@@ -35,32 +35,38 @@ export function ChartFaturamentoRecebimento({ data, className = "" }: ChartFatur
   }));
 
   return (
-    <div className={`rounded-lg border border-slate-200 bg-white p-4 ${className}`}>
-      <h3 className="text-sm font-semibold text-slate-900 mb-4">
+    <div className={`rounded-lg bg-white p-6 shadow-md ${className}`}>
+      <h3 className="text-sm font-heading font-bold text-neutral-900 mb-4">
         Faturamento bruto vs total recebido (últimos 12 meses)
       </h3>
-      <div className="h-64 w-full">
+      <div className="h-72 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#E8E9E8" />
             <XAxis
               dataKey="mesLabel"
-              tick={{ fontSize: 11 }}
+              tick={{ fontSize: 11, fill: "#6B6D70" }}
               tickLine={false}
+              axisLine={{ stroke: "#E8E9E8" }}
+              scale="band"
+              padding={{ left: 8, right: 8 }}
+              interval={0}
             />
             <YAxis
               tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v))}
-              tick={{ fontSize: 11 }}
+              tick={{ fontSize: 11, fill: "#6B6D70" }}
               tickLine={false}
+              axisLine={{ stroke: "#E8E9E8" }}
             />
             <Tooltip
               formatter={(value: number, name: string) => [formatCurrency(value), name]}
               labelFormatter={(_, payload) => (payload?.[0]?.payload?.mesLabel as string) ?? ""}
-              contentStyle={{ fontSize: 12 }}
+              contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #E8E9E8", boxShadow: "0 4px 6px -1px rgba(45,46,48,0.1)" }}
+              cursor={{ fill: "#E5E7EB", opacity: 0.5 }}
             />
             <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Bar dataKey="faturamentoBruto" name="Faturamento bruto" fill="#0A2463" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="totalRecebidoMes" name="Total recebido" fill="#059669" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="faturamentoBruto" name="Faturamento bruto" fill="#00109E" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="totalRecebidoMes" name="Total recebido" fill="#35BFAD" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>

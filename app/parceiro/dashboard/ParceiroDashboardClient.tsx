@@ -37,7 +37,7 @@ export function ParceiroDashboardClient({
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h2 className="text-xl font-bold text-[#0A2463]">Sua visão</h2>
+        <h2 className="text-xl font-semibold text-neutral-800">Sua visão</h2>
         <PeriodoSelector selectedPeriodo={mes} onChange={setMes} />
       </div>
 
@@ -48,34 +48,54 @@ export function ParceiroDashboardClient({
       )}
 
       {loading ? (
-        <p className="text-slate-500 text-sm">Carregando...</p>
+        <p className="text-neutral-500 text-sm">Carregando...</p>
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <KpiCard label="Faturamento bruto do mês" value={kpis.faturamentoBruto} format="currency" />
-            <KpiCard label="Valor líquido" value={kpis.valorLiquido} format="currency" />
+            <KpiCard
+              label="Faturamento bruto do mês"
+              value={kpis.faturamentoBruto}
+              format="currency"
+              icon="money"
+              accentColor="primary"
+            />
+            <KpiCard
+              label="Valor líquido"
+              value={kpis.valorLiquido}
+              format="currency"
+              icon="chart"
+              accentColor="primary"
+            />
             <KpiCard
               label="Parte da clínica (40%)"
               value={kpis.valorClinica}
               format="currency"
+              icon="percent"
+              accentColor="primary"
             />
-            <KpiCard label="Total inadimplente" value={kpis.totalInadimplente} format="currency" />
+            <KpiCard
+              label="Total inadimplente"
+              value={kpis.totalInadimplente}
+              format="currency"
+              icon="alert"
+              accentColor="danger"
+            />
           </div>
 
           <ChartParceiro data={chartData} />
 
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <h3 className="text-sm font-semibold text-slate-900 mb-3">Acesso rápido</h3>
+          <div className="rounded-lg border border-neutral-200 bg-white p-4">
+            <h3 className="text-sm font-semibold text-neutral-900 mb-3">Acesso rápido</h3>
             <div className="flex flex-wrap gap-3">
               <Link
                 href="/parceiro/orcamentos"
-                className="inline-flex items-center rounded-md bg-[#0A2463] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+                className="inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:opacity-90"
               >
                 Orçamentos
               </Link>
               <Link
                 href="/parceiro/inadimplencia"
-                className="inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                className="inline-flex items-center rounded-md border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
               >
                 Inadimplência
               </Link>

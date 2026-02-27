@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 // Evita cache do layout para sempre mostrar o usuário logado correto no header
 export const dynamic = "force-dynamic";
 
+
 const ADMIN_SIDEBAR_GROUPS_BASE = [
   {
     label: "Principal",
@@ -36,7 +37,7 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const supabase = createSupabaseServerClient();
-  let user: { id: string; email?: string } | null = null;
+  let user: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null = null;
   try {
     const { data } = await supabase.auth.getUser();
     user = data.user;
@@ -51,15 +52,20 @@ export default async function AdminLayout({
   }
 
   let displayName = user.email ?? "Admin";
+  let userRole = "Administrador";
   let pendentes = 0;
   try {
     const [profileResult, pendentesCount] = await Promise.all([
-      supabase.from("profiles").select("nome, email").eq("id", user.id).single(),
+      supabase.from("profiles").select("nome, email, role").eq("id", user.id).single(),
       countPendentesRevisao(),
     ]);
     const profile = profileResult.data;
     pendentes = pendentesCount;
-    displayName = profile?.nome || profile?.email || user?.email || "Admin";
+    const authDisplayName = typeof user?.user_metadata?.display_name === "string"
+      ? user.user_metadata.display_name
+      : "";
+    displayName = profile?.nome || authDisplayName || "Admin";
+    userRole = profile?.role === "admin" ? "Administrador" : "Parceiro";
   } catch {
     // Se falhar perfil ou contador, segue com o que temos
   }
@@ -72,11 +78,11 @@ export default async function AdminLayout({
   }));
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
-      <Sidebar groups={groups} />
+    <div className="flex min-h-screen bg-neutral-100">
+      <Sidebar groups={groups} variant="admin" />
       <div className="flex flex-1 flex-col min-w-0">
-        <Header title={displayName} subtitle="Painel administrativo" />
-        <main className="flex-1 p-6">{children}</main>
+        <Header userName={displayName} userRole={userRole} variant="admin" />
+        <main className="flex-1 p-6 scrollbar-light overflow-y-auto">{children}</main>
       </div>
     </div>
   );

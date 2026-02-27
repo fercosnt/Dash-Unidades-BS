@@ -33,57 +33,57 @@ export function DetalheOrcamentoClient({ orcamento, readOnly = false, backHref =
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2 text-sm text-slate-600">
-        <Link href={backHref} className="text-[#0A2463] hover:underline">
+      <div className="flex items-center gap-2 text-sm text-neutral-600">
+        <Link href={backHref} className="text-primary-600 hover:underline">
           ← Inadimplência
         </Link>
       </div>
 
-      <h2 className="text-xl font-bold text-[#0A2463]">Detalhe do orçamento</h2>
+      <h2 className="text-xl font-semibold text-neutral-800">Detalhe do orçamento</h2>
 
-      <div className="rounded-lg border border-slate-200 bg-white p-6 space-y-4">
+      <div className="rounded-lg border border-neutral-200 bg-white p-6 space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <p className="text-xs font-medium text-slate-500">Paciente</p>
-            <p className="font-medium text-slate-900">{orcamento.paciente_nome}</p>
+            <p className="text-xs font-medium text-neutral-500">Paciente</p>
+            <p className="font-medium text-neutral-900">{orcamento.paciente_nome}</p>
           </div>
           <div>
-            <p className="text-xs font-medium text-slate-500">Telefone (cobrança)</p>
-            <p className="font-medium text-slate-900">
+            <p className="text-xs font-medium text-neutral-500">Telefone (cobrança)</p>
+            <p className="font-medium text-neutral-900">
               {orcamento.paciente_telefone || "—"}
             </p>
           </div>
           <div>
-            <p className="text-xs font-medium text-slate-500">Clínica</p>
-            <p className="font-medium text-slate-900">{orcamento.clinica_nome}</p>
+            <p className="text-xs font-medium text-neutral-500">Clínica</p>
+            <p className="font-medium text-neutral-900">{orcamento.clinica_nome}</p>
           </div>
           <div>
-            <p className="text-xs font-medium text-slate-500">Data fechamento</p>
-            <p className="font-medium text-slate-900">{formatDate(orcamento.data_fechamento)}</p>
+            <p className="text-xs font-medium text-neutral-500">Data fechamento</p>
+            <p className="font-medium text-neutral-900">{formatDate(orcamento.data_fechamento)}</p>
           </div>
           <div>
-            <p className="text-xs font-medium text-slate-500">Profissional</p>
-            <p className="font-medium text-slate-900">{orcamento.profissional || "—"}</p>
+            <p className="text-xs font-medium text-neutral-500">Profissional</p>
+            <p className="font-medium text-neutral-900">{orcamento.profissional || "—"}</p>
           </div>
           <div>
-            <p className="text-xs font-medium text-slate-500">Procedimentos</p>
-            <p className="font-medium text-slate-900 text-sm">
+            <p className="text-xs font-medium text-neutral-500">Procedimentos</p>
+            <p className="font-medium text-neutral-900 text-sm">
               {orcamento.procedimentos_texto || "—"}
             </p>
           </div>
         </div>
 
-        <div className="pt-4 border-t border-slate-200 flex flex-wrap gap-4 items-center">
+        <div className="pt-4 border-t border-neutral-200 flex flex-wrap gap-4 items-center">
           <div>
-            <p className="text-xs font-medium text-slate-500">Valor total</p>
-            <p className="text-lg font-bold text-slate-900">{formatCurrency(orcamento.valor_total)}</p>
+            <p className="text-xs font-medium text-neutral-500">Valor total</p>
+            <p className="text-lg font-bold text-neutral-900">{formatCurrency(orcamento.valor_total)}</p>
           </div>
           <div>
-            <p className="text-xs font-medium text-slate-500">Valor pago</p>
+            <p className="text-xs font-medium text-neutral-500">Valor pago</p>
             <p className="text-lg font-bold text-green-700">{formatCurrency(orcamento.valor_pago)}</p>
           </div>
           <div>
-            <p className="text-xs font-medium text-slate-500">Saldo em aberto</p>
+            <p className="text-xs font-medium text-neutral-500">Saldo em aberto</p>
             <p className="text-lg font-bold text-amber-700">{formatCurrency(orcamento.valor_em_aberto)}</p>
           </div>
           <div className="ml-auto">
@@ -91,7 +91,7 @@ export function DetalheOrcamentoClient({ orcamento, readOnly = false, backHref =
               <button
                 type="button"
                 onClick={() => setShowRegistrarModal(true)}
-                className="rounded-md bg-[#0A2463] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+                className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:opacity-90"
               >
                 Registrar pagamento
               </button>

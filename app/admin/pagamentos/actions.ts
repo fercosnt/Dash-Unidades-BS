@@ -45,6 +45,55 @@ export async function getProjecaoRecebimentos(
   return rows;
 }
 
+export type ParcelaDrillRow = {
+  id: string;
+  paciente_nome: string;
+  parcela_numero: number;
+  total_parcelas: number;
+  valor_parcela: number;
+  mes_recebimento: string;
+  data_pagamento: string;
+};
+
+export async function getParcelasDrillDown(
+  mesRecebimento: string,
+  clinicaId?: string
+): Promise<ParcelaDrillRow[]> {
+  const supabase = createSupabaseServerClient();
+
+  let query = supabase
+    .from("parcelas_cartao")
+    .select(`
+      id,
+      parcela_numero,
+      total_parcelas,
+      valor_parcela,
+      mes_recebimento,
+      pagamentos!inner(data_pagamento, orcamentos_fechados!inner(paciente_nome))
+    `)
+    .eq("status", "projetado")
+    .gte("mes_recebimento", mesRecebimento + "-01")
+    .lte("mes_recebimento", mesRecebimento + "-31");
+
+  if (clinicaId) {
+    query = query.eq("clinica_id", clinicaId);
+  }
+
+  const { data, error } = await query.order("mes_recebimento", { ascending: true });
+
+  if (error || !data) return [];
+
+  return (data as any[]).map((r) => ({
+    id: r.id,
+    paciente_nome: r.pagamentos?.orcamentos_fechados?.paciente_nome ?? "—",
+    parcela_numero: r.parcela_numero,
+    total_parcelas: r.total_parcelas,
+    valor_parcela: Number(r.valor_parcela),
+    mes_recebimento: String(r.mes_recebimento),
+    data_pagamento: r.pagamentos?.data_pagamento ?? "—",
+  }));
+}
+
 export async function getKpisProjecao(): Promise<{
   totalProjetado: number;
   quantidadeMeses: number;

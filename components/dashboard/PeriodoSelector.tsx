@@ -25,7 +25,7 @@ export function PeriodoSelector({ selectedPeriodo, onChange, className = "" }: P
     <select
       value={selectedPeriodo}
       onChange={(e) => onChange(e.target.value)}
-      className={`rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 bg-white ${className}`}
+      className={`rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 shadow-sm transition-all focus:border-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-600/20 ${className}`}
     >
       {options.map((opt) => (
         <option key={opt.value} value={opt.value}>

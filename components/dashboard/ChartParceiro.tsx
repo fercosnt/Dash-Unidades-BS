@@ -25,45 +25,43 @@ export function ChartParceiro({ data, className = "" }: ChartParceiroProps) {
   );
 
   return (
-    <div className={`rounded-lg border border-slate-200 bg-white p-4 ${className}`}>
-      <h3 className="text-sm font-semibold text-slate-900 mb-4">Últimos 6 meses</h3>
-      <div className="space-y-3">
+    <div className={`rounded-lg bg-white p-6 shadow-md ${className}`}>
+      <h3 className="text-sm font-heading font-bold text-neutral-900 mb-4">Últimos 6 meses</h3>
+      <div className="space-y-4">
         {data.map((point) => (
           <div key={point.mesReferencia} className="flex items-center gap-3">
-            <span className="w-14 text-xs font-medium text-slate-600 shrink-0">
+            <span className="w-14 text-xs font-medium text-neutral-500 shrink-0">
               {formatMonth(point.mesReferencia)}
             </span>
-            <div className="flex-1 flex gap-2 items-center min-w-0 h-7">
-              <div
-                className="h-full bg-[#0A2463] rounded flex items-center justify-end pr-1.5 min-w-0"
-                style={{ width: `${(point.faturamentoBruto / maxVal) * 50}%` }}
-              >
-                {point.faturamentoBruto > 0 && (
-                  <span className="text-[10px] font-medium text-white truncate">
-                    {formatCurrency(point.faturamentoBruto)}
-                  </span>
-                )}
+            <div className="flex-1 flex items-center gap-4 min-w-0">
+              <div className="flex-1 space-y-2 min-w-0">
+                <div className="h-6 rounded-sm bg-primary-100 overflow-hidden">
+                  <div
+                    className="h-full rounded-sm bg-primary-600 transition-all"
+                    style={{ width: `${(point.faturamentoBruto / maxVal) * 100}%` }}
+                  />
+                </div>
+                <div className="h-6 rounded-sm bg-accent/15 overflow-hidden">
+                  <div
+                    className="h-full rounded-sm bg-accent transition-all"
+                    style={{ width: `${(point.valorClinica / maxVal) * 100}%` }}
+                  />
+                </div>
               </div>
-              <div
-                className="h-full bg-green-600 rounded flex items-center justify-end pr-1.5 min-w-0"
-                style={{ width: `${(point.valorClinica / maxVal) * 50}%` }}
-              >
-                {point.valorClinica > 0 && (
-                  <span className="text-[10px] font-medium text-white truncate">
-                    {formatCurrency(point.valorClinica)}
-                  </span>
-                )}
+              <div className="w-28 h-12 flex flex-col justify-center items-end text-xs font-semibold text-neutral-900">
+                <div>{formatCurrency(point.faturamentoBruto)}</div>
+                <div className="text-neutral-600">{formatCurrency(point.valorClinica)}</div>
               </div>
             </div>
           </div>
         ))}
       </div>
-      <div className="flex gap-4 mt-3 pt-3 border-t border-slate-100 text-xs text-slate-500">
+      <div className="flex gap-4 mt-4 pt-3 border-t border-neutral-100 text-xs text-neutral-500">
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded bg-[#0A2463]" /> Faturamento
+          <span className="w-3 h-3 rounded bg-primary-600" /> Faturamento
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded bg-green-600" /> Parte clínica (40%)
+          <span className="w-3 h-3 rounded bg-accent" /> Parte clínica (40%)
         </span>
       </div>
     </div>

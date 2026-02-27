@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
+
 const PARCEIRO_SIDEBAR_GROUPS = [
   {
     label: "Principal",
@@ -23,7 +24,7 @@ export default async function ParceiroLayout({
   children: React.ReactNode;
 }) {
   const supabase = createSupabaseServerClient();
-  let user: { id: string; email?: string | null } | null = null;
+  let user: { id: string; email?: string | null; user_metadata?: Record<string, unknown> } | null = null;
   try {
     const { data } = await supabase.auth.getUser();
     user = data.user;
@@ -38,28 +39,32 @@ export default async function ParceiroLayout({
     .eq("id", user?.id ?? "")
     .single();
 
-  let subtitle = "Painel parceiro";
+  let userRole = "Parceiro";
   if (profile?.clinica_id) {
     const { data: clinica } = await supabase
       .from("clinicas_parceiras")
       .select("nome")
       .eq("id", profile.clinica_id)
       .single();
-    if (clinica?.nome) subtitle = clinica.nome;
+    if (clinica?.nome) userRole = clinica.nome;
   }
 
-  const displayName = profile?.nome || profile?.email || user?.email || "Parceiro";
+  const authDisplayName = typeof user?.user_metadata?.display_name === "string"
+    ? user.user_metadata.display_name
+    : "";
+  const displayName = profile?.nome || authDisplayName || "Parceiro";
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen bg-neutral-100">
       <Sidebar
         groups={PARCEIRO_SIDEBAR_GROUPS}
         homeHref="/parceiro/dashboard"
         homeLabel="Beauty Smile"
+        variant="parceiro"
       />
       <div className="flex flex-1 flex-col min-w-0">
-        <Header title={displayName} subtitle={subtitle} />
-        <main className="flex-1 p-6">{children}</main>
+        <Header userName={displayName} userRole={userRole} variant="parceiro" />
+        <main className="flex-1 p-6 scrollbar-light overflow-y-auto">{children}</main>
       </div>
     </div>
   );

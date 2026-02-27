@@ -105,8 +105,8 @@ export function RegistrarPagamentoModal({
         className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="text-lg font-semibold text-slate-900 mb-2">Registrar pagamento</h3>
-        <div className="rounded-md bg-slate-50 p-3 text-sm text-slate-700 mb-4">
+        <h3 className="text-lg font-semibold text-neutral-900 mb-2">Registrar pagamento</h3>
+        <div className="rounded-md bg-neutral-50 p-3 text-sm text-neutral-700 mb-4">
           <p><strong>Paciente:</strong> {pacienteNome}</p>
           <p><strong>Valor total:</strong> {formatCurrency(valorTotal)}</p>
           <p className="text-amber-700 font-medium"><strong>Saldo em aberto:</strong> {formatCurrency(valorEmAberto)}</p>
@@ -120,23 +120,23 @@ export function RegistrarPagamentoModal({
           )}
 
           <label className="block">
-            <span className="text-sm font-medium text-slate-700">Valor do pagamento (R$)</span>
+            <span className="text-sm font-medium text-neutral-700">Valor do pagamento (R$)</span>
             <input
               type="text"
               inputMode="decimal"
               value={valor}
               onChange={handleValorChange}
               placeholder="0,00"
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
             />
           </label>
 
           <label className="block">
-            <span className="text-sm font-medium text-slate-700">Forma de pagamento</span>
+            <span className="text-sm font-medium text-neutral-700">Forma de pagamento</span>
             <select
               value={forma}
               onChange={(e) => setForma(e.target.value)}
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
             >
               {FORMAS.map((f) => (
                 <option key={f.value} value={f.value}>{f.label}</option>
@@ -146,11 +146,11 @@ export function RegistrarPagamentoModal({
 
           {isCartaoCredito && (
             <label className="block">
-              <span className="text-sm font-medium text-slate-700">Número de parcelas (1-12)</span>
+              <span className="text-sm font-medium text-neutral-700">Número de parcelas (1-12)</span>
               <select
                 value={parcelas}
                 onChange={(e) => setParcelas(Number(e.target.value))}
-                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
               >
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((n) => (
                   <option key={n} value={n}>{n}x</option>
@@ -160,13 +160,13 @@ export function RegistrarPagamentoModal({
           )}
 
           <label className="block">
-            <span className="text-sm font-medium text-slate-700">Data do pagamento</span>
+            <span className="text-sm font-medium text-neutral-700">Data do pagamento</span>
             <input
               type="date"
               value={dataPagamento}
               max={new Date().toISOString().slice(0, 10)}
               onChange={(e) => setDataPagamento(e.target.value)}
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
             />
           </label>
 
@@ -175,14 +175,14 @@ export function RegistrarPagamentoModal({
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="rounded-md bg-[#0A2463] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+              className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
             >
               {loading ? "Registrando..." : "Confirmar"}
             </button>

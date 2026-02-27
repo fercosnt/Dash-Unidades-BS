@@ -63,11 +63,11 @@ export function UploadHistoryTable({ initialBatches, clinicas }: { initialBatche
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-slate-700">Clínica</span>
+          <span className="text-sm font-medium text-neutral-700">Clínica</span>
           <select
             value={filters.clinica_id ?? ""}
             onChange={(e) => setFilters((f) => ({ ...f, clinica_id: e.target.value || undefined }))}
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className="rounded-md border border-neutral-300 px-3 py-2 text-sm"
           >
             <option value="">Todas</option>
             {clinicas.map((c) => (
@@ -76,20 +76,20 @@ export function UploadHistoryTable({ initialBatches, clinicas }: { initialBatche
           </select>
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-slate-700">Mês</span>
+          <span className="text-sm font-medium text-neutral-700">Mês</span>
           <input
             type="month"
             value={filters.mes ?? ""}
             onChange={(e) => setFilters((f) => ({ ...f, mes: e.target.value || undefined }))}
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className="rounded-md border border-neutral-300 px-3 py-2 text-sm"
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-slate-700">Tipo</span>
+          <span className="text-sm font-medium text-neutral-700">Tipo</span>
           <select
             value={filters.tipo ?? ""}
             onChange={(e) => setFilters((f) => ({ ...f, tipo: e.target.value || undefined }))}
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className="rounded-md border border-neutral-300 px-3 py-2 text-sm"
           >
             <option value="">Todos</option>
             <option value="orcamentos_fechados">Orçamentos fechados</option>
@@ -98,11 +98,11 @@ export function UploadHistoryTable({ initialBatches, clinicas }: { initialBatche
           </select>
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-slate-700">Status</span>
+          <span className="text-sm font-medium text-neutral-700">Status</span>
           <select
             value={filters.status ?? ""}
             onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value || undefined }))}
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className="rounded-md border border-neutral-300 px-3 py-2 text-sm"
           >
             <option value="">Todos</option>
             <option value="processando">Processando</option>
@@ -113,26 +113,26 @@ export function UploadHistoryTable({ initialBatches, clinicas }: { initialBatche
       </div>
 
       {loading ? (
-        <p className="text-slate-500 text-sm">Carregando...</p>
+        <p className="text-neutral-500 text-sm">Carregando...</p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-slate-200">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50">
+        <div className="overflow-x-auto rounded-lg border border-neutral-200">
+          <table className="min-w-full divide-y divide-neutral-200 text-sm">
+            <thead className="bg-neutral-50">
               <tr>
-                <th className="px-4 py-2 text-left font-medium text-slate-700">Clínica</th>
-                <th className="px-4 py-2 text-left font-medium text-slate-700">Mês</th>
-                <th className="px-4 py-2 text-left font-medium text-slate-700">Tipo</th>
-                <th className="px-4 py-2 text-left font-medium text-slate-700">Arquivo</th>
-                <th className="px-4 py-2 text-right font-medium text-slate-700">Registros</th>
-                <th className="px-4 py-2 text-left font-medium text-slate-700">Status</th>
-                <th className="px-4 py-2 text-left font-medium text-slate-700">Enviado em</th>
-                <th className="px-4 py-2 text-left font-medium text-slate-700">Por</th>
+                <th className="px-4 py-2 text-left font-medium text-neutral-700">Clínica</th>
+                <th className="px-4 py-2 text-left font-medium text-neutral-700">Mês</th>
+                <th className="px-4 py-2 text-left font-medium text-neutral-700">Tipo</th>
+                <th className="px-4 py-2 text-left font-medium text-neutral-700">Arquivo</th>
+                <th className="px-4 py-2 text-right font-medium text-neutral-700">Registros</th>
+                <th className="px-4 py-2 text-left font-medium text-neutral-700">Status</th>
+                <th className="px-4 py-2 text-left font-medium text-neutral-700">Enviado em</th>
+                <th className="px-4 py-2 text-left font-medium text-neutral-700">Por</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 bg-white">
+            <tbody className="divide-y divide-neutral-200 bg-white">
               {batches.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-6 text-center text-slate-500">
+                  <td colSpan={8} className="px-4 py-6 text-center text-neutral-500">
                     Nenhum upload encontrado.
                   </td>
                 </tr>
@@ -141,15 +141,15 @@ export function UploadHistoryTable({ initialBatches, clinicas }: { initialBatche
                   <tr
                     key={row.id}
                     onClick={() => handleRowClick(row.id)}
-                    className="cursor-pointer hover:bg-slate-50"
+                    className="cursor-pointer hover:bg-neutral-50"
                   >
-                    <td className="px-4 py-2 text-slate-900">{row.clinica_nome}</td>
-                    <td className="px-4 py-2 text-slate-700">{formatMonthRef(row.mes_referencia)}</td>
-                    <td className="px-4 py-2 text-slate-700">{TIPO_LABELS[row.tipo] ?? row.tipo}</td>
-                    <td className="px-4 py-2 text-slate-600 max-w-[180px] truncate" title={row.arquivo_nome ?? ""}>
+                    <td className="px-4 py-2 text-neutral-900">{row.clinica_nome}</td>
+                    <td className="px-4 py-2 text-neutral-700">{formatMonthRef(row.mes_referencia)}</td>
+                    <td className="px-4 py-2 text-neutral-700">{TIPO_LABELS[row.tipo] ?? row.tipo}</td>
+                    <td className="px-4 py-2 text-neutral-600 max-w-[180px] truncate" title={row.arquivo_nome ?? ""}>
                       {row.arquivo_nome ?? "—"}
                     </td>
-                    <td className="px-4 py-2 text-right text-slate-700">{row.total_registros}</td>
+                    <td className="px-4 py-2 text-right text-neutral-700">{row.total_registros}</td>
                     <td className="px-4 py-2">
                       <span
                         className={
@@ -163,8 +163,8 @@ export function UploadHistoryTable({ initialBatches, clinicas }: { initialBatche
                         {STATUS_LABELS[row.status] ?? row.status}
                       </span>
                     </td>
-                    <td className="px-4 py-2 text-slate-600">{formatDateTime(row.uploaded_at)}</td>
-                    <td className="px-4 py-2 text-slate-600">{row.uploader_nome ?? "—"}</td>
+                    <td className="px-4 py-2 text-neutral-600">{formatDateTime(row.uploaded_at)}</td>
+                    <td className="px-4 py-2 text-neutral-600">{row.uploader_nome ?? "—"}</td>
                   </tr>
                 ))
               )}
@@ -175,7 +175,7 @@ export function UploadHistoryTable({ initialBatches, clinicas }: { initialBatche
 
       {detailLoading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-          <p className="rounded-lg bg-white px-4 py-2 text-slate-700">Carregando detalhes...</p>
+          <p className="rounded-lg bg-white px-4 py-2 text-neutral-700">Carregando detalhes...</p>
         </div>
       )}
 

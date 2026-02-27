@@ -1,8 +1,13 @@
 /**
- * Gera dois arquivos XLSX de exemplo para testar o upload.
+ * Gera arquivos XLSX de exemplo para testar o upload.
  * Mínimo ~100 linhas por planilha, com procedimentos realistas (odontologia + estética).
+ *
+ * Agora gera amostras para o mês de referência + 6 meses anteriores.
+ * Para cada mês e para cada clínica são criados 2 arquivos:
+ *   - amostras-upload/orcamentos-CLINICA-YYYY-MM.xlsx
+ *   - amostras-upload/tratamentos-CLINICA-YYYY-MM.xlsx
+ *
  * Execute: node scripts/gerar-amostras-upload.cjs
- * Arquivos gerados em: amostras-upload/modelo-orcamentos.xlsx e modelo-tratamentos.xlsx
  */
 
 const fs = require("fs");
@@ -117,6 +122,30 @@ const REGIOES = ["São Paulo", "Campinas", "Guarulhos", "Santo André", "Osasco"
 
 const OBSERVACOES = ["Paciente retorno", "Aguardando aprovação", "Urgente", "Convênio", "Particular", "", "", ""];
 
+// Clínicas para gerar amostras separadas
+const CLINICAS = [
+  {
+    slug: "odonto-premium",
+    nome: "Clínica Odonto Premium",
+    profissionais: [
+      "Dra. Ana Costa",
+      "Dr. Pedro Lima",
+      "Dra. Camila Souza",
+      "Dr. Ricardo Mendes",
+    ],
+  },
+  {
+    slug: "sorriso-perfeito",
+    nome: "Clínica Sorriso Perfeito",
+    profissionais: [
+      "Dra. Fernanda Oliveira",
+      "Dr. Bruno Santos",
+      "Dra. Mariana Costa",
+      "Dr. Felipe Andrade",
+    ],
+  },
+];
+
 // --- Helpers ---
 
 function pick(arr) {
@@ -143,10 +172,42 @@ function dataNoMes(ano, mes, diaMax) {
   return `${dd}/${mm}/${yyyy}`;
 }
 
-// Ano/mês de referência (pode alterar)
-const ANO_REF = 2025;
-const MES_REF = 3;
+// Ano/mês de referência (pode alterar) — hoje: fev/2026
+const ANO_REF = 2026;
+const MES_REF = 2;
 const DIAS_MES = 31;
+
+// Gera lista com mês de referência + 6 meses anteriores
+function gerarMeses(anoRef, mesRef, quantMesesAnteriores) {
+  const meses = [];
+  // meses anteriores (do mais antigo para o mais recente)
+  for (let i = quantMesesAnteriores; i >= 1; i--) {
+    const d = new Date(anoRef, mesRef - 1 - i, 1);
+    meses.push({ ano: d.getFullYear(), mes: d.getMonth() + 1 });
+  }
+  // mês de referência por último
+  meses.push({ ano: anoRef, mes: mesRef });
+  return meses;
+}
+
+const MESES_REF = gerarMeses(ANO_REF, MES_REF, 6);
+
+// Nomes curtos dos meses em PT-BR (para usar no nome do arquivo)
+const MESES_NOME_SLUG = [
+  "",
+  "janeiro",
+  "fevereiro",
+  "marco",
+  "abril",
+  "maio",
+  "junho",
+  "julho",
+  "agosto",
+  "setembro",
+  "outubro",
+  "novembro",
+  "dezembro",
+];
 
 // --- Cabeçalhos (colunas esperadas pelo transform) ---
 
@@ -176,8 +237,9 @@ const TRATAMENTOS_HEADER = [
 
 // --- Gerar ~100+ orçamentos ---
 
-function gerarOrcamentos(quantidade) {
+function gerarOrcamentos(ano, mes, quantidade, profissionaisArr) {
   const rows = [ORCAMENTOS_HEADER];
+  const profissionais = Array.isArray(profissionaisArr) && profissionaisArr.length > 0 ? profissionaisArr : PROFISSIONAIS;
 
   for (let i = 0; i < quantidade; i++) {
     const nome = pick(NOMES);
@@ -195,9 +257,9 @@ function gerarOrcamentos(quantidade) {
       status,
       nomeComIdade,
       valorBR(valorTotal),
-      dataNoMes(ANO_REF, MES_REF, DIAS_MES),
+      dataNoMes(ano, mes, DIAS_MES),
       pick(COMO_CONHECEU),
-      pick(PROFISSIONAIS),
+      pick(profissionais),
       pick(TELEFONES),
       pick(PROCEDIMENTOS_ORCAMENTO),
       valorBR(valorBruto),
@@ -212,8 +274,9 @@ function gerarOrcamentos(quantidade) {
 
 // --- Gerar ~100+ tratamentos executados ---
 
-function gerarTratamentos(quantidade) {
+function gerarTratamentos(ano, mes, quantidade, profissionaisArr) {
   const rows = [TRATAMENTOS_HEADER];
+  const profissionais = Array.isArray(profissionaisArr) && profissionaisArr.length > 0 ? profissionaisArr : PROFISSIONAIS;
 
   for (let i = 0; i < quantidade; i++) {
     const paciente = pick(NOMES);
@@ -227,9 +290,9 @@ function gerarTratamentos(quantidade) {
     rows.push([
       paciente,
       procedimento,
-      dataNoMes(ANO_REF, MES_REF, DIAS_MES),
+      dataNoMes(ano, mes, DIAS_MES),
       valorBR(valor),
-      pick(PROFISSIONAIS),
+      pick(profissionais),
       pick(REGIOES),
     ]);
   }
@@ -242,25 +305,42 @@ function gerarTratamentos(quantidade) {
 const NUM_ORCAMENTOS = 110;
 const NUM_TRATAMENTOS = 120;
 
-const orcamentosData = gerarOrcamentos(NUM_ORCAMENTOS);
-const tratamentosData = gerarTratamentos(NUM_TRATAMENTOS);
-
 if (!fs.existsSync(OUT_DIR)) {
   fs.mkdirSync(OUT_DIR, { recursive: true });
 }
 
-const wbOrc = XLSX.utils.book_new();
-const wsOrc = XLSX.utils.aoa_to_sheet(orcamentosData);
-XLSX.utils.book_append_sheet(wbOrc, wsOrc, "Orcamentos");
-const pathOrc = path.join(OUT_DIR, "modelo-orcamentos.xlsx");
-XLSX.writeFile(wbOrc, pathOrc);
-console.log("Criado:", pathOrc, "—", NUM_ORCAMENTOS, "linhas de orçamentos");
+MESES_REF.forEach(({ ano, mes }) => {
+  const labelAno = String(ano);
+  const labelMes = String(mes).padStart(2, "0");
+  const mesNomeSlug = MESES_NOME_SLUG[mes] || labelMes;
 
-const wbTrat = XLSX.utils.book_new();
-const wsTrat = XLSX.utils.aoa_to_sheet(tratamentosData);
-XLSX.utils.book_append_sheet(wbTrat, wsTrat, "Tratamentos");
-const pathTrat = path.join(OUT_DIR, "modelo-tratamentos.xlsx");
-XLSX.writeFile(wbTrat, pathTrat);
-console.log("Criado:", pathTrat, "—", NUM_TRATAMENTOS, "linhas de tratamentos");
+  CLINICAS.forEach((clinica) => {
+    const orcamentosData = gerarOrcamentos(ano, mes, NUM_ORCAMENTOS, clinica.profissionais);
+    const tratamentosData = gerarTratamentos(ano, mes, NUM_TRATAMENTOS, clinica.profissionais);
 
-console.log("\nUse esses arquivos em Admin -> Upload (tipo Orcamentos ou Tratamentos executados).");
+    const clinicaSlug = clinica.slug;
+
+    // Orçamentos
+    const wbOrc = XLSX.utils.book_new();
+    const wsOrc = XLSX.utils.aoa_to_sheet(orcamentosData);
+    // Nome da aba precisa ter <= 31 caracteres (limite do Excel)
+    const sheetNameOrc = `ORC-${clinicaSlug}-${labelAno}${labelMes}`;
+    XLSX.utils.book_append_sheet(wbOrc, wsOrc, sheetNameOrc);
+    const pathOrc = path.join(OUT_DIR, `orcamentos-${clinicaSlug}-${labelAno}-${mesNomeSlug}.xlsx`);
+    XLSX.writeFile(wbOrc, pathOrc);
+    console.log("Criado:", pathOrc, "—", NUM_ORCAMENTOS, "linhas de orçamentos");
+
+    // Tratamentos
+    const wbTrat = XLSX.utils.book_new();
+    const wsTrat = XLSX.utils.aoa_to_sheet(tratamentosData);
+    const sheetNameTrat = `TRAT-${clinicaSlug}-${labelAno}${labelMes}`;
+    XLSX.utils.book_append_sheet(wbTrat, wsTrat, sheetNameTrat);
+    const pathTrat = path.join(OUT_DIR, `tratamentos-${clinicaSlug}-${labelAno}-${mesNomeSlug}.xlsx`);
+    XLSX.writeFile(wbTrat, pathTrat);
+    console.log("Criado:", pathTrat, "—", NUM_TRATAMENTOS, "linhas de tratamentos");
+  });
+});
+
+console.log(
+  "\nUse esses arquivos em Admin -> Upload (tipos: Orçamentos fechados/abertos e Tratamentos executados)."
+);

@@ -12,9 +12,9 @@ export function UploadProgress({ status, totalRegistros, errorMessage, onRetry }
 
   if (status === "sending") {
     return (
-      <div className="flex flex-col items-center justify-center rounded-lg border border-slate-200 bg-slate-50 p-8">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#0A2463] border-t-transparent" />
-        <p className="mt-4 text-slate-600">Enviando dados…</p>
+      <div className="flex flex-col items-center justify-center rounded-lg border border-neutral-200 bg-neutral-50 p-8">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#00109E] border-t-transparent" />
+        <p className="mt-4 text-neutral-600">Enviando dados…</p>
       </div>
     );
   }

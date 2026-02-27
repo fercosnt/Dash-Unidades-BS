@@ -63,6 +63,47 @@ export async function checkExistingBatches(
   return [{ tipo: "tratamentos_executados", exists: !!data?.id }];
 }
 
+export type ClinicaUploadStatus = {
+  clinicaId: string;
+  clinicaNome: string;
+  orcamentosFechados: boolean;
+  orcamentosAbertos: boolean;
+  tratamentos: boolean;
+};
+
+export async function getMonthlyUploadStatus(mesReferencia: string): Promise<ClinicaUploadStatus[]> {
+  const supabase = createSupabaseServerClient();
+
+  const [{ data: clinicas }, { data: batches }] = await Promise.all([
+    supabase.from("clinicas_parceiras").select("id, nome").eq("ativo", true).order("nome"),
+    supabase
+      .from("upload_batches")
+      .select("clinica_id, tipo")
+      .eq("mes_referencia", mesReferencia)
+      .eq("status", "concluido"),
+  ]);
+
+  const byClinica: Record<string, { of: boolean; oa: boolean; te: boolean }> = {};
+  (clinicas ?? []).forEach((c) => {
+    byClinica[c.id] = { of: false, oa: false, te: false };
+  });
+  (batches ?? []).forEach((b) => {
+    const id = b.clinica_id as string;
+    if (!byClinica[id]) return;
+    if (b.tipo === "orcamentos_fechados") byClinica[id].of = true;
+    if (b.tipo === "orcamentos_abertos") byClinica[id].oa = true;
+    if (b.tipo === "tratamentos_executados") byClinica[id].te = true;
+  });
+
+  return (clinicas ?? []).map((c) => ({
+    clinicaId: c.id,
+    clinicaNome: c.nome,
+    orcamentosFechados: byClinica[c.id]?.of ?? false,
+    orcamentosAbertos: byClinica[c.id]?.oa ?? false,
+    tratamentos: byClinica[c.id]?.te ?? false,
+  }));
+}
+
 export type UploadBatchRow = {
   id: string;
   clinica_id: string;

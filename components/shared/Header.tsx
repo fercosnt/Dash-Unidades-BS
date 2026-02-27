@@ -4,12 +4,24 @@ import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type HeaderProps = {
-  title: string;
-  subtitle?: string;
+  userName: string;
+  userRole: string;
+  variant?: "admin" | "parceiro";
 };
 
-export function Header({ title, subtitle }: HeaderProps) {
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
+}
+
+export function Header({ userName, userRole, variant = "admin" }: HeaderProps) {
   const router = useRouter();
+  const isAdmin = variant === "admin";
 
   async function handleLogout() {
     const supabase = createSupabaseBrowserClient();
@@ -19,16 +31,50 @@ export function Header({ title, subtitle }: HeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-slate-200 bg-white px-6">
-      <div>
-        <h1 className="text-lg font-semibold text-slate-900">{title}</h1>
-        {subtitle && <p className="text-sm text-slate-500">{subtitle}</p>}
-      </div>
-      <div className="flex items-center gap-4">
+    <header
+      className={`sticky top-0 z-10 flex h-14 items-center justify-between px-6 ${
+        isAdmin
+          ? "bg-primary-900 text-white"
+          : "bg-white text-neutral-900 shadow-sm"
+      }`}
+    >
+      <div />
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
+          <div
+            className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold ${
+              isAdmin
+                ? "bg-white/15 text-white"
+                : "bg-neutral-100 text-neutral-600"
+            }`}
+          >
+            {getInitials(userName)}
+          </div>
+          <div className="text-right">
+            <p
+              className={`text-sm font-medium leading-tight ${
+                isAdmin ? "text-white" : "text-neutral-800"
+              }`}
+            >
+              {userName}
+            </p>
+            <p
+              className={`text-[11px] leading-tight ${
+                isAdmin ? "text-white/50" : "text-neutral-400"
+              }`}
+            >
+              {userRole}
+            </p>
+          </div>
+        </div>
         <button
           type="button"
           onClick={handleLogout}
-          className="rounded-md px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100"
+          className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
+            isAdmin
+              ? "text-white/60 hover:bg-white/10 hover:text-white"
+              : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700"
+          }`}
         >
           Sair
         </button>

@@ -34,37 +34,40 @@ export function ChartEvolucaoLiquido({ data, className = "" }: ChartEvolucaoLiqu
   }));
 
   return (
-    <div className={`rounded-lg border border-slate-200 bg-white p-4 ${className}`}>
-      <h3 className="text-sm font-semibold text-slate-900 mb-4">
+    <div className={`rounded-lg bg-white p-6 shadow-md ${className}`}>
+      <h3 className="text-sm font-heading font-bold text-neutral-900 mb-4">
         Evolução do valor líquido (últimos 12 meses)
       </h3>
-      <div className="h-64 w-full">
+      <div className="h-72 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#E8E9E8" />
             <XAxis
               dataKey="mesLabel"
-              tick={{ fontSize: 11 }}
+              tick={{ fontSize: 11, fill: "#6B6D70" }}
               tickLine={false}
+              axisLine={{ stroke: "#E8E9E8" }}
+              interval={0}
             />
             <YAxis
               tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v))}
-              tick={{ fontSize: 11 }}
+              tick={{ fontSize: 11, fill: "#6B6D70" }}
               tickLine={false}
+              axisLine={{ stroke: "#E8E9E8" }}
             />
             <Tooltip
               formatter={(value: number) => [formatCurrency(value), "Valor líquido"]}
               labelFormatter={(_, payload) => (payload?.[0]?.payload?.mesLabel as string) ?? ""}
-              contentStyle={{ fontSize: 12 }}
+              contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #E8E9E8", boxShadow: "0 4px 6px -1px rgba(45,46,48,0.1)" }}
             />
             <Line
               type="monotone"
               dataKey="valorLiquido"
               name="Valor líquido"
-              stroke="#0A2463"
-              strokeWidth={2}
-              dot={{ fill: "#0A2463", r: 3 }}
-              activeDot={{ r: 4 }}
+              stroke="#BB965B"
+              strokeWidth={2.5}
+              dot={{ fill: "#BB965B", r: 3, strokeWidth: 2, stroke: "#fff" }}
+              activeDot={{ r: 5, fill: "#BB965B", stroke: "#fff", strokeWidth: 2 }}
             />
           </LineChart>
         </ResponsiveContainer>

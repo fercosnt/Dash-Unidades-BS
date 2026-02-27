@@ -5,6 +5,7 @@ import {
   listTratamentosSemProcedimento,
   getProcedimentosAtivos,
   vincularProcedimento,
+  vincularProcedimentoBulk,
   criarProcedimentoRapido,
   vincularAutomaticamente,
   type TratamentoPendenteRow,
@@ -41,8 +42,52 @@ export function RevisaoProcedimentosClient({
   const [vinculando, setVinculando] = useState(false);
   const [mensagem, setMensagem] = useState<{ tipo: "ok" | "erro"; texto: string } | null>(null);
   const [autoLinking, setAutoLinking] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showBulkModal, setShowBulkModal] = useState(false);
+  const [bulkProcedimentoId, setBulkProcedimentoId] = useState("");
+  const [bulkVinculando, setBulkVinculando] = useState(false);
 
   const hasFilters = filters.clinica_id != null || filters.mes != null;
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.size === tratamentos.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(tratamentos.map((t) => t.id)));
+    }
+  }
+
+  function selectByProcName(name: string) {
+    const ids = tratamentos.filter((t) => t.procedimento_nome === name).map((t) => t.id);
+    setSelectedIds(new Set(ids));
+  }
+
+  async function handleBulkVincular() {
+    if (!bulkProcedimentoId || selectedIds.size === 0) return;
+    setBulkVinculando(true);
+    setMensagem(null);
+    const result = await vincularProcedimentoBulk(Array.from(selectedIds), bulkProcedimentoId);
+    setBulkVinculando(false);
+    if (result.ok) {
+      setTratamentos((prev) => prev.filter((t) => !selectedIds.has(t.id)));
+      setSelectedIds(new Set());
+      setShowBulkModal(false);
+      setBulkProcedimentoId("");
+      setMensagem({ tipo: "ok", texto: `${result.vinculados} tratamento(s) vinculado(s) em lote.` });
+      setTimeout(() => setMensagem(null), 4000);
+    } else {
+      setMensagem({ tipo: "erro", texto: result.error ?? "Erro ao vincular em lote." });
+    }
+  }
 
   async function carregar() {
     setLoading(true);
@@ -144,11 +189,11 @@ export function RevisaoProcedimentosClient({
 
       <div className="flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-slate-700">Clínica</span>
+          <span className="text-sm font-medium text-neutral-700">Clínica</span>
           <select
             value={filters.clinica_id ?? ""}
             onChange={(e) => setFilters((f) => ({ ...f, clinica_id: e.target.value || undefined }))}
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className="rounded-md border border-neutral-300 px-3 py-2 text-sm"
           >
             <option value="">Todas</option>
             {clinicas.map((c) => (
@@ -157,12 +202,12 @@ export function RevisaoProcedimentosClient({
           </select>
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-slate-700">Mês</span>
+          <span className="text-sm font-medium text-neutral-700">Mês</span>
           <input
             type="month"
             value={filters.mes ?? ""}
             onChange={(e) => setFilters((f) => ({ ...f, mes: e.target.value || undefined }))}
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className="rounded-md border border-neutral-300 px-3 py-2 text-sm"
           />
         </label>
         <button
@@ -175,43 +220,91 @@ export function RevisaoProcedimentosClient({
         </button>
       </div>
 
+      {/* Bulk action bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 rounded-lg bg-primary-600/5 border border-primary-600/20 px-4 py-3">
+          <span className="text-sm font-medium text-primary-700">
+            {selectedIds.size} selecionado(s)
+          </span>
+          <button
+            type="button"
+            onClick={() => { setShowBulkModal(true); setBulkProcedimentoId(""); }}
+            className="rounded-md bg-primary-600 px-3 py-1.5 text-xs font-medium text-white hover:opacity-90"
+          >
+            Vincular selecionados
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedIds(new Set())}
+            className="text-xs text-neutral-500 hover:text-neutral-700"
+          >
+            Limpar seleção
+          </button>
+        </div>
+      )}
+
       {loading ? (
-        <p className="text-slate-500 text-sm">Carregando...</p>
+        <p className="text-neutral-500 text-sm">Carregando...</p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-slate-200">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50">
+        <div className="overflow-x-auto rounded-lg border border-neutral-200">
+          <table className="min-w-full divide-y divide-neutral-200 text-sm">
+            <thead className="bg-neutral-50">
               <tr>
-                <th className="px-4 py-2 text-left font-medium text-slate-700">Clínica</th>
-                <th className="px-4 py-2 text-left font-medium text-slate-700">Mês</th>
-                <th className="px-4 py-2 text-left font-medium text-slate-700">Paciente</th>
-                <th className="px-4 py-2 text-left font-medium text-slate-700">Procedimento (planilha)</th>
-                <th className="px-4 py-2 text-right font-medium text-slate-700">Qtd</th>
-                <th className="px-4 py-2 text-left font-medium text-slate-700">Data</th>
-                <th className="px-4 py-2 text-left font-medium text-slate-700">Ação</th>
+                <th className="px-3 py-2 w-10">
+                  <input
+                    type="checkbox"
+                    checked={tratamentos.length > 0 && selectedIds.size === tratamentos.length}
+                    onChange={toggleSelectAll}
+                    className="h-4 w-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-600/20"
+                  />
+                </th>
+                <th className="px-4 py-2 text-left font-medium text-neutral-700">Clínica</th>
+                <th className="px-4 py-2 text-left font-medium text-neutral-700">Mês</th>
+                <th className="px-4 py-2 text-left font-medium text-neutral-700">Paciente</th>
+                <th className="px-4 py-2 text-left font-medium text-neutral-700">Procedimento (planilha)</th>
+                <th className="px-4 py-2 text-right font-medium text-neutral-700">Qtd</th>
+                <th className="px-4 py-2 text-left font-medium text-neutral-700">Data</th>
+                <th className="px-4 py-2 text-left font-medium text-neutral-700">Ação</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 bg-white">
+            <tbody className="divide-y divide-neutral-200 bg-white">
               {tratamentos.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-6 text-center text-slate-500">
+                  <td colSpan={8} className="px-4 py-6 text-center text-neutral-500">
                     Nenhum tratamento pendente de revisão.
                   </td>
                 </tr>
               ) : (
                 tratamentos.map((row) => (
-                  <tr key={row.id}>
-                    <td className="px-4 py-2 text-slate-900">{row.clinica_nome}</td>
-                    <td className="px-4 py-2 text-slate-700">{formatMonthRef(row.mes_referencia)}</td>
-                    <td className="px-4 py-2 text-slate-900">{row.paciente_nome}</td>
-                    <td className="px-4 py-2 text-slate-700">{row.procedimento_nome ?? "—"}</td>
-                    <td className="px-4 py-2 text-right text-slate-700">{row.quantidade}</td>
-                    <td className="px-4 py-2 text-slate-600">{row.data_execucao ?? "—"}</td>
+                  <tr key={row.id} className={`hover:bg-neutral-50 transition-colors ${selectedIds.has(row.id) ? "bg-primary-600/[0.03]" : ""}`}>
+                    <td className="px-3 py-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(row.id)}
+                        onChange={() => toggleSelect(row.id)}
+                        className="h-4 w-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-600/20"
+                      />
+                    </td>
+                    <td className="px-4 py-2 text-neutral-900">{row.clinica_nome}</td>
+                    <td className="px-4 py-2 text-neutral-700">{formatMonthRef(row.mes_referencia)}</td>
+                    <td className="px-4 py-2 text-neutral-900">{row.paciente_nome}</td>
+                    <td className="px-4 py-2">
+                      <button
+                        type="button"
+                        onClick={() => selectByProcName(row.procedimento_nome ?? "")}
+                        className="text-neutral-700 hover:text-primary-600 hover:underline text-left"
+                        title="Clique para selecionar todos com este nome"
+                      >
+                        {row.procedimento_nome ?? "—"}
+                      </button>
+                    </td>
+                    <td className="px-4 py-2 text-right text-neutral-700">{row.quantidade}</td>
+                    <td className="px-4 py-2 text-neutral-600">{row.data_execucao ?? "—"}</td>
                     <td className="px-4 py-2">
                       <button
                         type="button"
                         onClick={() => abrirModal(row)}
-                        className="rounded-md bg-[#0A2463] px-3 py-1.5 text-xs font-medium text-white hover:opacity-90"
+                        className="rounded-md bg-primary-600 px-3 py-1.5 text-xs font-medium text-white hover:opacity-90"
                       >
                         Vincular
                       </button>
@@ -230,17 +323,17 @@ export function RevisaoProcedimentosClient({
             className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-semibold text-slate-900 mb-1">Vincular procedimento</h3>
-            <p className="text-sm text-slate-600 mb-4">
+            <h3 className="text-lg font-semibold text-neutral-900 mb-1">Vincular procedimento</h3>
+            <p className="text-sm text-neutral-600 mb-4">
               {modalTratamento.paciente_nome} · {modalTratamento.procedimento_nome ?? "(sem nome)"}
             </p>
             {!showCriarNovo ? (
               <>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Procedimento cadastrado</label>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">Procedimento cadastrado</label>
                 <select
                   value={selectedProcedimentoId}
                   onChange={(e) => setSelectedProcedimentoId(e.target.value)}
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm mb-4"
+                  className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm mb-4"
                 >
                   <option value="">Selecione...</option>
                   {procedimentos.map((p) => (
@@ -250,27 +343,27 @@ export function RevisaoProcedimentosClient({
                 <button
                   type="button"
                   onClick={() => setShowCriarNovo(true)}
-                  className="text-sm text-[#0A2463] hover:underline mb-4 block"
+                  className="text-sm text-primary-600 hover:underline mb-4 block"
                 >
                   + Criar novo procedimento
                 </button>
               </>
             ) : (
               <div className="mb-4">
-                <label className="block text-sm font-medium text-slate-700 mb-2">Nome do novo procedimento</label>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">Nome do novo procedimento</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     value={novoProcedimentoNome}
                     onChange={(e) => setNovoProcedimentoNome(e.target.value)}
                     placeholder="Ex.: Clareamento dental"
-                    className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm"
+                    className="flex-1 rounded-md border border-neutral-300 px-3 py-2 text-sm"
                   />
                   <button
                     type="button"
                     onClick={handleCriarNovo}
                     disabled={criando || !novoProcedimentoNome.trim()}
-                    className="rounded-md bg-slate-600 px-3 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
+                    className="rounded-md bg-neutral-600 px-3 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-50"
                   >
                     {criando ? "Criando..." : "Criar"}
                   </button>
@@ -278,7 +371,7 @@ export function RevisaoProcedimentosClient({
                 <button
                   type="button"
                   onClick={() => { setShowCriarNovo(false); setNovoProcedimentoNome(""); }}
-                  className="text-sm text-slate-500 hover:underline mt-2"
+                  className="text-sm text-neutral-500 hover:underline mt-2"
                 >
                   Cancelar (voltar à lista)
                 </button>
@@ -289,7 +382,7 @@ export function RevisaoProcedimentosClient({
                 type="button"
                 onClick={() => setModalTratamento(null)}
                 disabled={vinculando}
-                className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
               >
                 Cancelar
               </button>
@@ -297,9 +390,49 @@ export function RevisaoProcedimentosClient({
                 type="button"
                 onClick={handleVincular}
                 disabled={vinculando || !selectedProcedimentoId}
-                className="rounded-md bg-[#0A2463] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+                className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
               >
                 {vinculando ? "Vinculando..." : "Confirmar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showBulkModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => !bulkVinculando && setShowBulkModal(false)}>
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-neutral-900 mb-1">Vincular em lote</h3>
+            <p className="text-sm text-neutral-600 mb-4">
+              {selectedIds.size} tratamento(s) selecionado(s) serão vinculados ao mesmo procedimento.
+            </p>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">Procedimento cadastrado</label>
+            <select
+              value={bulkProcedimentoId}
+              onChange={(e) => setBulkProcedimentoId(e.target.value)}
+              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm mb-4"
+            >
+              <option value="">Selecione...</option>
+              {procedimentos.map((p) => (
+                <option key={p.id} value={p.id}>{p.nome}</option>
+              ))}
+            </select>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowBulkModal(false)}
+                disabled={bulkVinculando}
+                className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleBulkVincular}
+                disabled={bulkVinculando || !bulkProcedimentoId}
+                className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+              >
+                {bulkVinculando ? "Vinculando..." : `Vincular ${selectedIds.size} tratamento(s)`}
               </button>
             </div>
           </div>

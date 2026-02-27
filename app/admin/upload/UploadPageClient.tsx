@@ -131,11 +131,24 @@ export function UploadPageClient({ clinicas }: { clinicas: ClinicaOption[] }) {
     doUpload();
   }
 
+  function handleNewUpload() {
+    setParsedResult(null);
+    setArquivoNome("");
+    setClinicaId("");
+    setMesReferencia("");
+    setTipoPlanilha("orcamentos");
+    setSubstituir(false);
+    setProgressStatus("idle");
+    setErrorMessage("");
+    setTotalRegistros(0);
+    setStep(1);
+  }
+
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-xl font-bold text-[#0A2463]">Upload de planilhas</h2>
-        <p className="text-slate-600 text-sm mt-1">
+        <h2 className="text-xl font-semibold text-neutral-800">Upload de planilhas</h2>
+        <p className="text-neutral-600 text-sm mt-1">
           Selecione a clínica, o mês, o tipo e o arquivo XLSX. Os dados são processados no navegador antes do envio.
         </p>
       </div>
@@ -151,19 +164,19 @@ export function UploadPageClient({ clinicas }: { clinicas: ClinicaOption[] }) {
       {step === 2 && parsedResult && (
         <div className="space-y-4">
           <PreviewTable result={parsedResult} arquivoNome={arquivoNome} />
-          <p className="text-slate-500 text-sm">Campos em amarelo podem precisar de atenção (vazios ou zerados).</p>
+          <p className="text-neutral-500 text-sm">Campos em amarelo podem precisar de atenção (vazios ou zerados).</p>
           <div className="flex gap-3">
             <button
               type="button"
               onClick={handleCancelPreview}
-              className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
             >
               Cancelar
             </button>
             <button
               type="button"
               onClick={handleConfirm}
-              className="rounded-md bg-[#0A2463] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+              className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:opacity-90"
             >
               Confirmar upload
             </button>
@@ -180,12 +193,21 @@ export function UploadPageClient({ clinicas }: { clinicas: ClinicaOption[] }) {
             onRetry={() => { setProgressStatus("sending"); doUpload(); }}
           />
           {step === 4 && progressStatus === "success" && (
-            <Link
-              href="/admin/upload/historico"
-              className="inline-block text-[#0A2463] font-medium hover:underline"
-            >
-              Ver histórico de uploads →
-            </Link>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={handleNewUpload}
+                className="inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+              >
+                Novo upload
+              </button>
+              <Link
+                href="/admin/upload/historico"
+                className="inline-flex items-center text-sm font-medium text-primary-600 hover:underline"
+              >
+                Ver histórico de uploads →
+              </Link>
+            </div>
           )}
         </div>
       )}
@@ -193,15 +215,15 @@ export function UploadPageClient({ clinicas }: { clinicas: ClinicaOption[] }) {
       {showReplaceConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">Upload já existe</h3>
-            <p className="text-slate-600 text-sm mb-4">
+            <h3 className="text-lg font-semibold text-neutral-900 mb-2">Upload já existe</h3>
+            <p className="text-neutral-600 text-sm mb-4">
               Já existe upload para esta clínica e mês. Deseja substituir os dados? Os registros antigos serão removidos.
             </p>
             <div className="flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setShowReplaceConfirm(false)}
-                className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
               >
                 Cancelar
               </button>

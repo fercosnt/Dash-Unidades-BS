@@ -99,7 +99,7 @@ export function DashboardClient({
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h2 className="text-xl font-bold text-[#0A2463]">Visão geral</h2>
+        <h2 className="text-xl font-semibold text-neutral-800">Visão geral</h2>
         <PeriodoSelector selectedPeriodo={mes} onChange={setMes} />
       </div>
 
@@ -110,9 +110,9 @@ export function DashboardClient({
         </div>
       )}
 
-      <div className="rounded-lg border border-slate-200 bg-white p-4">
-        <h3 className="text-sm font-semibold text-slate-900 mb-2">Calcular resumo mensal</h3>
-        <p className="text-xs text-slate-600 mb-3">
+      <div className="rounded-lg border border-neutral-200 bg-white p-4">
+        <h3 className="text-sm font-semibold text-neutral-900 mb-2">Calcular resumo mensal</h3>
+        <p className="text-xs text-neutral-600 mb-3">
           Dispara o cálculo do resumo para uma clínica e o mês selecionado (via webhook n8n). Requer N8N_WEBHOOK_URL e N8N_WEBHOOK_SECRET configurados.
         </p>
         {resumoMessage && (
@@ -126,11 +126,11 @@ export function DashboardClient({
         )}
         <div className="flex flex-wrap items-end gap-3">
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-slate-700">Clínica</span>
+            <span className="text-xs font-medium text-neutral-700">Clínica</span>
             <select
               value={resumoClinicaId}
               onChange={(e) => setResumoClinicaId(e.target.value)}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+              className="rounded-md border border-neutral-300 px-3 py-2 text-sm"
             >
               <option value="">Selecione...</option>
               {clinicas.map((c) => (
@@ -138,12 +138,12 @@ export function DashboardClient({
               ))}
             </select>
           </label>
-          <span className="text-sm text-slate-500">Mês: {mes}</span>
+          <span className="text-sm text-neutral-500">Mês: {mes}</span>
           <button
             type="button"
             onClick={handleCalcularResumo}
             disabled={resumoLoading || !resumoClinicaId}
-            className="rounded-md bg-[#0A2463] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+            className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
           >
             {resumoLoading ? "Enviando..." : "Calcular resumo"}
           </button>
@@ -151,16 +151,52 @@ export function DashboardClient({
       </div>
 
       {loading ? (
-        <p className="text-slate-500 text-sm">Carregando...</p>
+        <p className="text-neutral-500 text-sm">Carregando...</p>
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-            <KpiCard label="Faturamento bruto" value={kpis.faturamentoBruto} format="currency" />
-            <KpiCard label="Total recebido no mês" value={kpis.totalRecebidoMes} format="currency" />
-            <KpiCard label="Total a receber" value={kpis.totalAReceberMes} format="currency" />
-            <KpiCard label="Total inadimplente" value={kpis.totalInadimplente} format="currency" />
-            <KpiCard label="Valor líquido total" value={kpis.valorLiquido} format="currency" />
-            <KpiCard label="Parte Beauty Smile (60%)" value={kpis.valorBeautySmile} format="currency" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <KpiCard
+              label="Faturamento bruto"
+              value={kpis.faturamentoBruto}
+              format="currency"
+              icon="money"
+              accentColor="primary"
+            />
+            <KpiCard
+              label="Total recebido no mês"
+              value={kpis.totalRecebidoMes}
+              format="currency"
+              icon="receive"
+              accentColor="primary"
+            />
+            <KpiCard
+              label="Total a receber"
+              value={kpis.totalAReceberMes}
+              format="currency"
+              icon="pending"
+              accentColor="primary"
+            />
+            <KpiCard
+              label="Total inadimplente"
+              value={kpis.totalInadimplente}
+              format="currency"
+              icon="alert"
+              accentColor="danger"
+            />
+            <KpiCard
+              label="Valor líquido total"
+              value={kpis.valorLiquido}
+              format="currency"
+              icon="chart"
+              accentColor="primary"
+            />
+            <KpiCard
+              label="Parte Beauty Smile (60%)"
+              value={kpis.valorBeautySmile}
+              format="currency"
+              icon="percent"
+              accentColor="primary"
+            />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

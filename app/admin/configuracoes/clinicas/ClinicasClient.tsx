@@ -194,15 +194,15 @@ export function ClinicasClient({
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <h2 className="text-xl font-bold text-[#0A2463]">Clínicas parceiras</h2>
+        <h2 className="text-xl font-semibold text-neutral-800">Clínicas parceiras</h2>
         <div className="flex items-center gap-3">
-          <div className="flex rounded-lg border border-slate-200 bg-white p-1">
+          <div className="flex rounded-lg border border-neutral-200 bg-white p-1">
             {(["todas", "ativa", "inativa"] as const).map((f) => (
               <Link
                 key={f}
                 href={`/admin/configuracoes/clinicas${f === "todas" ? "" : `?status=${f}`}`}
                 className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-                  statusFilter === f ? "bg-[#0A2463] text-white" : "text-slate-600 hover:bg-slate-100"
+                  statusFilter === f ? "bg-primary-600 text-white" : "text-neutral-600 hover:bg-neutral-100"
                 }`}
               >
                 {f === "todas" ? "Todas" : f === "ativa" ? "Ativas" : "Inativas"}
@@ -212,45 +212,45 @@ export function ClinicasClient({
           <button
             type="button"
             onClick={openCreate}
-            className="rounded-md bg-[#0A2463] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+            className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:opacity-90"
           >
             Nova clínica
           </button>
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-        <table className="min-w-full divide-y divide-slate-200">
+      <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
+        <table className="min-w-full divide-y divide-neutral-200">
           <thead>
-            <tr className="bg-slate-50">
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-slate-600">Nome</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-slate-600">CNPJ</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-slate-600">Responsável</th>
-              <th className="px-4 py-3 text-right text-xs font-medium uppercase text-slate-600">Custo mão de obra</th>
-              <th className="px-4 py-3 text-right text-xs font-medium uppercase text-slate-600">Split</th>
-              <th className="px-4 py-3 text-center text-xs font-medium uppercase text-slate-600">Status</th>
-              <th className="px-4 py-3 text-right text-xs font-medium uppercase text-slate-600">Ações</th>
+            <tr className="bg-neutral-50">
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-neutral-600">Nome</th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-neutral-600">CNPJ</th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-neutral-600">Responsável</th>
+              <th className="px-4 py-3 text-right text-xs font-medium uppercase text-neutral-600">Custo mão de obra</th>
+              <th className="px-4 py-3 text-right text-xs font-medium uppercase text-neutral-600">Split</th>
+              <th className="px-4 py-3 text-center text-xs font-medium uppercase text-neutral-600">Status</th>
+              <th className="px-4 py-3 text-right text-xs font-medium uppercase text-neutral-600">Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-200">
+          <tbody className="divide-y divide-neutral-200">
             {clinicas.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-slate-500">
+                <td colSpan={7} className="px-4 py-8 text-center text-neutral-500">
                   Nenhuma clínica encontrada.
                 </td>
               </tr>
             ) : (
               clinicas.map((c) => (
-                <tr key={c.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 text-sm font-medium text-slate-900">{c.nome}</td>
-                  <td className="px-4 py-3 text-sm text-slate-600">{c.cnpj ?? "—"}</td>
-                  <td className="px-4 py-3 text-sm text-slate-600">{c.responsavel ?? "—"}</td>
-                  <td className="px-4 py-3 text-right text-sm text-slate-600">{formatMoney(c.custo_mao_de_obra)}</td>
-                  <td className="px-4 py-3 text-right text-sm text-slate-600">{formatPercent(c.percentual_split)}</td>
+                <tr key={c.id} className="hover:bg-neutral-50">
+                  <td className="px-4 py-3 text-sm font-medium text-neutral-900">{c.nome}</td>
+                  <td className="px-4 py-3 text-sm text-neutral-600">{c.cnpj ?? "—"}</td>
+                  <td className="px-4 py-3 text-sm text-neutral-600">{c.responsavel ?? "—"}</td>
+                  <td className="px-4 py-3 text-right text-sm text-neutral-600">{formatMoney(c.custo_mao_de_obra)}</td>
+                  <td className="px-4 py-3 text-right text-sm text-neutral-600">{formatPercent(c.percentual_split)}</td>
                   <td className="px-4 py-3 text-center">
                     <span
                       className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                        c.ativo ? "bg-green-100 text-green-800" : "bg-slate-100 text-slate-600"
+                        c.ativo ? "bg-green-100 text-green-800" : "bg-neutral-100 text-neutral-600"
                       }`}
                     >
                       {c.ativo ? "Ativa" : "Inativa"}
@@ -260,14 +260,14 @@ export function ClinicasClient({
                     <button
                       type="button"
                       onClick={() => handleToggle(c)}
-                      className="text-slate-600 hover:text-slate-900 mr-2 text-sm"
+                      className="text-neutral-600 hover:text-neutral-900 mr-2 text-sm"
                     >
                       {c.ativo ? "Desativar" : "Ativar"}
                     </button>
                     <button
                       type="button"
                       onClick={() => openEdit(c)}
-                      className="text-[#0A2463] hover:underline text-sm font-medium mr-2"
+                      className="text-primary-600 hover:underline text-sm font-medium mr-2"
                     >
                       Editar
                     </button>
@@ -292,71 +292,71 @@ export function ClinicasClient({
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">
+            <h3 className="text-lg font-semibold text-neutral-900 mb-4">
               {editing ? "Editar clínica" : "Nova clínica"}
             </h3>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Nome *</label>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Nome *</label>
                 <input
                   type="text"
                   value={form.nome}
                   onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))}
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 focus:border-[#0A2463] focus:ring-1 focus:ring-[#0A2463]"
+                  className="w-full rounded-md border border-neutral-300 px-3 py-2 text-neutral-900 focus:border-primary-600 focus:ring-1 focus:ring-primary-600"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">CNPJ</label>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">CNPJ</label>
                 <input
                   type="text"
                   value={form.cnpj}
                   onChange={(e) => setForm((f) => ({ ...f, cnpj: e.target.value }))}
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 focus:border-[#0A2463] focus:ring-1 focus:ring-[#0A2463]"
+                  className="w-full rounded-md border border-neutral-300 px-3 py-2 text-neutral-900 focus:border-primary-600 focus:ring-1 focus:ring-primary-600"
                   placeholder="00.000.000/0000-00"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Responsável</label>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Responsável</label>
                 <input
                   type="text"
                   value={form.responsavel}
                   onChange={(e) => setForm((f) => ({ ...f, responsavel: e.target.value }))}
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 focus:border-[#0A2463] focus:ring-1 focus:ring-[#0A2463]"
+                  className="w-full rounded-md border border-neutral-300 px-3 py-2 text-neutral-900 focus:border-primary-600 focus:ring-1 focus:ring-primary-600"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">E-mail</label>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">E-mail</label>
                 <input
                   type="email"
                   value={form.email}
                   onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 focus:border-[#0A2463] focus:ring-1 focus:ring-[#0A2463]"
+                  className="w-full rounded-md border border-neutral-300 px-3 py-2 text-neutral-900 focus:border-primary-600 focus:ring-1 focus:ring-primary-600"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Telefone</label>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Telefone</label>
                 <input
                   type="text"
                   value={form.telefone}
                   onChange={(e) => setForm((f) => ({ ...f, telefone: e.target.value }))}
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 focus:border-[#0A2463] focus:ring-1 focus:ring-[#0A2463]"
+                  className="w-full rounded-md border border-neutral-300 px-3 py-2 text-neutral-900 focus:border-primary-600 focus:ring-1 focus:ring-primary-600"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Custo mão de obra (R$) *</label>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Custo mão de obra (R$) *</label>
                   <input
                     type="number"
                     min={0}
                     step={0.01}
                     value={form.custo_mao_de_obra}
                     onChange={(e) => setForm((f) => ({ ...f, custo_mao_de_obra: e.target.value }))}
-                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 focus:border-[#0A2463] focus:ring-1 focus:ring-[#0A2463]"
+                    className="w-full rounded-md border border-neutral-300 px-3 py-2 text-neutral-900 focus:border-primary-600 focus:ring-1 focus:ring-primary-600"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Split (%)</label>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Split (%)</label>
                   <input
                     type="number"
                     min={0}
@@ -364,7 +364,7 @@ export function ClinicasClient({
                     step={0.1}
                     value={form.percentual_split}
                     onChange={(e) => setForm((f) => ({ ...f, percentual_split: e.target.value }))}
-                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 focus:border-[#0A2463] focus:ring-1 focus:ring-[#0A2463]"
+                    className="w-full rounded-md border border-neutral-300 px-3 py-2 text-neutral-900 focus:border-primary-600 focus:ring-1 focus:ring-primary-600"
                   />
                 </div>
               </div>
@@ -373,14 +373,14 @@ export function ClinicasClient({
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-md bg-[#0A2463] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+                  className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
                 >
                   {saving ? "Salvando…" : editing ? "Salvar" : "Criar"}
                 </button>
@@ -394,8 +394,8 @@ export function ClinicasClient({
       {confirmModal?.tipo === "desativar" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">Desativar clínica</h3>
-            <p className="text-slate-600 text-sm mb-4">
+            <h3 className="text-lg font-semibold text-neutral-900 mb-2">Desativar clínica</h3>
+            <p className="text-neutral-600 text-sm mb-4">
               Desativar a clínica <strong>{confirmModal.clinica.nome}</strong>? Ela não aparecerá nas listas de clínicas ativas. Você pode ativá-la novamente depois.
             </p>
             {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
@@ -404,7 +404,7 @@ export function ClinicasClient({
                 type="button"
                 onClick={closeConfirmModal}
                 disabled={confirmLoading}
-                className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
               >
                 Cancelar
               </button>
@@ -425,11 +425,11 @@ export function ClinicasClient({
       {confirmModal?.tipo === "excluir" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">Excluir clínica permanentemente</h3>
-            <p className="text-slate-600 text-sm mb-2">
+            <h3 className="text-lg font-semibold text-neutral-900 mb-2">Excluir clínica permanentemente</h3>
+            <p className="text-neutral-600 text-sm mb-2">
               Tem certeza que deseja excluir a clínica <strong>{confirmModal.clinica.nome}</strong>?
             </p>
-            <p className="text-slate-500 text-xs mb-4">
+            <p className="text-neutral-500 text-xs mb-4">
               Esta ação não pode ser desfeita. Só é possível excluir clínicas sem usuários ou médicos vinculados.
             </p>
             {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
@@ -438,7 +438,7 @@ export function ClinicasClient({
                 type="button"
                 onClick={closeConfirmModal}
                 disabled={confirmLoading}
-                className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
               >
                 Cancelar
               </button>
