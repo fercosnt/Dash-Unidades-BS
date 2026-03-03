@@ -147,8 +147,8 @@ export function UploadPageClient({ clinicas }: { clinicas: ClinicaOption[] }) {
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-neutral-800">Upload de planilhas</h2>
-        <p className="text-neutral-600 text-sm mt-1">
+        <h2 className="text-xl font-semibold text-white">Upload de planilhas</h2>
+        <p className="mt-1 text-sm text-white/80">
           Selecione a clínica, o mês, o tipo e o arquivo XLSX. Os dados são processados no navegador antes do envio.
         </p>
       </div>
@@ -164,12 +164,12 @@ export function UploadPageClient({ clinicas }: { clinicas: ClinicaOption[] }) {
       {step === 2 && parsedResult && (
         <div className="space-y-4">
           <PreviewTable result={parsedResult} arquivoNome={arquivoNome} />
-          <p className="text-neutral-500 text-sm">Campos em amarelo podem precisar de atenção (vazios ou zerados).</p>
+          <p className="text-sm text-white/80">Campos em amarelo podem precisar de atenção (vazios ou zerados).</p>
           <div className="flex gap-3">
             <button
               type="button"
               onClick={handleCancelPreview}
-              className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+              className="rounded-md bg-white/95 px-4 py-2 text-sm font-medium text-neutral-800 shadow-sm hover:bg-white"
             >
               Cancelar
             </button>
@@ -203,7 +203,7 @@ export function UploadPageClient({ clinicas }: { clinicas: ClinicaOption[] }) {
               </button>
               <Link
                 href="/admin/upload/historico"
-                className="inline-flex items-center text-sm font-medium text-primary-600 hover:underline"
+                className="inline-flex items-center text-sm font-medium text-white/90 hover:text-white hover:underline"
               >
                 Ver histórico de uploads →
               </Link>

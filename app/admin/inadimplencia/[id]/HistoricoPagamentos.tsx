@@ -55,14 +55,18 @@ export function HistoricoPagamentos({
   }
 
   if (loading) {
-    return <p className="text-neutral-500 text-sm">Carregando pagamentos...</p>;
+    return (
+      <div className="flex h-40 w-full items-center justify-center text-sm text-white">
+        Carregando pagamentos...
+      </div>
+    );
   }
 
   return (
     <div className="space-y-2">
-      <h4 className="text-sm font-semibold text-neutral-900">Histórico de pagamentos</h4>
+      <h4 className="text-sm font-semibold text-white">Histórico de pagamentos</h4>
       {pagamentos.length === 0 ? (
-        <p className="text-neutral-500 text-sm">Nenhum pagamento registrado.</p>
+        <p className="mt-0.5 text-sm text-white/80">Nenhum pagamento registrado.</p>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-neutral-200">
           <table className="min-w-full divide-y divide-neutral-200 text-sm">

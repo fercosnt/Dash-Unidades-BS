@@ -175,7 +175,7 @@ export function MedicosClient({
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <h2 className="text-xl font-semibold text-neutral-800">Médicos indicadores</h2>
+        <h2 className="text-xl font-semibold text-white">Médicos indicadores</h2>
         <div className="flex flex-wrap items-center gap-3">
           <select
             value={clinicaFilter}

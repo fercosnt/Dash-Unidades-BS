@@ -28,6 +28,28 @@
   body {
     font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
       "Helvetica Neue", Arial, sans-serif;
+
+    /* Scrollbar global no estilo Beauty Sleep */
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: #d1d5db #111827;
+  }
+
+  body::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  body::-webkit-scrollbar-track {
+    background: #111827;
+  }
+
+  body::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 9999px;
+    border: 2px solid #111827;
+  }
+
+  body::-webkit-scrollbar-thumb:hover {
+    background: #e5e7eb;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -128,10 +150,30 @@
 }
 
 /* ============================================================
+   HEADER GRADIENT ANIMADO
+   ============================================================ */
+@keyframes headerGradientShift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.header-gradient-animated {
+  background-size: 200% 200%;
+  animation: headerGradientShift 18s ease infinite;
+}
+
+/* ============================================================
    REDUCED MOTION
    ============================================================ */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;

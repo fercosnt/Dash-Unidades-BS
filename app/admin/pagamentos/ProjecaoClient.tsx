@@ -92,10 +92,15 @@ export function ProjecaoClient({
       .slice(0, 12);
   }, [list]);
 
+  const mediaMensal =
+    chartData.length > 0
+      ? chartData.reduce((sum, d) => sum + d.valor, 0) / chartData.length
+      : 0;
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-neutral-800">Projeção de recebimentos</h1>
-      <p className="text-neutral-600">
+      <h1 className="text-2xl font-bold text-white">Projeção de recebimentos</h1>
+      <p className="mt-0.5 text-sm text-white/80">
         Parcelas de cartão (D+30) projetadas por clínica e mês de recebimento.
       </p>
 
@@ -162,35 +167,75 @@ export function ProjecaoClient({
         </button>
       </div>
 
-      {/* Gráfico por mês (barras em CSS) */}
+      {/* Gráfico por mês (barras verticais + linha de tendência) */}
       {chartData.length > 0 && (
         <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
-          <h3 className="text-sm font-semibold text-neutral-800 mb-4">
+          <h3 className="mb-1 text-sm font-semibold text-neutral-800">
             Valor projetado por mês (até 12 meses)
           </h3>
-          <div className="space-y-2">
-            {chartData.map((d) => {
-              const maxVal = Math.max(...chartData.map((x) => x.valor), 1);
-              const pct = (d.valor / maxVal) * 100;
-              return (
-                <div key={d.mes} className="flex items-center gap-3">
-                  <span className="w-20 text-xs text-neutral-600 shrink-0">{d.mesLabel}</span>
-                  <div className="flex-1 h-6 bg-neutral-100 rounded overflow-hidden">
-                    <div
-                      className="h-full bg-primary-600 rounded min-w-[2px] transition-all"
-                      style={{ width: `${pct}%` }}
-                      title={formatCurrency(d.valor)}
-                    />
+          <p className="mb-3 text-xs text-neutral-600">
+            Média mensal projetada:{" "}
+            <span className="font-semibold text-neutral-900">
+              {formatCurrency(mediaMensal)}
+            </span>
+          </p>
+
+          {(() => {
+            const maxVal = Math.max(...chartData.map((x) => x.valor), 1);
+            const CHART_H = 150;
+
+            return (
+              <div>
+                {/* Chart area */}
+                <div className="relative mt-2" style={{ height: CHART_H }}>
+                  {/* Bars */}
+                  <div className="flex h-full items-end">
+                    {chartData.map((d) => {
+                      const pct = Math.max(5, (d.valor / maxVal) * 100);
+                      return (
+                        <div
+                          key={d.mes}
+                          className="flex h-full flex-1 items-end justify-center"
+                          style={{ minWidth: 0 }}
+                        >
+                          <div className="relative h-full w-8">
+                            <div className="absolute inset-0 rounded-sm bg-neutral-100" />
+                            <div
+                              className="absolute inset-x-0 bottom-0 rounded-t-sm bg-primary-600"
+                              style={{ height: `${pct}%` }}
+                              title={formatCurrency(d.valor)}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <span className="text-xs font-medium text-neutral-800 w-20 text-right">
-                    {formatCurrency(d.valor)}
-                  </span>
+
                 </div>
-              );
-            })}
-          </div>
+
+                {/* Labels */}
+                <div className="mt-3 flex text-xs">
+                  {chartData.map((d) => (
+                    <div
+                      key={d.mes}
+                      className="flex flex-1 flex-col items-center gap-0.5"
+                      style={{ minWidth: 0 }}
+                    >
+                      <span className="w-full truncate text-center text-[11px] text-neutral-600">
+                        {d.mesLabel}
+                      </span>
+                      <span className="w-full truncate text-center font-medium text-neutral-800">
+                        {formatCurrency(d.valor)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       )}
+
 
       {/* Tabela */}
       <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white shadow">

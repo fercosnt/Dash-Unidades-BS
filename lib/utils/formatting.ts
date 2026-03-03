@@ -18,9 +18,10 @@ export function parseDateBR(value: string): string | null {
   const match = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (!match) return null;
   const [, d, m, y] = match;
-  const day = d!.padStart(2, "0");
-  const month = m!.padStart(2, "0");
-  return `${y}-${month}-${day}`;
+  const day = Number(d);
+  const month = Number(m);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  return `${y}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
 /** Remove número entre parênteses no final: "Fabio Sakuma (18)" → "Fabio Sakuma" */

@@ -78,7 +78,7 @@ export function InadimplenciaClient({
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-neutral-800">Inadimplência</h2>
+      <h2 className="text-xl font-semibold text-white">Inadimplência</h2>
 
       {message && (
         <div
@@ -94,26 +94,26 @@ export function InadimplenciaClient({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="rounded-lg border border-neutral-200 bg-white p-4">
-          <p className="text-xs font-medium text-neutral-500">Total inadimplente</p>
+          <p className="text-sm font-medium text-neutral-500">Total inadimplente</p>
           <p className="text-xl font-bold text-neutral-900">{formatCurrency(kpis.totalInadimplente)}</p>
         </div>
         <div className="rounded-lg border border-neutral-200 bg-white p-4">
-          <p className="text-xs font-medium text-neutral-500">Pacientes inadimplentes</p>
+          <p className="text-sm font-medium text-neutral-500">Pacientes inadimplentes</p>
           <p className="text-xl font-bold text-neutral-900">{kpis.quantidadePacientes}</p>
         </div>
         <div className="rounded-lg border border-neutral-200 bg-white p-4">
-          <p className="text-xs font-medium text-neutral-500">Maior valor em aberto</p>
+          <p className="text-sm font-medium text-neutral-500">Maior valor em aberto</p>
           <p className="text-xl font-bold text-neutral-900">{formatCurrency(kpis.maiorValor)}</p>
         </div>
         <div className="rounded-lg border border-neutral-200 bg-white p-4">
-          <p className="text-xs font-medium text-neutral-500">Média por paciente</p>
+          <p className="text-sm font-medium text-neutral-500">Média por paciente</p>
           <p className="text-xl font-bold text-neutral-900">{formatCurrency(kpis.mediaPorPaciente)}</p>
         </div>
       </div>
 
       <div className="flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-neutral-700">Clínica</span>
+          <span className="text-sm font-medium text-white/80">Clínica</span>
           <select
             value={filters.clinica_id ?? ""}
             onChange={(e) => setFilters((f) => ({ ...f, clinica_id: e.target.value || undefined }))}
@@ -126,7 +126,7 @@ export function InadimplenciaClient({
           </select>
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-neutral-700">Valor mínimo (R$)</span>
+          <span className="text-sm font-medium text-white/80">Valor mínimo (R$)</span>
           <select
             value={filters.valor_min ?? ""}
             onChange={(e) =>
@@ -144,7 +144,7 @@ export function InadimplenciaClient({
           </select>
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-neutral-700">Dias em aberto</span>
+          <span className="text-sm font-medium text-white/80">Dias em aberto</span>
           <select
             value={filters.dias_min ?? ""}
             onChange={(e) =>
@@ -162,7 +162,7 @@ export function InadimplenciaClient({
           </select>
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-neutral-700">Status</span>
+          <span className="text-sm font-medium text-white/80">Status</span>
           <select
             value={filters.status ?? ""}
             onChange={(e) =>
@@ -181,7 +181,9 @@ export function InadimplenciaClient({
       </div>
 
       {loading ? (
-        <p className="text-neutral-500 text-sm">Carregando...</p>
+        <div className="flex h-40 w-full items-center justify-center text-sm text-white">
+          Carregando...
+        </div>
       ) : (
         <div className="rounded-lg border border-neutral-200 bg-white">
           <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100">

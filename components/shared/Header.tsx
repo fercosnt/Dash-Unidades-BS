@@ -19,9 +19,8 @@ function getInitials(name: string): string {
     .toUpperCase();
 }
 
-export function Header({ userName, userRole, variant = "admin" }: HeaderProps) {
+export function Header({ userName, userRole }: HeaderProps) {
   const router = useRouter();
-  const isAdmin = variant === "admin";
 
   async function handleLogout() {
     const supabase = createSupabaseBrowserClient();
@@ -31,50 +30,23 @@ export function Header({ userName, userRole, variant = "admin" }: HeaderProps) {
   }
 
   return (
-    <header
-      className={`sticky top-0 z-10 flex h-14 items-center justify-between px-6 ${
-        isAdmin
-          ? "bg-primary-900 text-white"
-          : "bg-white text-neutral-900 shadow-sm"
-      }`}
-    >
-      <div />
+    <header className="sticky top-0 z-10 flex h-16 items-center justify-end px-6 bg-[#05071F]/96 backdrop-blur-md shadow-[0_10px_30px_rgba(3,7,18,0.85)] rounded-bl-3xl rounded-br-3xl">
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2.5">
-          <div
-            className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold ${
-              isAdmin
-                ? "bg-white/15 text-white"
-                : "bg-neutral-100 text-neutral-600"
-            }`}
-          >
-            {getInitials(userName)}
-          </div>
-          <div className="text-right">
-            <p
-              className={`text-sm font-medium leading-tight ${
-                isAdmin ? "text-white" : "text-neutral-800"
-              }`}
-            >
-              {userName}
-            </p>
-            <p
-              className={`text-[11px] leading-tight ${
-                isAdmin ? "text-white/50" : "text-neutral-400"
-              }`}
-            >
-              {userRole}
-            </p>
-          </div>
+        <div className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold bg-white text-primary-600">
+          {getInitials(userName)}
+        </div>
+        <div className="text-right">
+          <p className="text-sm font-medium leading-tight text-white">
+            {userName}
+          </p>
+          <p className="text-[11px] leading-tight text-white/60">
+            {userRole}
+          </p>
         </div>
         <button
           type="button"
           onClick={handleLogout}
-          className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
-            isAdmin
-              ? "text-white/60 hover:bg-white/10 hover:text-white"
-              : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700"
-          }`}
+          className="ml-2 rounded-full bg-white/10 px-3 py-1 text-[11px] font-medium text-white/90 transition-colors hover:bg-white/20"
         >
           Sair
         </button>

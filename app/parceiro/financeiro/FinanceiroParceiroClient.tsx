@@ -47,8 +47,8 @@ export function FinanceiroParceiroClient({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-neutral-800">Financeiro</h2>
-        <p className="text-neutral-500 text-sm mt-1">
+        <h2 className="text-xl font-semibold text-white">Financeiro</h2>
+        <p className="mt-1 text-sm text-white/80">
           Resumo financeiro mensal e histórico da sua clínica.
         </p>
       </div>
@@ -56,7 +56,7 @@ export function FinanceiroParceiroClient({
       {/* Month selector */}
       <div className="flex flex-wrap items-end gap-4">
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-neutral-700">Mês de referência</span>
+          <span className="text-sm font-medium text-white/80">Mês de referência</span>
           <select
             value={mesRef}
             onChange={(e) => setMesRef(e.target.value)}
@@ -70,7 +70,7 @@ export function FinanceiroParceiroClient({
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2 text-neutral-500 text-sm py-8">
+        <div className="flex h-40 w-full items-center justify-center gap-2 text-sm text-neutral-800">
           <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
@@ -79,8 +79,8 @@ export function FinanceiroParceiroClient({
         </div>
       ) : !resumo ? (
         <div className="rounded-xl bg-white p-8 shadow-md text-center">
-          <p className="text-neutral-500">Nenhum resumo financeiro disponível para {formatMonth(mesRef)}.</p>
-          <p className="text-neutral-400 text-sm mt-1">Os dados aparecerão após o cálculo mensal ser processado.</p>
+          <p className="text-neutral-900 font-semibold">Nenhum resumo financeiro disponível para {formatMonth(mesRef)}.</p>
+          <p className="mt-1 text-sm text-neutral-900">Os dados aparecerão após o cálculo mensal ser processado.</p>
         </div>
       ) : (
         <>

@@ -37,7 +37,7 @@ export function ParceiroDashboardClient({
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h2 className="text-xl font-semibold text-neutral-800">Sua visão</h2>
+        <h2 className="text-xl font-semibold text-white">Sua visão</h2>
         <PeriodoSelector selectedPeriodo={mes} onChange={setMes} />
       </div>
 
@@ -48,7 +48,9 @@ export function ParceiroDashboardClient({
       )}
 
       {loading ? (
-        <p className="text-neutral-500 text-sm">Carregando...</p>
+        <div className="flex h-40 w-full items-center justify-center text-sm text-neutral-800">
+          Carregando...
+        </div>
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

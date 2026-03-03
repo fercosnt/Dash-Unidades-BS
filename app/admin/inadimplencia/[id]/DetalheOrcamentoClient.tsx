@@ -33,13 +33,13 @@ export function DetalheOrcamentoClient({ orcamento, readOnly = false, backHref =
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2 text-sm text-neutral-600">
-        <Link href={backHref} className="text-primary-600 hover:underline">
+      <div className="flex items-center gap-2 text-sm text-white/80">
+        <Link href={backHref} className="text-white/90 hover:text-white underline-offset-2 hover:underline">
           ← Inadimplência
         </Link>
       </div>
 
-      <h2 className="text-xl font-semibold text-neutral-800">Detalhe do orçamento</h2>
+      <h2 className="text-xl font-semibold text-white">Detalhe do orçamento</h2>
 
       <div className="rounded-lg border border-neutral-200 bg-white p-6 space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

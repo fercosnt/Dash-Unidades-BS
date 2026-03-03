@@ -42,83 +42,83 @@ Update the file after completing each sub-task, not just after completing an ent
 - [ ] 0.0 Create feature branch
   - [ ] 0.1 Criar e fazer checkout de uma nova branch: `git checkout -b feature/fase4-pagamentos-inadimplencia`
 
-- [ ] 1.0 Supabase RPC Function para Registro e Estorno de Pagamento
-  - [ ] 1.1 Criar arquivo de migration `supabase/migrations/004_rpc_pagamentos.sql`
-  - [ ] 1.2 Verificar se o enum `forma_pagamento` contem apenas `cartao_credito`, `cartao_debito`, `pix`, `dinheiro`. Se conter `boleto` ou `transferencia`, criar ALTER TYPE para remove-los
-  - [ ] 1.3 Criar RPC function `registrar_pagamento(p_orcamento_fechado_id UUID, p_valor DECIMAL, p_forma forma_pagamento, p_parcelas INTEGER, p_data_pagamento DATE, p_registrado_por UUID)` que executa atomicamente: (a) valida que valor > 0, valor <= valor_em_aberto do orcamento, parcelas entre 1-12, data <= hoje; (b) insere registro em `pagamentos`; (c) se forma = cartao_credito E parcelas > 1, gera N registros em `parcelas_cartao` com arredondamento correto (diferenca na ultima parcela) e mes_recebimento = primeiro dia do mes (data_pagamento + N meses); (d) atualiza `orcamentos_fechados.valor_pago += valor` (o trigger `update_orcamento_status` cuida do status); (e) retorna o pagamento criado + parcelas geradas
-  - [ ] 1.4 Implementar logica de arredondamento: `valor_parcela = ROUND(valor / parcelas, 2)` para parcelas 1..N-1, e ultima parcela = `valor - (valor_parcela * (parcelas - 1))` para garantir que a soma seja exata
-  - [ ] 1.5 Implementar logica D+30: `mes_recebimento = DATE_TRUNC('month', data_pagamento) + (parcela_numero * INTERVAL '1 month')` — parcela 1 recebe no mes seguinte, parcela 2 dois meses depois, etc.
-  - [ ] 1.6 Criar RPC function `estornar_pagamento(p_pagamento_id UUID)` que executa atomicamente: (a) busca o pagamento e seu valor; (b) deleta registros de `parcelas_cartao` vinculados (CASCADE ja cuida, mas ser explicito); (c) deleta o registro de `pagamentos`; (d) atualiza `orcamentos_fechados.valor_pago -= valor_do_pagamento` (trigger cuida do status); (e) retorna confirmacao
-  - [ ] 1.7 Executar migration no Supabase e verificar que as functions foram criadas corretamente
-  - [ ] 1.8 Testar manualmente as RPC functions com dados de teste (registrar pagamento a vista, parcelado 3x, 12x, e estornar)
+- [x] 1.0 Supabase RPC Function para Registro e Estorno de Pagamento
+  - [x] 1.1 Criar arquivo de migration `supabase/migrations/004_rpc_pagamentos.sql`
+  - [x] 1.2 Verificar se o enum `forma_pagamento` contem apenas `cartao_credito`, `cartao_debito`, `pix`, `dinheiro`. Se conter `boleto` ou `transferencia`, criar ALTER TYPE para remove-los
+  - [x] 1.3 Criar RPC function `registrar_pagamento(p_orcamento_fechado_id UUID, p_valor DECIMAL, p_forma forma_pagamento, p_parcelas INTEGER, p_data_pagamento DATE, p_registrado_por UUID)` que executa atomicamente: (a) valida que valor > 0, valor <= valor_em_aberto do orcamento, parcelas entre 1-12, data <= hoje; (b) insere registro em `pagamentos`; (c) se forma = cartao_credito E parcelas > 1, gera N registros em `parcelas_cartao` com arredondamento correto (diferenca na ultima parcela) e mes_recebimento = primeiro dia do mes (data_pagamento + N meses); (d) atualiza `orcamentos_fechados.valor_pago += valor` (o trigger `update_orcamento_status` cuida do status); (e) retorna o pagamento criado + parcelas geradas
+  - [x] 1.4 Implementar logica de arredondamento: `valor_parcela = ROUND(valor / parcelas, 2)` para parcelas 1..N-1, e ultima parcela = `valor - (valor_parcela * (parcelas - 1))` para garantir que a soma seja exata
+  - [x] 1.5 Implementar logica D+30: `mes_recebimento = DATE_TRUNC('month', data_pagamento) + (parcela_numero * INTERVAL '1 month')` — parcela 1 recebe no mes seguinte, parcela 2 dois meses depois, etc.
+  - [x] 1.6 Criar RPC function `estornar_pagamento(p_pagamento_id UUID)` que executa atomicamente: (a) busca o pagamento e seu valor; (b) deleta registros de `parcelas_cartao` vinculados (CASCADE ja cuida, mas ser explicito); (c) deleta o registro de `pagamentos`; (d) atualiza `orcamentos_fechados.valor_pago -= valor_do_pagamento` (trigger cuida do status); (e) retorna confirmacao
+  - [x] 1.7 Executar migration no Supabase e verificar que as functions foram criadas corretamente
+  - [x] 1.8 Testar manualmente as RPC functions com dados de teste (registrar pagamento a vista, parcelado 3x, 12x, e estornar)
 
-- [ ] 2.0 API Routes de Pagamento (POST e DELETE)
-  - [ ] 2.1 Criar `src/app/api/pagamentos/route.ts` com handler POST: recebe body `{ orcamento_fechado_id, valor, forma, parcelas, data_pagamento }`, valida campos obrigatorios no server-side
-  - [ ] 2.2 Adicionar verificacao de autenticacao e role admin (rejeitar com 403 se nao for admin)
-  - [ ] 2.3 Chamar RPC `registrar_pagamento` via Supabase client e retornar resultado (pagamento + parcelas) com status 201
-  - [ ] 2.4 Tratar erros da RPC (valor excede saldo, orcamento nao encontrado, etc.) e retornar mensagens claras com status 400/404
-  - [ ] 2.5 Criar `src/app/api/pagamentos/[id]/route.ts` com handler DELETE: recebe pagamento_id via params
-  - [ ] 2.6 Adicionar verificacao de autenticacao e role admin no DELETE
-  - [ ] 2.7 Chamar RPC `estornar_pagamento` via Supabase client e retornar confirmacao com status 200
-  - [ ] 2.8 Apos sucesso do POST ou DELETE, disparar webhook n8n para recalculo do `resumo_mensal` (mesma URL da Fase 3, enviar `{ clinica_id, mes_referencia }`)
+- [x] 2.0 API Routes de Pagamento (POST e DELETE)
+  - [x] 2.1 Criar `src/app/api/pagamentos/route.ts` com handler POST:
+  - [x] 2.2 Adicionar verificacao de autenticacao e role admin (rejeitar com 403 se nao for admin)
+  - [x] 2.3 Chamar RPC `registrar_pagamento` via Supabase client e retornar resultado (pagamento + parcelas) com status 201
+  - [x] 2.4 Tratar erros da RPC (valor excede saldo, orcamento nao encontrado, etc.) e retornar mensagens claras com status 400/404
+  - [x] 2.5 Criar `src/app/api/pagamentos/[id]/route.ts` com handler DELETE:
+  - [x] 2.6 Adicionar verificacao de autenticacao e role admin no DELETE
+  - [x] 2.7 Chamar RPC `estornar_pagamento` via Supabase client e retornar confirmacao com status 200
+  - [x] 2.8 Apos sucesso do POST ou DELETE, disparar webhook n8n para recalculo do `resumo_mensal` (mesma URL da Fase 3, enviar `{ clinica_id, mes_referencia }`)
 
-- [ ] 3.0 Modal de Registro de Pagamento
-  - [ ] 3.1 Criar `src/components/pagamentos/RegistrarPagamentoModal.tsx` recebendo props: `orcamentoId`, `pacienteNome`, `valorTotal`, `valorEmAberto`, `clinicaId`, `onSuccess`, `onClose`
-  - [ ] 3.2 Exibir no topo do modal (read-only): nome do paciente, valor total do orcamento, saldo em aberto (destaque visual)
-  - [ ] 3.3 Implementar campo "Valor do pagamento" (R$, obrigatorio) com mascara monetaria brasileira
-  - [ ] 3.4 Implementar dropdown "Forma de pagamento" com opcoes: Cartao Credito, Cartao Debito, PIX, Dinheiro
-  - [ ] 3.5 Implementar campo "Numero de parcelas" (1-12) que so aparece quando forma = cartao_credito; para outras formas, setar parcelas = 1 automaticamente (campo escondido)
-  - [ ] 3.6 Implementar campo "Data do pagamento" (date picker, default = hoje, maximo = hoje)
-  - [ ] 3.7 Adicionar validacoes client-side: valor > 0, valor <= valorEmAberto, parcelas 1-12 (se cartao), data <= hoje
-  - [ ] 3.8 Implementar submit: chamar POST `/api/pagamentos`, mostrar loading state no botao, exibir toast de sucesso com valor e forma, chamar `onSuccess()` para atualizar tabela pai
-  - [ ] 3.9 Tratar erros do POST: exibir mensagem de erro no modal sem fechar
+- [x] 3.0 Modal de Registro de Pagamento
+  - [x] 3.1 Criar `src/components/pagamentos/RegistrarPagamentoModal.tsx` recebendo props:
+  - [x] 3.2 Exibir no topo do modal (read-only): nome do paciente, valor total do orcamento, saldo em aberto (destaque visual)
+  - [x] 3.3 Implementar campo "Valor do pagamento" (R$, obrigatorio) com mascara monetaria brasileira
+  - [x] 3.4 Implementar dropdown "Forma de pagamento" com opcoes: Cartao Credito, Cartao Debito, PIX, Dinheiro
+  - [x] 3.5 Implementar campo "Numero de parcelas" (1-12) que so aparece quando forma = cartao_credito; para outras formas, setar parcelas = 1 automaticamente (campo escondido)
+  - [x] 3.6 Implementar campo "Data do pagamento" (date picker, default = hoje, maximo = hoje)
+  - [x] 3.7 Adicionar validacoes client-side: valor > 0, valor <= valorEmAberto, parcelas 1-12 (se cartao), data <= hoje
+  - [x] 3.8 Implementar submit: chamar POST `/api/pagamentos`, mostrar loading state no botao, exibir toast de sucesso com valor e forma, chamar `onSuccess()` para atualizar tabela pai
+  - [x] 3.9 Tratar erros do POST: exibir mensagem de erro no modal sem fechar
 
-- [ ] 4.0 Estorno de Pagamento (UI)
-  - [ ] 4.1 Criar `src/components/pagamentos/HistoricoPagamentos.tsx` que recebe `orcamentoFechadoId` e lista todos os pagamentos do orcamento (data, valor formatado, forma de pagamento, parcelas)
-  - [ ] 4.2 Buscar pagamentos via Supabase query: `pagamentos WHERE orcamento_fechado_id = X ORDER BY data_pagamento DESC`
-  - [ ] 4.3 Adicionar botao "Estornar" em cada linha de pagamento
-  - [ ] 4.4 Criar `src/components/pagamentos/EstornarPagamentoModal.tsx` com modal de confirmacao: "Tem certeza que deseja estornar o pagamento de R$ X.XXX,XX de [data]? Esta acao nao pode ser desfeita."
-  - [ ] 4.5 Implementar confirmacao: chamar DELETE `/api/pagamentos/[id]`, mostrar loading, exibir toast de sucesso, atualizar lista de pagamentos e dados do orcamento
+- [x] 4.0 Estorno de Pagamento (UI)
+  - [x] 4.1 Criar `src/components/pagamentos/HistoricoPagamentos.tsx` que recebe `orcamentoFechadoId` e lista todos os pagamentos do orcamento (data, valor formatado, forma de pagamento, parcelas)
+  - [x] 4.2 Buscar pagamentos via Supabase query: `pagamentos WHERE orcamento_fechado_id = X ORDER BY data_pagamento DESC`
+  - [x] 4.3 Adicionar botao "Estornar" em cada linha de pagamento
+  - [x] 4.4 Criar `src/components/pagamentos/EstornarPagamentoModal.tsx` com modal de confirmacao:
+  - [x] 4.5 Implementar confirmacao: chamar DELETE `/api/pagamentos/[id]`, mostrar loading, exibir toast de sucesso, atualizar lista de pagamentos e dados do orcamento
 
-- [ ] 5.0 Tela de Inadimplencia (Admin)
-  - [ ] 5.1 Criar pagina `src/app/(admin)/inadimplencia/page.tsx` usando template ListWithFilters do design system
-  - [ ] 5.2 Implementar KPI cards no topo: (a) Total inadimplente (soma de valor_em_aberto), (b) Quantidade de pacientes inadimplentes, (c) Maior valor individual em aberto, (d) Inadimplencia media por paciente
-  - [ ] 5.3 Buscar dados da view `vw_inadimplentes` via Supabase query (a view ja agrega orcamentos com valor_em_aberto > 0 por paciente e clinica)
-  - [ ] 5.4 Criar tabela principal com colunas: Paciente, Clinica, Valor Total (formatado R$), Valor Pago (formatado R$), Valor em Aberto (formatado R$), Dias em Aberto, Status (badge em_aberto/parcial)
-  - [ ] 5.5 Implementar ordenacao padrao: valor_em_aberto decrescente (maiores devedores primeiro)
-  - [ ] 5.6 Implementar filtro por clinica (dropdown com todas as clinicas)
-  - [ ] 5.7 Implementar filtro por faixa de valor (opcoes: > R$ 1.000, > R$ 5.000, > R$ 10.000)
-  - [ ] 5.8 Implementar filtro por tempo em aberto (opcoes: > 30 dias, > 60 dias, > 90 dias)
-  - [ ] 5.9 Implementar filtro por status (em_aberto, parcial)
-  - [ ] 5.10 Adicionar botao "Registrar Pagamento" em cada linha que abre o `RegistrarPagamentoModal` com orcamento pre-selecionado
-  - [ ] 5.11 Adicionar botao "Ver Detalhes" em cada linha que navega para pagina de detalhe do orcamento
-  - [ ] 5.12 Criar pagina de detalhe `src/app/(admin)/inadimplencia/[id]/page.tsx` usando template DetailView: informacoes do orcamento (paciente, valor total, data, profissional, procedimentos), telefone do paciente (para cobranca), componente `HistoricoPagamentos` com lista de pagamentos, saldo remanescente em destaque
+- [x] 5.0 Tela de Inadimplencia (Admin)
+  - [x] 5.1 Criar pagina `src/app/(admin)/inadimplencia/page.tsx` usando template ListWithFilters do design system
+  - [x] 5.2 Implementar KPI cards no topo: (a) Total inadimplente (soma de valor_em_aberto), (b) Quantidade de pacientes inadimplentes, (c) Maior valor individual em aberto, (d) Inadimplencia media por paciente
+  - [x] 5.3 Buscar dados da view `vw_inadimplentes` via Supabase query (a view ja agrega orcamentos com valor_em_aberto > 0 por paciente e clinica)
+  - [x] 5.4 Criar tabela principal com colunas: Paciente, Clinica, Valor Total (formatado R$), Valor Pago (formatado R$), Valor em Aberto (formatado R$), Dias em Aberto, Status (badge em_aberto/parcial)
+  - [x] 5.5 Implementar ordenacao padrao: valor_em_aberto decrescente (maiores devedores primeiro)
+  - [x] 5.6 Implementar filtro por clinica (dropdown com todas as clinicas)
+  - [x] 5.7 Implementar filtro por faixa de valor (opcoes: > R$ 1.000, > R$ 5.000, > R$ 10.000)
+  - [x] 5.8 Implementar filtro por tempo em aberto (opcoes: > 30 dias, > 60 dias, > 90 dias)
+  - [x] 5.9 Implementar filtro por status (em_aberto, parcial)
+  - [x] 5.10 Adicionar botao "Registrar Pagamento" em cada linha que abre o `RegistrarPagamentoModal` com orcamento pre-selecionado
+  - [x] 5.11 Adicionar botao "Ver Detalhes" em cada linha que navega para pagina de detalhe do orcamento
+  - [x] 5.12 Criar pagina de detalhe `src/app/(admin)/inadimplencia/[id]/page.tsx` usando template DetailView: informacoes do orcamento (paciente, valor total, data, profissional, procedimentos), telefone do paciente (para cobranca), componente `HistoricoPagamentos` com lista de pagamentos, saldo remanescente em destaque
 
-- [ ] 6.0 Tela de Projecao de Recebimentos Futuros (Admin)
-  - [ ] 6.1 Criar pagina `src/app/(admin)/pagamentos/page.tsx` usando template ListWithFilters do design system
-  - [ ] 6.2 Buscar dados da view `vw_recebimentos_futuros` via Supabase query (agrupado por clinica e mes_recebimento, filtrado por status = 'projetado')
-  - [ ] 6.3 Implementar tabela de projecao com colunas: Mes (formatado "Mar/2026"), Clinica, Total Projetado (formatado R$), Qtd Parcelas
-  - [ ] 6.4 Implementar filtro por clinica (dropdown)
-  - [ ] 6.5 Criar visualizacao de timeline/barra com recharts mostrando valor projetado por mes para os proximos 12 meses
-  - [ ] 6.6 Exibir total geral projetado (soma de todos os meses) em card destaque
-  - [ ] 6.7 Implementar drill-down por mes (ao clicar em um mes na tabela ou grafico): exibir lista de parcelas individuais com colunas Paciente, Orcamento, Parcela N/Total, Valor (formatado R$), Status (badge projetado/recebido)
+- [x] 6.0 Tela de Projecao de Recebimentos Futuros (Admin)
+  - [x] 6.1 Criar pagina `src/app/(admin)/pagamentos/page.tsx` usando template ListWithFilters do design system
+  - [x] 6.2 Buscar dados da view `vw_recebimentos_futuros` via Supabase query (agrupado por clinica e mes_recebimento, filtrado por status = 'projetado')
+  - [x] 6.3 Implementar tabela de projecao com colunas: Mes (formatado "Mar/2026"), Clinica, Total Projetado (formatado R$), Qtd Parcelas
+  - [x] 6.4 Implementar filtro por clinica (dropdown)
+  - [x] 6.5 Criar visualizacao de timeline/barra com recharts mostrando valor projetado por mes para os proximos 12 meses
+  - [x] 6.6 Exibir total geral projetado (soma de todos os meses) em card destaque
+  - [x] 6.7 Implementar drill-down por mes (ao clicar em um mes na tabela ou grafico): exibir lista de parcelas individuais com colunas Paciente, Orcamento, Parcela N/Total, Valor (formatado R$), Status (badge projetado/recebido)
 
-- [ ] 7.0 Dashboard Parceiro - Inadimplencia e Projecao
-  - [ ] 7.1 Criar pagina `src/app/(parceiro)/inadimplencia/page.tsx` (RLS garante que query retorna somente dados da clinica do parceiro)
-  - [ ] 7.2 Implementar KPI cards: (a) Total inadimplente da clinica, (b) Quantidade de pacientes inadimplentes
-  - [ ] 7.3 Criar tabela de inadimplentes (somente leitura, SEM botao de registrar pagamento): Paciente, Valor Total, Valor Pago, Valor em Aberto, Dias em Aberto
-  - [ ] 7.4 Implementar filtros: faixa de valor e tempo em aberto
-  - [ ] 7.5 Adicionar secao de projecao de recebimentos simplificada: tabela com colunas Mes, Total Projetado, Qtd Parcelas (proximos 6 meses apenas)
-  - [ ] 7.6 Testar isolamento RLS: verificar que parceiro ve somente pacientes da sua clinica (fazer login como parceiro e confirmar que dados de outras clinicas nao aparecem)
+- [x] 7.0 Dashboard Parceiro - Inadimplencia e Projecao
+  - [x] 7.1 Criar pagina `src/app/(parceiro)/inadimplencia/page.tsx` (RLS garante que query retorna somente dados da clinica do parceiro)
+  - [x] 7.2 Implementar KPI cards: (a) Total inadimplente da clinica, (b) Quantidade de pacientes inadimplentes
+  - [x] 7.3 Criar tabela de inadimplentes (somente leitura, SEM botao de registrar pagamento): Paciente, Valor Total, Valor Pago, Valor em Aberto, Dias em Aberto
+  - [x] 7.4 Implementar filtros: faixa de valor e tempo em aberto
+  - [x] 7.5 Adicionar secao de projecao de recebimentos simplificada: tabela com colunas Mes, Total Projetado, Qtd Parcelas (proximos 6 meses apenas)
+  - [x] 7.6 Testar isolamento RLS: verificar que parceiro ve somente pacientes da sua clinica (fazer login como parceiro e confirmar que dados de outras clinicas nao aparecem)
 
-- [ ] 8.0 n8n Workflow 3 - Auto-recebimento de Parcelas de Cartao
-  - [ ] 8.1 Criar novo workflow no n8n com nome "WF3: Auto-recebimento Parcelas Cartao"
-  - [ ] 8.2 Configurar trigger Schedule (Cron): `0 0 * * *` (todo dia a meia-noite), timezone America/Sao_Paulo
-  - [ ] 8.3 Adicionar node Supabase/HTTP para executar query: `UPDATE parcelas_cartao SET status = 'recebido' WHERE mes_recebimento <= DATE_TRUNC('month', CURRENT_DATE) AND status = 'projetado'`
-  - [ ] 8.4 Capturar quantidade de registros atualizados na resposta
-  - [ ] 8.5 Adicionar node de log: "[N] parcelas de cartao marcadas como recebidas em [mes/ano]" (formatar mes/ano atual)
-  - [ ] 8.6 Verificar idempotencia: executar o workflow 2x no mesmo dia e confirmar que a segunda execucao atualiza 0 registros (parcelas ja recebidas nao sao afetadas)
-  - [ ] 8.7 Ativar o workflow em producao
+- [x] 8.0 n8n Workflow 3 - Auto-recebimento de Parcelas de Cartao
+  - [x] 8.1 Criar novo workflow no n8n com nome "WF3: Auto-recebimento Parcelas Cartao"
+  - [x] 8.2 Configurar trigger Schedule (Cron): `0 0 * * *` (todo dia a meia-noite), timezone America/Sao_Paulo
+  - [x] 8.3 Adicionar node Supabase/HTTP ou HTTP Request para executar a RPC `auto_receber_parcelas_cartao`
+  - [x] 8.4 Capturar quantidade de registros atualizados na resposta
+  - [x] 8.5 Adicionar node de log: "[N] parcelas de cartao marcadas como recebidas em [mes/ano]" (formatar mes/ano atual)
+  - [x] 8.6 Verificar idempotencia: executar o workflow 2x no mesmo dia e confirmar que a segunda execucao atualiza 0 registros (parcelas ja recebidas nao sao afetadas)
+  - [x] 8.7 Ativar o workflow em producao
 
 - [ ] 9.0 Testes e Validacao Final
   - [ ] 9.1 Testar fluxo completo de pagamento: registrar pagamento a vista (PIX/dinheiro/debito) → verificar que valor_pago atualiza e status muda para parcial ou quitado

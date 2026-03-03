@@ -194,7 +194,7 @@ export function ClinicasClient({
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <h2 className="text-xl font-semibold text-neutral-800">Clínicas parceiras</h2>
+        <h2 className="text-xl font-semibold text-white">Clínicas parceiras</h2>
         <div className="flex items-center gap-3">
           <div className="flex rounded-lg border border-neutral-200 bg-white p-1">
             {(["todas", "ativa", "inativa"] as const).map((f) => (

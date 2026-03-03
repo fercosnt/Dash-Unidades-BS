@@ -107,7 +107,7 @@ export function ClinicaDetailClient({
       <div className="flex items-center gap-4">
         <Link
           href="/admin/dashboard"
-          className="text-sm font-medium text-primary-600 hover:underline"
+          className="text-sm font-medium text-white/90 hover:text-white hover:underline"
         >
           ← Voltar ao dashboard
         </Link>
@@ -140,7 +140,9 @@ export function ClinicaDetailClient({
       </div>
 
       {loading ? (
-        <p className="text-neutral-500 text-sm">Carregando...</p>
+        <div className="flex h-40 w-full items-center justify-center text-sm text-white">
+          Carregando...
+        </div>
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -197,8 +199,8 @@ export function ClinicaDetailClient({
                   onClick={() => setTab(i)}
                   className={`py-3 px-1 text-sm font-medium border-b-2 -mb-px transition-colors ${
                     tab === i
-                      ? "border-primary-600 text-primary-600"
-                      : "border-transparent text-neutral-500 hover:text-neutral-700"
+                      ? "border-white text-white"
+                      : "border-transparent text-white/60 hover:text-white"
                   }`}
                 >
                   {label}

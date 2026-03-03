@@ -77,8 +77,8 @@ export function FinanceiroClient({
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-neutral-800">Configurações financeiras</h2>
-        <p className="text-neutral-600 text-sm mt-1">Parâmetros vigentes e histórico de alterações.</p>
+        <h2 className="text-xl font-semibold text-white">Configurações financeiras</h2>
+        <p className="mt-1 text-sm text-white/80">Parâmetros vigentes e histórico de alterações.</p>
       </div>
 
       <div className="rounded-lg border border-neutral-200 bg-white p-6 mb-8">

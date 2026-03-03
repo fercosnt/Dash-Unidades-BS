@@ -18,13 +18,13 @@ export function PreviewTable({ result, arquivoNome }: PreviewTableProps) {
     const total = fechados.length + abertos.length;
     return (
       <div className="space-y-4">
-        <p className="text-neutral-600 text-sm">
+        <p className="mt-1 text-sm text-white/80">
           <strong>{arquivoNome}</strong> — {fechados.length} fechados, {abertos.length} abertos ({total} registros)
         </p>
         {fechados.length > 0 && (
           <div>
-            <h4 className="font-medium text-neutral-900 mb-2">Orçamentos fechados (APPROVED)</h4>
-            <div className="overflow-x-auto rounded-lg border border-neutral-200">
+            <h4 className="mb-2 font-medium text-white/90">Orçamentos fechados (APPROVED)</h4>
+            <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white">
               <table className="min-w-full text-sm">
                 <thead>
                   <tr className="bg-neutral-50">
@@ -50,8 +50,8 @@ export function PreviewTable({ result, arquivoNome }: PreviewTableProps) {
         )}
         {abertos.length > 0 && (
           <div>
-            <h4 className="font-medium text-neutral-900 mb-2">Orçamentos abertos</h4>
-            <div className="overflow-x-auto rounded-lg border border-neutral-200">
+            <h4 className="mb-2 font-medium text-white/90">Orçamentos abertos</h4>
+            <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white">
               <table className="min-w-full text-sm">
                 <thead>
                   <tr className="bg-neutral-50">
@@ -80,10 +80,10 @@ export function PreviewTable({ result, arquivoNome }: PreviewTableProps) {
   const tratamentos = result.data;
   return (
     <div className="space-y-4">
-      <p className="text-neutral-600 text-sm">
+      <p className="mt-1 text-sm text-white/80">
         <strong>{arquivoNome}</strong> — {tratamentos.length} registros (tratamentos executados)
       </p>
-      <div className="overflow-x-auto rounded-lg border border-neutral-200">
+      <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white">
         <table className="min-w-full text-sm">
           <thead>
             <tr className="bg-neutral-50">

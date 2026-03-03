@@ -55,14 +55,14 @@ export default async function ParceiroLayout({
   const displayName = profile?.nome || authDisplayName || "Parceiro";
 
   return (
-    <div className="flex min-h-screen bg-neutral-100">
+    <div className="flex min-h-screen gap-2 bg-[url('/background-gradient-1.png')] bg-cover bg-fixed bg-center">
       <Sidebar
         groups={PARCEIRO_SIDEBAR_GROUPS}
         homeHref="/parceiro/dashboard"
         homeLabel="Beauty Smile"
         variant="parceiro"
       />
-      <div className="flex flex-1 flex-col min-w-0">
+      <div className="flex flex-1 flex-col min-w-0 pr-2">
         <Header userName={displayName} userRole={userRole} variant="parceiro" />
         <main className="flex-1 p-6 scrollbar-light overflow-y-auto">{children}</main>
       </div>

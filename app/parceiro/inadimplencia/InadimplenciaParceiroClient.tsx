@@ -83,8 +83,8 @@ export function InadimplenciaParceiroClient({
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-neutral-800">Inadimplência</h2>
-      <p className="text-neutral-600 text-sm">
+      <h2 className="text-xl font-semibold text-white">Inadimplência</h2>
+      <p className="mt-0.5 text-sm text-white/80">
         Orçamentos da sua clínica com saldo em aberto. Apenas visualização.
       </p>
 
@@ -110,7 +110,7 @@ export function InadimplenciaParceiroClient({
       {/* Filtros locais */}
       <div className="flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-neutral-700">Valor mínimo (R$)</span>
+          <span className="text-sm font-medium text-white/80">Valor mínimo (R$)</span>
           <select
             value={valorMin ?? ""}
             onChange={(e) => setValorMin(e.target.value ? Number(e.target.value) : undefined)}
@@ -123,7 +123,7 @@ export function InadimplenciaParceiroClient({
           </select>
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-neutral-700">Dias em aberto</span>
+          <span className="text-sm font-medium text-white/80">Dias em aberto</span>
           <select
             value={diasMin ?? ""}
             onChange={(e) => setDiasMin(e.target.value ? Number(e.target.value) : undefined)}
@@ -261,8 +261,8 @@ export function InadimplenciaParceiroClient({
 
       {projecao.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-base font-semibold text-neutral-800">Próximos recebimentos (cartão D+30)</h3>
-          <p className="text-neutral-600 text-sm">
+          <h3 className="text-base font-semibold text-white">Próximos recebimentos (cartão D+30)</h3>
+          <p className="text-sm text-white/80">
             Projeção dos próximos 6 meses com base nas parcelas de cartão já registradas.
           </p>
           <div className="rounded-lg border border-neutral-200 bg-white">

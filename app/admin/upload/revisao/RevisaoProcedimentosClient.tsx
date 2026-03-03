@@ -189,7 +189,7 @@ export function RevisaoProcedimentosClient({
 
       <div className="flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-neutral-700">Clínica</span>
+          <span className="text-sm font-medium text-white/80">Clínica</span>
           <select
             value={filters.clinica_id ?? ""}
             onChange={(e) => setFilters((f) => ({ ...f, clinica_id: e.target.value || undefined }))}
@@ -202,7 +202,7 @@ export function RevisaoProcedimentosClient({
           </select>
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-neutral-700">Mês</span>
+          <span className="text-sm font-medium text-white/80">Mês</span>
           <input
             type="month"
             value={filters.mes ?? ""}
@@ -244,7 +244,9 @@ export function RevisaoProcedimentosClient({
       )}
 
       {loading ? (
-        <p className="text-neutral-500 text-sm">Carregando...</p>
+        <div className="flex h-40 w-full items-center justify-center text-sm text-white">
+          Carregando...
+        </div>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-neutral-200">
           <table className="min-w-full divide-y divide-neutral-200 text-sm">

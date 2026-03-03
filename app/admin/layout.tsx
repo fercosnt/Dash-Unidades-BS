@@ -78,9 +78,9 @@ export default async function AdminLayout({
   }));
 
   return (
-    <div className="flex min-h-screen bg-neutral-100">
+    <div className="flex min-h-screen gap-2 bg-[url('/68a4d045b130b34b3614881d.jpeg')] bg-cover bg-fixed bg-center">
       <Sidebar groups={groups} variant="admin" />
-      <div className="flex flex-1 flex-col min-w-0">
+      <div className="flex flex-1 flex-col min-w-0 pr-2">
         <Header userName={displayName} userRole={userRole} variant="admin" />
         <main className="flex-1 p-6 scrollbar-light overflow-y-auto">{children}</main>
       </div>
