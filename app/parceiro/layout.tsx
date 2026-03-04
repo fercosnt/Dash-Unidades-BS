@@ -5,6 +5,11 @@ import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = {
+  icons: {
+    icon: "/favicon-equipe.svg",
+  },
+};
 
 const PARCEIRO_SIDEBAR_GROUPS = [
   {

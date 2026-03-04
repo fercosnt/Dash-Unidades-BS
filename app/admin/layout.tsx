@@ -7,6 +7,12 @@ import { redirect } from "next/navigation";
 // Evita cache do layout para sempre mostrar o usuário logado correto no header
 export const dynamic = "force-dynamic";
 
+export const metadata = {
+  icons: {
+    icon: "/favicon-admin.svg",
+  },
+};
+
 
 const ADMIN_SIDEBAR_GROUPS_BASE = [
   {
