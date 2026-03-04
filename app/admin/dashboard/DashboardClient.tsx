@@ -106,14 +106,14 @@ export function DashboardClient({
       {!kpis.resumoCalculado && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           Resumo não calculado para este período. Os KPIs abaixo referem-se ao que já foi lançado no sistema.
-          Para gerar o resumo financeiro (valor líquido, parte BS/clínica), use o cálculo abaixo ou configure o n8n.
+          Para gerar o resumo financeiro (valor líquido, parte BS/clínica), use o cálculo abaixo.
         </div>
       )}
 
       <div className="rounded-lg border border-neutral-200 bg-white p-4">
         <h3 className="text-sm font-semibold text-neutral-900 mb-2">Calcular resumo mensal</h3>
         <p className="text-xs text-neutral-600 mb-3">
-          Dispara o cálculo do resumo para uma clínica e o mês selecionado (via webhook n8n). Requer N8N_WEBHOOK_URL e N8N_WEBHOOK_SECRET configurados.
+          Recalcula o resumo financeiro (valor líquido, split BS/clínica) para a clínica e o mês escolhidos.
         </p>
         {resumoMessage && (
           <div

@@ -2,7 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+
+const REDE_LINKS_EXTERNOS = [
+  { href: "https://beautysleep.bslabs.com.br/", label: "Beauty Sleep", sublabel: "Protótipo", external: true },
+];
 
 type NavItem = { href: string; label: string; badge?: number; exact?: boolean };
 type NavGroup = { label: string; items: NavItem[] };
@@ -24,7 +28,24 @@ export function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
   const isAdmin = variant === "admin";
-   const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [redeOpen, setRedeOpen] = useState(false);
+  const redeRef = useRef<HTMLDivElement>(null);
+
+  const redeLinks = [
+    { href: homeHref, label: "Beauty Smile Partners", sublabel: "Este site" as const },
+    ...REDE_LINKS_EXTERNOS,
+  ];
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (redeRef.current && !redeRef.current.contains(e.target as Node)) setRedeOpen(false);
+    }
+    if (redeOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [redeOpen]);
 
   const allHrefs = groups.flatMap((g) => g.items.map((i) => i.href));
 
@@ -46,17 +67,21 @@ export function Sidebar({
       } transition-all duration-300 ease-in-out ${className}`}
     >
       <div
-        className={`flex shrink-0 ${
-          collapsed ? "flex-col items-center pt-5 pb-3 gap-3 px-2" : "items-center justify-between pt-5 pb-3 px-3"
+        ref={redeRef}
+        className={`relative flex shrink-0 flex-col pt-5 pb-2 ${
+          collapsed ? "items-center gap-3 px-2" : "px-3"
         }`}
       >
-        <Link
-          href={homeHref}
-          className={`flex items-center gap-3 ${
+        <button
+          type="button"
+          onClick={() => setRedeOpen((v) => !v)}
+          className={`flex items-center gap-3 rounded-xl outline-none focus:outline-none ${
             collapsed ? "justify-center" : ""
           }`}
+          aria-expanded={redeOpen}
+          aria-haspopup="true"
         >
-          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-br from-[#35bfad] via-primary-500 to-[#00109e] shadow-[0_0_0_1px_rgba(255,255,255,0.18)]">
+          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-br from-[#35bfad] via-primary-500 to-[#00109e] shadow-[0_0_0_1px_rgba(255,255,255,0.18)] transition-transform duration-200 hover:scale-110 hover:shadow-[0_0_12px_rgba(53,191,173,0.4)]">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 503 503"
@@ -71,16 +96,51 @@ export function Sidebar({
             </svg>
           </div>
           {!collapsed && (
-            <div>
+            <div className="flex flex-col items-start text-left">
               <p className="text-sm font-semibold leading-tight text-white">
                 {homeLabel}
               </p>
-              <p className="text-[10px] leading-tight text-white/50">
+              <p className="text-[10px] leading-tight text-white/50 flex items-center gap-1">
                 Partners
+                <svg className={`h-3.5 w-3.5 text-white/50 transition-transform ${redeOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
               </p>
             </div>
           )}
-        </Link>
+        </button>
+        {redeOpen && (
+          <div className="absolute left-0 top-full z-[100] mt-1 w-52 rounded-lg border border-white/15 bg-[#0f172a] shadow-xl overflow-hidden">
+            <p className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-white/40 text-center">
+              Sites da rede
+            </p>
+            <div className="py-1">
+              {redeLinks.map((item) => (
+                "external" in item && item.external ? (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full px-4 py-2.5 text-sm font-medium text-white/95 hover:bg-white/10 transition-colors whitespace-nowrap"
+                    onClick={() => setRedeOpen(false)}
+                  >
+                    {item.label}
+                  </a>
+                ) : (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="block w-full px-4 py-2.5 text-sm font-medium text-white/95 hover:bg-white/10 transition-colors whitespace-nowrap"
+                    onClick={() => setRedeOpen(false)}
+                  >
+                    {item.label}
+                  </Link>
+                )
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+      <div className={`flex shrink-0 items-center ${collapsed ? "justify-center pb-3 px-2" : "justify-end pb-3 pr-3"}`}>
         <button
           type="button"
           aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
