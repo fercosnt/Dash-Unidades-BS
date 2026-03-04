@@ -32,10 +32,7 @@ export function Sidebar({
   const [redeOpen, setRedeOpen] = useState(false);
   const redeRef = useRef<HTMLDivElement>(null);
 
-  const redeLinks = [
-    { href: homeHref, label: "Beauty Smile Partners", sublabel: "Este site" as const },
-    ...REDE_LINKS_EXTERNOS,
-  ];
+  const redeLinks = REDE_LINKS_EXTERNOS;
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
