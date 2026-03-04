@@ -105,3 +105,5 @@ app/
 ## Licença
 
 Projeto privado — Beauty Smile.
+
+_Sync de deploy: atualizado em 2026-03-04 para alinhar com Vercel._
