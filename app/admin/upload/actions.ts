@@ -386,7 +386,7 @@ export async function createBatchRecord(
 
   const { data: batch, error: batchError } = await supabase
     .from("upload_batches")
-    .select("id, clinica_id, mes_referencia, tipo")
+    .select("id, clinica_id, mes_referencia, tipo, total_registros")
     .eq("id", input.batchId)
     .single();
 
@@ -446,7 +446,7 @@ export async function createBatchRecord(
 
   await supabase
     .from("upload_batches")
-    .update({ total_registros: (batch.total_registros as number) + 1 })
+    .update({ total_registros: (Number((batch as { total_registros?: number }).total_registros) || 0) + 1 })
     .eq("id", input.batchId);
 
   revalidatePath("/admin/upload/historico");
