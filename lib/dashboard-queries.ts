@@ -145,15 +145,14 @@ export async function fetchStatusUploads(mesReferencia: string): Promise<UploadS
 /** KPIs do parceiro para o mês (RLS filtra pela clínica do usuário) */
 export async function fetchKpisParceiro(mesReferencia: string): Promise<KpisParceiro> {
   const supabase = createSupabaseServerClient();
-  let query = supabase
+  const baseQuery = supabase
     .from("resumo_mensal")
     .select("faturamento_bruto, valor_liquido, valor_clinica, total_inadimplente");
 
   if (mesReferencia !== "all") {
     const start = firstDayOfMonth(mesReferencia);
     const end = lastDayOfMonth(mesReferencia);
-    query = query.gte("mes_referencia", start).lte("mes_referencia", end).maybeSingle();
-    const { data, error } = await query;
+    const { data, error } = await baseQuery.gte("mes_referencia", start).lte("mes_referencia", end).maybeSingle();
 
     if (error || !data) {
       return {
@@ -175,7 +174,7 @@ export async function fetchKpisParceiro(mesReferencia: string): Promise<KpisParc
     };
   }
 
-  const { data, error } = await query;
+  const { data, error } = await baseQuery;
   if (error || !data?.length) {
     return {
       faturamentoBruto: 0,
