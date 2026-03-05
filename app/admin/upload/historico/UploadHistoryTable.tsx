@@ -1,7 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { listUploadBatches, getBatchDetail, type UploadBatchRow, type HistoricoFilters, type BatchDetail } from "../actions";
+import {
+  listUploadBatches,
+  getBatchDetail,
+  updateUploadBatchMonth,
+  deleteUploadBatch,
+  updateBatchRecord,
+  createBatchRecord,
+  deleteBatchRecord,
+  type UploadBatchRow,
+  type HistoricoFilters,
+  type BatchDetail,
+} from "../actions";
 import { UploadDetailModal } from "./UploadDetailModal";
 
 const TIPO_LABELS: Record<string, string> = {
@@ -35,6 +46,89 @@ export function UploadHistoryTable({ initialBatches, clinicas }: { initialBatche
     if (!hasFilters) return;
     applyFilters();
   }, [filters.clinica_id, filters.mes, filters.tipo, filters.status]);
+
+  async function handleUpdateMonth(batchId: string, newMonth: string) {
+    setDetailLoading(true);
+    const result = await updateUploadBatchMonth(batchId, newMonth);
+    setDetailLoading(false);
+    if (!result.ok) {
+      if (typeof window !== "undefined") {
+        window.alert(result.error ?? "Erro ao atualizar o mês do upload.");
+      }
+      return;
+    }
+    await applyFilters();
+    const d = await getBatchDetail(batchId);
+    setDetail(d);
+  }
+
+  async function handleDeleteBatch(batchId: string) {
+    setDetailLoading(true);
+    const result = await deleteUploadBatch(batchId);
+    setDetailLoading(false);
+    if (!result.ok) {
+      if (typeof window !== "undefined") {
+        window.alert(result.error ?? "Erro ao excluir o upload.");
+      }
+      return;
+    }
+    setDetail(null);
+    await applyFilters();
+  }
+
+  async function handleSaveRecord(
+    batchId: string,
+    tipo: string,
+    recordId: string,
+    payload: { paciente_nome?: string; valor_total?: number },
+  ) {
+    const result = await updateBatchRecord({
+      batchId,
+      tipo: tipo as "orcamentos_fechados" | "orcamentos_abertos" | "tratamentos_executados",
+      id: recordId,
+      ...payload,
+    });
+    if (!result.ok && typeof window !== "undefined") {
+      window.alert(result.error ?? "Erro ao salvar registro.");
+    } else if (detail && detail.batch.id === batchId) {
+      const d = await getBatchDetail(batchId);
+      setDetail(d);
+    }
+  }
+
+  async function handleAddRecord(
+    batchId: string,
+    tipo: string,
+    payload: { paciente_nome: string; valor_total?: number },
+  ) {
+    const result = await createBatchRecord({
+      batchId,
+      tipo: tipo as "orcamentos_fechados" | "orcamentos_abertos" | "tratamentos_executados",
+      ...payload,
+    });
+    if (!result.ok && typeof window !== "undefined") {
+      window.alert(result.error ?? "Erro ao adicionar registro.");
+    } else if (detail && detail.batch.id === batchId) {
+      const d = await getBatchDetail(batchId);
+      setDetail(d);
+      await applyFilters();
+    }
+  }
+
+  async function handleDeleteRecord(batchId: string, tipo: string, recordId: string) {
+    const result = await deleteBatchRecord(
+      batchId,
+      tipo as "orcamentos_fechados" | "orcamentos_abertos" | "tratamentos_executados",
+      recordId,
+    );
+    if (!result.ok && typeof window !== "undefined") {
+      window.alert(result.error ?? "Erro ao excluir registro.");
+    } else if (detail && detail.batch.id === batchId) {
+      const d = await getBatchDetail(batchId);
+      setDetail(d);
+      await applyFilters();
+    }
+  }
 
   async function handleRowClick(batchId: string) {
     setDetailLoading(true);
@@ -187,6 +281,11 @@ export function UploadHistoryTable({ initialBatches, clinicas }: { initialBatche
           onClose={() => setDetail(null)}
           formatMonthRef={formatMonthRef}
           formatDateTime={formatDateTime}
+          onChangeMonth={handleUpdateMonth}
+          onDelete={handleDeleteBatch}
+          onSaveRecord={handleSaveRecord}
+          onAddRecord={handleAddRecord}
+          onDeleteRecord={handleDeleteRecord}
         />
       )}
     </div>

@@ -1,6 +1,7 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
 
 export type ClinicaOption = { id: string; nome: string };
 
@@ -326,4 +327,236 @@ export async function getBatchDetail(batchId: string): Promise<BatchDetail | nul
     registros,
     total: count ?? registros.length,
   };
+}
+
+type TipoPlanilha = "orcamentos_fechados" | "orcamentos_abertos" | "tratamentos_executados";
+
+type UpdateBatchRecordInput = {
+  batchId: string;
+  tipo: TipoPlanilha;
+  id: string;
+  paciente_nome?: string;
+  valor_total?: number;
+};
+
+export async function updateBatchRecord(
+  input: UpdateBatchRecordInput,
+): Promise<{ ok: boolean; error?: string }> {
+  const supabase = createSupabaseServerClient();
+
+  const updates: Record<string, unknown> = {};
+  if (input.paciente_nome !== undefined) updates.paciente_nome = input.paciente_nome;
+  if (input.valor_total !== undefined) updates.valor_total = input.valor_total;
+
+  if (Object.keys(updates).length === 0) {
+    return { ok: true };
+  }
+
+  const tableName =
+    input.tipo === "orcamentos_fechados"
+      ? "orcamentos_fechados"
+      : input.tipo === "orcamentos_abertos"
+        ? "orcamentos_abertos"
+        : "tratamentos_executados";
+
+  const { error } = await supabase
+    .from(tableName)
+    .update(updates)
+    .eq("id", input.id)
+    .eq("upload_batch_id", input.batchId);
+
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath("/admin/upload/historico");
+  revalidatePath("/admin/dashboard");
+  return { ok: true };
+}
+
+type CreateBatchRecordInput = {
+  batchId: string;
+  tipo: TipoPlanilha;
+  paciente_nome: string;
+  valor_total?: number;
+};
+
+export async function createBatchRecord(
+  input: CreateBatchRecordInput,
+): Promise<{ ok: boolean; error?: string; record?: BatchDetailRecord }> {
+  const supabase = createSupabaseServerClient();
+
+  const { data: batch, error: batchError } = await supabase
+    .from("upload_batches")
+    .select("id, clinica_id, mes_referencia, tipo")
+    .eq("id", input.batchId)
+    .single();
+
+  if (batchError || !batch) {
+    return { ok: false, error: batchError?.message ?? "Upload não encontrado." };
+  }
+
+  if (batch.tipo !== input.tipo) {
+    return { ok: false, error: "Tipo de planilha não corresponde ao batch." };
+  }
+
+  const base = {
+    clinica_id: batch.clinica_id as string,
+    mes_referencia: batch.mes_referencia as string,
+    paciente_nome: input.paciente_nome,
+    upload_batch_id: input.batchId,
+  };
+
+  if (!base.paciente_nome.trim()) {
+    return { ok: false, error: "Nome do paciente é obrigatório." };
+  }
+
+  let tableName: string;
+  let insertPayload: Record<string, unknown> = base;
+
+  if (input.tipo === "orcamentos_fechados" || input.tipo === "orcamentos_abertos") {
+    const valor = Number(input.valor_total ?? 0);
+    if (!valor || Number.isNaN(valor)) {
+      return { ok: false, error: "Valor inválido." };
+    }
+    insertPayload = { ...base, valor_total: valor };
+    tableName = input.tipo;
+  } else {
+    tableName = "tratamentos_executados";
+    insertPayload = { ...base, quantidade: 1 };
+  }
+
+  const { data, error } = await supabase
+    .from(tableName)
+    .insert(insertPayload)
+    .select("id, paciente_nome, valor_total, procedimento_nome, quantidade, data_execucao, data_fechamento")
+    .single();
+
+  if (error || !data) {
+    return { ok: false, error: error?.message ?? "Erro ao criar registro." };
+  }
+
+  const record: BatchDetailRecord = {
+    id: data.id as string,
+    paciente_nome: data.paciente_nome as string | undefined,
+    valor_total: (data as Record<string, unknown>).valor_total as number | undefined,
+    procedimento_nome: (data as Record<string, unknown>).procedimento_nome as string | undefined,
+    quantidade: (data as Record<string, unknown>).quantidade as number | undefined,
+    data_execucao: (data as Record<string, unknown>).data_execucao as string | undefined,
+    data_fechamento: (data as Record<string, unknown>).data_fechamento as string | undefined,
+  };
+
+  await supabase
+    .from("upload_batches")
+    .update({ total_registros: (batch.total_registros as number) + 1 })
+    .eq("id", input.batchId);
+
+  revalidatePath("/admin/upload/historico");
+  revalidatePath("/admin/dashboard");
+
+  return { ok: true, record };
+}
+
+export async function deleteBatchRecord(
+  batchId: string,
+  tipo: TipoPlanilha,
+  recordId: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const supabase = createSupabaseServerClient();
+
+  const tableName =
+    tipo === "orcamentos_fechados"
+      ? "orcamentos_fechados"
+      : tipo === "orcamentos_abertos"
+        ? "orcamentos_abertos"
+        : "tratamentos_executados";
+
+  const { error } = await supabase
+    .from(tableName)
+    .delete()
+    .eq("id", recordId)
+    .eq("upload_batch_id", batchId);
+
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath("/admin/upload/historico");
+  revalidatePath("/admin/dashboard");
+  return { ok: true };
+}
+
+export async function updateUploadBatchMonth(
+  batchId: string,
+  newMonth: string,
+): Promise<{ ok: boolean; error?: string }> {
+  if (!/^\d{4}-\d{2}$/.test(newMonth)) {
+    return { ok: false, error: "Mês inválido. Use o formato AAAA-MM." };
+  }
+
+  const supabase = createSupabaseServerClient();
+
+  const { data: batch, error: fetchError } = await supabase
+    .from("upload_batches")
+    .select("id, tipo")
+    .eq("id", batchId)
+    .single();
+
+  if (fetchError || !batch) {
+    return { ok: false, error: fetchError?.message ?? "Upload não encontrado." };
+  }
+
+  const mesReferencia = `${newMonth}-01`;
+
+  const updates: Array<Promise<{ error: { message: string } | null }>> = [];
+
+  updates.push(
+    supabase
+      .from("upload_batches")
+      .update({ mes_referencia: mesReferencia })
+      .eq("id", batchId) as any,
+  );
+
+  if (batch.tipo === "orcamentos_fechados") {
+    updates.push(
+      supabase
+        .from("orcamentos_fechados")
+        .update({ mes_referencia: mesReferencia })
+        .eq("upload_batch_id", batchId) as any,
+    );
+  } else if (batch.tipo === "orcamentos_abertos") {
+    updates.push(
+      supabase
+        .from("orcamentos_abertos")
+        .update({ mes_referencia: mesReferencia })
+        .eq("upload_batch_id", batchId) as any,
+    );
+  } else if (batch.tipo === "tratamentos_executados") {
+    updates.push(
+      supabase
+        .from("tratamentos_executados")
+        .update({ mes_referencia: mesReferencia })
+        .eq("upload_batch_id", batchId) as any,
+    );
+  }
+
+  const results = await Promise.all(updates);
+  const failed = results.find((r) => r.error);
+  if (failed?.error) {
+    return { ok: false, error: failed.error.message };
+  }
+
+  revalidatePath("/admin/upload/historico");
+  revalidatePath("/admin/upload");
+  revalidatePath("/admin/upload/revisao");
+
+  return { ok: true };
+}
+
+export async function deleteUploadBatch(batchId: string): Promise<{ ok: boolean; error?: string }> {
+  const supabase = createSupabaseServerClient();
+  const { error } = await supabase.from("upload_batches").delete().eq("id", batchId);
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath("/admin/upload/historico");
+  revalidatePath("/admin/upload");
+  revalidatePath("/admin/upload/revisao");
+
+  return { ok: true };
 }

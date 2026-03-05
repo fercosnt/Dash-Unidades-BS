@@ -47,14 +47,15 @@ export function DashboardClient({
   const [resumoMessage, setResumoMessage] = useState<{ tipo: "ok" | "erro"; texto: string } | null>(null);
 
   useEffect(() => {
-    if (mes === initialMes) return;
+    if (mes === initialMes && mes !== "all") return;
     setLoading(true);
+    const mesParaGraficos = mes === "all" ? initialMes : mes;
     Promise.all([
       fetchKpisAdmin(mes),
       fetchRankingClinicas(mes),
       fetchStatusUploads(mes),
-      fetchChartDataAdmin(mes, 12),
-      fetchChartLiquidoAdmin(mes, 12),
+      fetchChartDataAdmin(mesParaGraficos, 12),
+      fetchChartLiquidoAdmin(mesParaGraficos, 12),
     ]).then(([k, r, s, cd, cl]) => {
       setKpis(k);
       setRanking(r);
@@ -138,11 +139,13 @@ export function DashboardClient({
               ))}
             </select>
           </label>
-          <span className="text-sm text-neutral-500">Mês: {mes}</span>
+          <span className="text-sm text-neutral-500">
+            Mês: {mes === "all" ? "Todos os meses (não disponível para cálculo)" : mes}
+          </span>
           <button
             type="button"
             onClick={handleCalcularResumo}
-            disabled={resumoLoading || !resumoClinicaId}
+            disabled={resumoLoading || !resumoClinicaId || mes === "all"}
             className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
           >
             {resumoLoading ? "Enviando..." : "Calcular resumo"}

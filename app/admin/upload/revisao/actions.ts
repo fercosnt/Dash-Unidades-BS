@@ -82,14 +82,14 @@ export async function listTratamentosSemProcedimento(
   });
 }
 
-export type ProcedimentoOption = { id: string; nome: string };
+export type ProcedimentoOption = { id: string; nome: string; custo_fixo?: number };
 
 /** Lista procedimentos ativos para o dropdown */
 export async function getProcedimentosAtivos(): Promise<ProcedimentoOption[]> {
   const supabase = createSupabaseServerClient();
   const { data, error } = await supabase
     .from("procedimentos")
-    .select("id, nome")
+    .select("id, nome, custo_fixo")
     .eq("ativo", true)
     .order("nome");
   if (error) return [];

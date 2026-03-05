@@ -25,7 +25,7 @@ export function ParceiroDashboardClient({
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (mes === initialMes) return;
+    if (mes === initialMes && mes !== "all") return;
     setLoading(true);
     Promise.all([fetchKpisParceiro(mes), fetchChartParceiro(6)]).then(([k, c]) => {
       setKpis(k);

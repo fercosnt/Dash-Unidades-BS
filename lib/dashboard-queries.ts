@@ -15,14 +15,17 @@ function lastDayOfMonth(mesReferencia: string): string {
 
 export async function fetchKpisAdmin(mesReferencia: string): Promise<KpisAdmin> {
   const supabase = createSupabaseServerClient();
-  const start = firstDayOfMonth(mesReferencia);
-  const end = lastDayOfMonth(mesReferencia);
-
-  const { data, error } = await supabase
+  let query = supabase
     .from("resumo_mensal")
-    .select("faturamento_bruto, total_recebido_mes, total_a_receber_mes, total_inadimplente, valor_liquido, valor_beauty_smile")
-    .gte("mes_referencia", start)
-    .lte("mes_referencia", end);
+    .select("faturamento_bruto, total_recebido_mes, total_a_receber_mes, total_inadimplente, valor_liquido, valor_beauty_smile");
+
+  if (mesReferencia !== "all") {
+    const start = firstDayOfMonth(mesReferencia);
+    const end = lastDayOfMonth(mesReferencia);
+    query = query.gte("mes_referencia", start).lte("mes_referencia", end);
+  }
+
+  const { data, error } = await query;
 
   if (error || !data?.length) {
     return {
@@ -52,10 +55,7 @@ export async function fetchKpisAdmin(mesReferencia: string): Promise<KpisAdmin> 
 
 export async function fetchRankingClinicas(mesReferencia: string): Promise<RankingClinica[]> {
   const supabase = createSupabaseServerClient();
-  const start = firstDayOfMonth(mesReferencia);
-  const end = lastDayOfMonth(mesReferencia);
-
-  const { data, error } = await supabase
+  let query = supabase
     .from("resumo_mensal")
     .select(`
       clinica_id,
@@ -65,9 +65,15 @@ export async function fetchRankingClinicas(mesReferencia: string): Promise<Ranki
       valor_clinica,
       clinicas_parceiras(nome, ativo)
     `)
-    .gte("mes_referencia", start)
-    .lte("mes_referencia", end)
     .order("faturamento_bruto", { ascending: false });
+
+  if (mesReferencia !== "all") {
+    const start = firstDayOfMonth(mesReferencia);
+    const end = lastDayOfMonth(mesReferencia);
+    query = query.gte("mes_referencia", start).lte("mes_referencia", end);
+  }
+
+  const { data, error } = await query;
 
   if (error) return [];
 
@@ -97,20 +103,23 @@ export async function fetchRankingClinicas(mesReferencia: string): Promise<Ranki
 
 export async function fetchStatusUploads(mesReferencia: string): Promise<UploadStatusItem[]> {
   const supabase = createSupabaseServerClient();
-  const start = firstDayOfMonth(mesReferencia);
-  const end = lastDayOfMonth(mesReferencia);
-
   const { data: clinicas } = await supabase
     .from("clinicas_parceiras")
     .select("id, nome")
     .order("nome");
 
-  const { data: batches } = await supabase
+  let query = supabase
     .from("upload_batches")
     .select("clinica_id, tipo")
-    .gte("mes_referencia", start)
-    .lte("mes_referencia", end)
     .eq("status", "concluido");
+
+  if (mesReferencia !== "all") {
+    const start = firstDayOfMonth(mesReferencia);
+    const end = lastDayOfMonth(mesReferencia);
+    query = query.gte("mes_referencia", start).lte("mes_referencia", end);
+  }
+
+  const { data: batches } = await query;
 
   const byClinica: Record<string, { orcamentosFechados: boolean; orcamentosAbertos: boolean; tratamentos: boolean }> = {};
   (clinicas ?? []).forEach((c) => {
@@ -136,17 +145,38 @@ export async function fetchStatusUploads(mesReferencia: string): Promise<UploadS
 /** KPIs do parceiro para o mês (RLS filtra pela clínica do usuário) */
 export async function fetchKpisParceiro(mesReferencia: string): Promise<KpisParceiro> {
   const supabase = createSupabaseServerClient();
-  const start = firstDayOfMonth(mesReferencia);
-  const end = lastDayOfMonth(mesReferencia);
-
-  const { data, error } = await supabase
+  let query = supabase
     .from("resumo_mensal")
-    .select("faturamento_bruto, valor_liquido, valor_clinica, total_inadimplente")
-    .gte("mes_referencia", start)
-    .lte("mes_referencia", end)
-    .maybeSingle();
+    .select("faturamento_bruto, valor_liquido, valor_clinica, total_inadimplente");
 
-  if (error || !data) {
+  if (mesReferencia !== "all") {
+    const start = firstDayOfMonth(mesReferencia);
+    const end = lastDayOfMonth(mesReferencia);
+    query = query.gte("mes_referencia", start).lte("mes_referencia", end).maybeSingle();
+    const { data, error } = await query;
+
+    if (error || !data) {
+      return {
+        faturamentoBruto: 0,
+        valorLiquido: 0,
+        valorClinica: 0,
+        totalInadimplente: 0,
+        resumoDisponivel: false,
+      };
+    }
+
+    const r = data as Record<string, unknown>;
+    return {
+      faturamentoBruto: Number(r.faturamento_bruto ?? 0),
+      valorLiquido: Number(r.valor_liquido ?? 0),
+      valorClinica: Number(r.valor_clinica ?? 0),
+      totalInadimplente: Number(r.total_inadimplente ?? 0),
+      resumoDisponivel: true,
+    };
+  }
+
+  const { data, error } = await query;
+  if (error || !data?.length) {
     return {
       faturamentoBruto: 0,
       valorLiquido: 0,
@@ -156,12 +186,17 @@ export async function fetchKpisParceiro(mesReferencia: string): Promise<KpisParc
     };
   }
 
-  const r = data as Record<string, unknown>;
+  const sum = (key: string) =>
+    (data ?? []).reduce(
+      (acc, row) => acc + Number((row as Record<string, unknown>)[key] ?? 0),
+      0,
+    );
+
   return {
-    faturamentoBruto: Number(r.faturamento_bruto ?? 0),
-    valorLiquido: Number(r.valor_liquido ?? 0),
-    valorClinica: Number(r.valor_clinica ?? 0),
-    totalInadimplente: Number(r.total_inadimplente ?? 0),
+    faturamentoBruto: sum("faturamento_bruto"),
+    valorLiquido: sum("valor_liquido"),
+    valorClinica: sum("valor_clinica"),
+    totalInadimplente: sum("total_inadimplente"),
     resumoDisponivel: true,
   };
 }

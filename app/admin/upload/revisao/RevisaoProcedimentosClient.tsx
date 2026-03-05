@@ -1,6 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { matchProcedimentoPorNome } from "@/lib/utils/match-procedimento";
 import {
   listTratamentosSemProcedimento,
   getProcedimentosAtivos,
@@ -48,6 +59,51 @@ export function RevisaoProcedimentosClient({
   const [bulkVinculando, setBulkVinculando] = useState(false);
 
   const hasFilters = filters.clinica_id != null || filters.mes != null;
+
+  const totalPendentes = useMemo(
+    () => tratamentos.reduce((acc, t) => acc + (t.quantidade ?? 1), 0),
+    [tratamentos],
+  );
+
+  const kpiCostData = useMemo(() => {
+    if (tratamentos.length === 0 || procedimentos.length === 0) return [];
+
+    const matches = procedimentos.map((p) => ({ id: p.id, nome: p.nome }));
+    const custoPorId = new Map<string, number>(
+      procedimentos.map((p) => [p.id, Number(p.custo_fixo ?? 0)]),
+    );
+
+    const agg = new Map<string, { clinica_nome: string; custo: number }>();
+
+    for (const t of tratamentos) {
+      const nome = t.procedimento_nome ?? "";
+      const matched = matchProcedimentoPorNome(nome, matches);
+      if (!matched) continue;
+      const custoUnitario = custoPorId.get(matched.id) ?? 0;
+      if (!custoUnitario) continue;
+
+      const key = t.clinica_id;
+      const existing = agg.get(key) ?? { clinica_nome: t.clinica_nome, custo: 0 };
+      existing.custo += custoUnitario * (t.quantidade ?? 1);
+      agg.set(key, existing);
+    }
+
+    return Array.from(agg.values())
+      .sort((a, b) => b.custo - a.custo)
+      .slice(0, 8);
+  }, [tratamentos, procedimentos]);
+
+  const totalCusto = useMemo(
+    () => kpiCostData.reduce((sum, item) => sum + item.custo, 0),
+    [kpiCostData],
+  );
+
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+      maximumFractionDigits: 0,
+    }).format(value || 0);
 
   function toggleSelect(id: string) {
     setSelectedIds((prev) => {
@@ -187,43 +243,125 @@ export function RevisaoProcedimentosClient({
         </div>
       )}
 
-      <div className="flex flex-wrap items-end gap-3">
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-white/80">Clínica</span>
-          <select
-            value={filters.clinica_id ?? ""}
-            onChange={(e) => setFilters((f) => ({ ...f, clinica_id: e.target.value || undefined }))}
-            className="rounded-md border border-neutral-300 px-3 py-2 text-sm"
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="flex flex-wrap items-end gap-3">
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-medium text-white/80">Clínica</span>
+            <select
+              value={filters.clinica_id ?? ""}
+              onChange={(e) => setFilters((f) => ({ ...f, clinica_id: e.target.value || undefined }))}
+              className="rounded-md border border-neutral-300 px-3 py-2 text-sm"
+            >
+              <option value="">Todas</option>
+              {clinicas.map((c) => (
+                <option key={c.id} value={c.id}>{c.nome}</option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-medium text-white/80">Mês</span>
+            <input
+              type="month"
+              value={filters.mes ?? ""}
+              onChange={(e) => setFilters((f) => ({ ...f, mes: e.target.value || undefined }))}
+              className="rounded-md border border-neutral-300 px-3 py-2 text-sm"
+            />
+          </label>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={handleVincularAutomaticamente}
+            disabled={autoLinking || tratamentos.length === 0}
+            className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
           >
-            <option value="">Todas</option>
-            {clinicas.map((c) => (
-              <option key={c.id} value={c.id}>{c.nome}</option>
-            ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-white/80">Mês</span>
-          <input
-            type="month"
-            value={filters.mes ?? ""}
-            onChange={(e) => setFilters((f) => ({ ...f, mes: e.target.value || undefined }))}
-            className="rounded-md border border-neutral-300 px-3 py-2 text-sm"
-          />
-        </label>
-        <button
-          type="button"
-          onClick={handleVincularAutomaticamente}
-          disabled={autoLinking || tratamentos.length === 0}
-          className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
-        >
-          {autoLinking ? "Vinculando..." : "Vincular automaticamente"}
-        </button>
+            {autoLinking ? "Vinculando..." : "Vincular automaticamente"}
+          </button>
+          <Link
+            href="/admin/upload/historico"
+            className="rounded-md border border-white/30 bg-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-white/20"
+          >
+            Editar planilha e valores
+          </Link>
+        </div>
       </div>
 
-      {/* Bulk action bar */}
+      {tratamentos.length > 0 && (
+        <div className="grid gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+          <div className="rounded-lg bg-white p-4 shadow-md">
+            <h3 className="mb-3 text-sm font-semibold text-neutral-900">KPIs de custos pendentes</h3>
+            <dl className="space-y-2 text-sm">
+              <div className="flex items-baseline justify-between">
+                <dt className="text-neutral-600">Custo fixo estimado pendente</dt>
+                <dd className="font-semibold text-neutral-900">{formatCurrency(totalCusto)}</dd>
+              </div>
+              <div className="flex items-baseline justify-between">
+                <dt className="text-neutral-600">Tratamentos pendentes</dt>
+                <dd className="font-semibold text-neutral-900">{totalPendentes}</dd>
+              </div>
+              <div className="flex items-baseline justify-between">
+                <dt className="text-neutral-600">Clínicas impactadas</dt>
+                <dd className="font-semibold text-neutral-900">{kpiCostData.length}</dd>
+              </div>
+            </dl>
+            <p className="mt-3 text-xs text-neutral-500">
+              Os valores consideram apenas tratamentos cujo nome bate com um procedimento cadastrado com custo fixo.
+            </p>
+          </div>
+          <div className="rounded-lg bg-white p-4 shadow-md">
+            <h3 className="mb-3 text-sm font-heading font-bold text-neutral-900">
+              Custo estimado pendente por clínica
+            </h3>
+            <div className="h-56">
+              {kpiCostData.length === 0 ? (
+                <div className="flex h-full items-center justify-center px-4 text-center text-xs text-neutral-500">
+                  Nenhum custo estimado. Ajuste os filtros ou cadastre custos fixos nos procedimentos.
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={kpiCostData}
+                    margin={{ top: 8, right: 8, left: 0, bottom: 24 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E8E9E8" />
+                    <XAxis
+                      dataKey="clinica_nome"
+                      tick={{ fontSize: 11, fill: "#6B6D70" }}
+                      tickLine={false}
+                      axisLine={{ stroke: "#E8E9E8" }}
+                      interval={0}
+                      angle={-20}
+                      textAnchor="end"
+                    />
+                    <YAxis
+                      tickFormatter={(v) => (v >= 1000 ? `${Math.round((Number(v) as number) / 1000)}k` : String(v))}
+                      tick={{ fontSize: 11, fill: "#6B6D70" }}
+                      tickLine={false}
+                      axisLine={{ stroke: "#E8E9E8" }}
+                    />
+                    <Tooltip
+                      formatter={(value: number) => formatCurrency(value)}
+                      labelFormatter={(label) => String(label)}
+                      contentStyle={{
+                        fontSize: 12,
+                        borderRadius: 8,
+                        border: "1px solid #E8E9E8",
+                        boxShadow: "0 4px 6px -1px rgba(45,46,48,0.1)",
+                      }}
+                      cursor={{ fill: "#E5E7EB", opacity: 0.5 }}
+                    />
+                    <Bar dataKey="custo" name="Custo estimado" fill="#35BFAD" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {selectedIds.size > 0 && (
-        <div className="flex items-center gap-3 rounded-lg bg-primary-600/5 border border-primary-600/20 px-4 py-3">
-          <span className="text-sm font-medium text-primary-700">
+        <div className="flex items-center gap-3 rounded-lg border border-neutral-200 bg-white px-4 py-3 shadow-sm">
+          <span className="text-sm font-medium text-neutral-900">
             {selectedIds.size} selecionado(s)
           </span>
           <button
