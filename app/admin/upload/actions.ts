@@ -551,6 +551,37 @@ export async function updateUploadBatchMonth(
 
 export async function deleteUploadBatch(batchId: string): Promise<{ ok: boolean; error?: string }> {
   const supabase = createSupabaseServerClient();
+
+  // Remove dependentes na ordem correta (funciona mesmo sem ON DELETE CASCADE no banco)
+  const { data: orcamentosIds } = await supabase
+    .from("orcamentos_fechados")
+    .select("id")
+    .eq("upload_batch_id", batchId);
+  const ids = (orcamentosIds ?? []).map((r) => r.id);
+
+  if (ids.length > 0) {
+    const { data: pagamentosIds } = await supabase
+      .from("pagamentos")
+      .select("id")
+      .in("orcamento_fechado_id", ids);
+    const pagIds = (pagamentosIds ?? []).map((p) => p.id);
+    if (pagIds.length > 0) {
+      const { error: errPc } = await supabase.from("parcelas_cartao").delete().in("pagamento_id", pagIds);
+      if (errPc) return { ok: false, error: errPc.message };
+    }
+    const { error: errPag } = await supabase.from("pagamentos").delete().in("orcamento_fechado_id", ids);
+    if (errPag) return { ok: false, error: errPag.message };
+  }
+
+  const { error: errOf } = await supabase.from("orcamentos_fechados").delete().eq("upload_batch_id", batchId);
+  if (errOf) return { ok: false, error: errOf.message };
+
+  const { error: errOa } = await supabase.from("orcamentos_abertos").delete().eq("upload_batch_id", batchId);
+  if (errOa) return { ok: false, error: errOa.message };
+
+  const { error: errTe } = await supabase.from("tratamentos_executados").delete().eq("upload_batch_id", batchId);
+  if (errTe) return { ok: false, error: errTe.message };
+
   const { error } = await supabase.from("upload_batches").delete().eq("id", batchId);
   if (error) return { ok: false, error: error.message };
 
