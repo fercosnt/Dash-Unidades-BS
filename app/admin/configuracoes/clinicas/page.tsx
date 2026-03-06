@@ -6,9 +6,9 @@ type SearchParams = { status?: string };
 export default async function ClinicasPage({
   searchParams,
 }: {
-  searchParams: SearchParams;
+  searchParams: Promise<SearchParams>;
 }) {
-  const status = searchParams?.status;
+  const { status } = await searchParams;
   const statusFilter =
     status === "ativa" ? "ativa" : status === "inativa" ? "inativa" : "todas";
   const clinicas = await listarClinicas(statusFilter);

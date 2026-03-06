@@ -95,5 +95,6 @@ describe("transformTratamentos", () => {
       valor: 300,
     });
   });
-}
+});
+
 

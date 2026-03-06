@@ -16,7 +16,7 @@ export type MedicoRow = {
 export type ClinicaOption = { id: string; nome: string };
 
 export async function listarClinicasAtivas(): Promise<ClinicaOption[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("clinicas_parceiras")
     .select("id, nome")
@@ -27,7 +27,7 @@ export async function listarClinicasAtivas(): Promise<ClinicaOption[]> {
 }
 
 export async function listarMedicos(filtroClinicaId?: string) {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   let query = supabase
     .from("medicos_indicadores")
     .select("id, nome, clinica_id, percentual_comissao, ativo, created_at, clinicas_parceiras(nome)")
@@ -74,7 +74,7 @@ export async function criarMedico(form: {
   percentual_comissao: number;
   ativo?: boolean;
 }) {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("medicos_indicadores").insert({
     nome: form.nome.trim(),
     clinica_id: form.clinica_id,
@@ -94,7 +94,7 @@ export async function atualizarMedico(
     ativo?: boolean;
   }
 ) {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("medicos_indicadores")
     .update({
@@ -109,14 +109,14 @@ export async function atualizarMedico(
 }
 
 export async function toggleAtivoMedico(id: string, ativo: boolean) {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("medicos_indicadores").update({ ativo }).eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/configuracoes/medicos");
 }
 
 export async function excluirMedico(id: string) {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("medicos_indicadores").delete().eq("id", id);
   if (error) {
     if (error.code === "23503") {

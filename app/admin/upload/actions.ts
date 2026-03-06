@@ -7,7 +7,7 @@ export type ClinicaOption = { id: string; nome: string };
 
 /** Lista clínicas ativas para select (upload, etc.) */
 export async function getClinicasAtivas(): Promise<ClinicaOption[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("clinicas_parceiras")
     .select("id, nome")
@@ -28,7 +28,7 @@ export async function checkExistingBatches(
   mesReferencia: string,
   tipoPlanilha: "orcamentos" | "tratamentos_executados"
 ): Promise<UploadBatchExists[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   if (tipoPlanilha === "orcamentos") {
     const [f, a] = await Promise.all([
@@ -73,7 +73,7 @@ export type ClinicaUploadStatus = {
 };
 
 export async function getMonthlyUploadStatus(mesReferencia: string): Promise<ClinicaUploadStatus[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const [{ data: clinicas }, { data: batches }] = await Promise.all([
     supabase.from("clinicas_parceiras").select("id, nome").eq("ativo", true).order("nome"),
@@ -127,7 +127,7 @@ export type HistoricoFilters = {
 
 /** Lista batches para histórico com filtros */
 export async function listUploadBatches(filters: HistoricoFilters = {}): Promise<UploadBatchRow[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   let query = supabase
     .from("upload_batches")
     .select(`
@@ -224,7 +224,7 @@ export type BatchDetail = {
 
 /** Detalhe do batch com até 100 registros */
 export async function getBatchDetail(batchId: string): Promise<BatchDetail | null> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data: batchRow, error: batchError } = await supabase
     .from("upload_batches")
     .select(`
@@ -342,7 +342,7 @@ type UpdateBatchRecordInput = {
 export async function updateBatchRecord(
   input: UpdateBatchRecordInput,
 ): Promise<{ ok: boolean; error?: string }> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const updates: Record<string, unknown> = {};
   if (input.paciente_nome !== undefined) updates.paciente_nome = input.paciente_nome;
@@ -382,7 +382,7 @@ type CreateBatchRecordInput = {
 export async function createBatchRecord(
   input: CreateBatchRecordInput,
 ): Promise<{ ok: boolean; error?: string; record?: BatchDetailRecord }> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const { data: batch, error: batchError } = await supabase
     .from("upload_batches")
@@ -460,7 +460,7 @@ export async function deleteBatchRecord(
   tipo: TipoPlanilha,
   recordId: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const tableName =
     tipo === "orcamentos_fechados"
@@ -490,7 +490,7 @@ export async function updateUploadBatchMonth(
     return { ok: false, error: "Mês inválido. Use o formato AAAA-MM." };
   }
 
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const { data: batch, error: fetchError } = await supabase
     .from("upload_batches")
@@ -550,7 +550,7 @@ export async function updateUploadBatchMonth(
 }
 
 export async function deleteUploadBatch(batchId: string): Promise<{ ok: boolean; error?: string }> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   // Remove dependentes na ordem correta (funciona mesmo sem ON DELETE CASCADE no banco)
   const { data: orcamentosIds } = await supabase

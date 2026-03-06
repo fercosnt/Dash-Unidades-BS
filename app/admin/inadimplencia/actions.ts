@@ -25,7 +25,7 @@ export type InadimplenciaFilters = {
 export async function listInadimplentes(
   filters: InadimplenciaFilters = {}
 ): Promise<InadimplenteRow[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.from("vw_inadimplentes").select("*");
   if (error) return [];
 

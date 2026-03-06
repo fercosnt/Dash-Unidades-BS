@@ -21,7 +21,7 @@ export type RevisaoFilters = { clinica_id?: string; mes?: string };
 export async function listTratamentosSemProcedimento(
   filters: RevisaoFilters = {}
 ): Promise<TratamentoPendenteRow[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   let query = supabase
     .from("tratamentos_executados")
     .select(`
@@ -86,7 +86,7 @@ export type ProcedimentoOption = { id: string; nome: string; custo_fixo?: number
 
 /** Lista procedimentos ativos para o dropdown */
 export async function getProcedimentosAtivos(): Promise<ProcedimentoOption[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("procedimentos")
     .select("id, nome, custo_fixo")
@@ -98,7 +98,7 @@ export async function getProcedimentosAtivos(): Promise<ProcedimentoOption[]> {
 
 /** Vincula um tratamento a um procedimento */
 export async function vincularProcedimento(tratamentoId: string, procedimentoId: string): Promise<{ ok: boolean; error?: string }> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data: proc } = await supabase.from("procedimentos").select("nome").eq("id", procedimentoId).single();
   const { error } = await supabase
     .from("tratamentos_executados")
@@ -114,7 +114,7 @@ export async function vincularProcedimento(tratamentoId: string, procedimentoId:
 
 /** Cria um procedimento rápido e retorna o id */
 export async function criarProcedimentoRapido(nome: string): Promise<{ id: string } | { error: string }> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const trimmed = nome.trim();
   if (!trimmed) return { error: "Nome é obrigatório" };
   const { data, error } = await supabase
@@ -130,7 +130,7 @@ export async function criarProcedimentoRapido(nome: string): Promise<{ id: strin
 
 /** Contagem de tratamentos pendentes (para badge no menu) */
 export async function countPendentesRevisao(): Promise<number> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { count, error } = await supabase
     .from("tratamentos_executados")
     .select("id", { count: "exact", head: true })
@@ -145,7 +145,7 @@ export async function vincularProcedimentoBulk(
   procedimentoId: string
 ): Promise<{ ok: boolean; vinculados: number; error?: string }> {
   if (tratamentoIds.length === 0) return { ok: true, vinculados: 0 };
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data: proc } = await supabase.from("procedimentos").select("nome").eq("id", procedimentoId).single();
   let vinculados = 0;
   for (const id of tratamentoIds) {
@@ -172,7 +172,7 @@ export type VincularAutomaticamenteResult = {
 export async function vincularAutomaticamente(
   filters: RevisaoFilters = {}
 ): Promise<VincularAutomaticamenteResult> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const [tratamentosRes, procedimentosRes] = await Promise.all([
     (async () => {

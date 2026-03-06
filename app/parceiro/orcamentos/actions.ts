@@ -43,7 +43,7 @@ export async function getOrcamentosFechados(
   mesRef: string,
   statusFilter?: string
 ): Promise<OrcamentoFechadoRow[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const start = firstDay(mesRef);
   const end = lastDay(mesRef);
   let q = supabase
@@ -72,7 +72,7 @@ export async function getOrcamentosFechados(
 export async function getOrcamentosAbertos(
   mesRef: string
 ): Promise<OrcamentoAbertoRow[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const start = firstDay(mesRef);
   const end = lastDay(mesRef);
   const { data, error } = await supabase
@@ -107,7 +107,7 @@ export async function getOrcamentosKpis(mesRef: string): Promise<OrcamentosKpis>
 }
 
 export async function getMesesDisponiveis(): Promise<string[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("orcamentos_fechados")
     .select("mes_referencia")

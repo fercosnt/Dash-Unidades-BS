@@ -19,7 +19,7 @@ export type ProjecaoFilters = {
 export async function getProjecaoRecebimentos(
   filters: ProjecaoFilters = {}
 ): Promise<ProjecaoRow[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("vw_recebimentos_futuros")
     .select("clinica_id, clinica_nome, mes_recebimento, total_projetado, total_parcelas");
@@ -59,7 +59,7 @@ export async function getParcelasDrillDown(
   mesRecebimento: string,
   clinicaId?: string
 ): Promise<ParcelaDrillRow[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   let query = supabase
     .from("parcelas_cartao")

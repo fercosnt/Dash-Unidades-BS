@@ -1,17 +1,28 @@
 /**
- * Parse de arquivos XLSX no browser (SheetJS)
+ * Parse de arquivos XLSX no browser (ExcelJS — substitui SheetJS por segurança)
  */
 
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
 /** Lê o arquivo e retorna a primeira aba como array de arrays */
 export async function parseXLSXFile(file: File): Promise<unknown[][]> {
+  const ext = (file.name || "").toLowerCase().split(".").pop();
+  if (ext === "xls") {
+    throw new Error("Por segurança, use apenas arquivos .xlsx (Excel 2007+).");
+  }
   const buf = await file.arrayBuffer();
-  const wb = XLSX.read(buf, { type: "array", raw: true });
-  const firstSheetName = wb.SheetNames[0];
-  const ws = wb.Sheets[firstSheetName];
-  const data = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: "" });
-  return data as unknown[][];
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(buf);
+  const sheet = workbook.worksheets[0];
+  if (!sheet) return [];
+
+  const data: unknown[][] = [];
+  sheet.eachRow({ includeEmpty: true }, (row) => {
+    const values = row.values as unknown[];
+    const arr = values.slice(1).map((v) => (v != null && v !== "") ? v : "");
+    data.push(arr);
+  });
+  return data;
 }
 
 /** Separa a primeira linha (headers) das demais (rows) */

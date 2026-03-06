@@ -44,6 +44,11 @@ supabase/.temp/
 # Vercel
 .vercel
 
+# Outro projeto (não faz parte do Dash-Unidades-BS)
+Beauty-Sleep-estilos/
+Beauty-Sleep-paginas/
+Beauty-Sleep-paginas-estilos/
+
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts

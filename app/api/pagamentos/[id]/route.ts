@@ -10,7 +10,7 @@ export async function DELETE(request: Request, { params }: Params) {
       return NextResponse.json({ error: "id do pagamento é obrigatório" }, { status: 400 });
     }
 
-    const supabase = createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });

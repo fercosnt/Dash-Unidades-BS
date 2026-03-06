@@ -15,7 +15,7 @@ export type ConfigFinanceiraRow = {
 
 /** Configuração vigente (vigencia_fim IS NULL) */
 export async function getConfigVigente(): Promise<ConfigFinanceiraRow | null> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("configuracoes_financeiras")
     .select("id, taxa_cartao_percentual, imposto_nf_percentual, percentual_beauty_smile, vigencia_inicio, vigencia_fim, created_at")
@@ -27,7 +27,7 @@ export async function getConfigVigente(): Promise<ConfigFinanceiraRow | null> {
 
 /** Histórico: todas as configurações ordenadas por vigencia_inicio DESC */
 export async function getHistoricoConfig(): Promise<ConfigFinanceiraRow[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("configuracoes_financeiras")
     .select("id, taxa_cartao_percentual, imposto_nf_percentual, percentual_beauty_smile, vigencia_inicio, vigencia_fim, created_at")
@@ -42,7 +42,7 @@ export async function salvarConfigFinanceira(form: {
   imposto_nf_percentual: number;
   percentual_beauty_smile: number;
 }) {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const hoje = new Date().toISOString().slice(0, 10);
   const ontem = new Date(Date.now() - 864e5).toISOString().slice(0, 10);

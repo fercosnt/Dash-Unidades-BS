@@ -2,7 +2,7 @@
 
 Dashboard multi-tenant para gestão financeira das clínicas parceiras da Beauty Smile. Upload de planilhas (Clinicorp), cálculo do split 60/40, controle de pagamentos e inadimplência.
 
-**Stack:** Next.js 14 (App Router) · Supabase · TypeScript · Tailwind CSS
+**Stack:** Next.js 15 (App Router) · React 19 · Supabase · TypeScript · Tailwind CSS
 
 ---
 
@@ -99,6 +99,8 @@ app/
 - Valores monetários em `DECIMAL(12,2)`; percentuais em `DECIMAL(5,2)`.
 - Nenhum secret em código; uso apenas de variáveis de ambiente.
 - Validação de inputs no backend com Zod.
+
+**npm audit:** Projeto em Next 15.5.10 e React 19; vulnerabilidades de next, xlsx, @tootallnate/once e glob tratadas. Ver [SECURITY.md](SECURITY.md).
 
 ---
 

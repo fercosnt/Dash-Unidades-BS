@@ -28,7 +28,7 @@ export type PagamentoRow = {
 export async function getOrcamentoDetalhe(
   orcamentoFechadoId: string
 ): Promise<OrcamentoDetalhe | null> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("orcamentos_fechados")
     .select(`
@@ -90,7 +90,7 @@ export async function getOrcamentoDetalhe(
 export async function listPagamentosDoOrcamento(
   orcamentoFechadoId: string
 ): Promise<PagamentoRow[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("pagamentos")
     .select("id, valor, forma, parcelas, data_pagamento")

@@ -18,7 +18,7 @@ export type ClinicaRow = {
 };
 
 export async function listarClinicas(filtroStatus: "todas" | "ativa" | "inativa" = "todas") {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   let query = supabase
     .from("clinicas_parceiras")
     .select("id, nome, cnpj, responsavel, email, telefone, custo_mao_de_obra, percentual_split, ativo, created_at")

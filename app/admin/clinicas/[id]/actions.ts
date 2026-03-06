@@ -64,7 +64,7 @@ export type TratamentoRow = {
 };
 
 export async function getClinicaById(id: string): Promise<ClinicaInfo | null> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("clinicas_parceiras")
     .select("id, nome, cnpj, responsavel, email, telefone, ativo")
@@ -87,7 +87,7 @@ export async function getResumoClinicaMes(
   clinicaId: string,
   mesRef: string
 ): Promise<ResumoClinica | null> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const start = firstDay(mesRef);
   const end = lastDay(mesRef);
   const { data, error } = await supabase
@@ -118,7 +118,7 @@ export async function getOrcamentosFechadosClinicaMes(
   mesRef: string,
   statusFilter?: string
 ): Promise<OrcamentoFechadoRow[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const start = firstDay(mesRef);
   const end = lastDay(mesRef);
   let q = supabase
@@ -149,7 +149,7 @@ export async function getOrcamentosAbertosClinicaMes(
   clinicaId: string,
   mesRef: string
 ): Promise<OrcamentoAbertoRow[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const start = firstDay(mesRef);
   const end = lastDay(mesRef);
   const { data, error } = await supabase
@@ -173,7 +173,7 @@ export async function getTratamentosClinicaMes(
   clinicaId: string,
   mesRef: string
 ): Promise<TratamentoRow[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const start = firstDay(mesRef);
   const end = lastDay(mesRef);
   const { data, error } = await supabase

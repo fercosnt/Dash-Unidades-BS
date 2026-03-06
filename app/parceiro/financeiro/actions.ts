@@ -28,7 +28,7 @@ export type ResumoMensal = {
 };
 
 export async function getResumoMes(mesRef: string): Promise<ResumoMensal | null> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const start = firstDay(mesRef);
   const end = lastDay(mesRef);
   const { data, error } = await supabase
@@ -57,7 +57,7 @@ export async function getResumoMes(mesRef: string): Promise<ResumoMensal | null>
 }
 
 export async function getHistoricoResumos(mesesAtras: number = 12): Promise<ResumoMensal[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const now = new Date();
   const startDate = new Date(now.getFullYear(), now.getMonth() - mesesAtras + 1, 1);
   const startStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, "0")}-01`;
@@ -90,7 +90,7 @@ export async function getHistoricoResumos(mesesAtras: number = 12): Promise<Resu
 }
 
 export async function getMesesComResumo(): Promise<string[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("resumo_mensal")
     .select("mes_referencia")

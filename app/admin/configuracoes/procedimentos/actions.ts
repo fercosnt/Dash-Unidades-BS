@@ -17,7 +17,7 @@ export async function listarProcedimentos(filtros: {
   categoria?: string;
   status?: "todos" | "ativo" | "inativo";
 } = {}) {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   let query = supabase
     .from("procedimentos")
     .select("id, nome, codigo_clinicorp, custo_fixo, categoria, ativo, created_at")
@@ -33,7 +33,7 @@ export async function listarProcedimentos(filtros: {
 }
 
 export async function listarCategoriasProcedimentos() {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("procedimentos")
     .select("categoria")
@@ -50,7 +50,7 @@ export async function criarProcedimento(form: {
   categoria?: string;
   ativo?: boolean;
 }) {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("procedimentos").insert({
     nome: form.nome.trim(),
     codigo_clinicorp: form.codigo_clinicorp?.trim() || null,
@@ -72,7 +72,7 @@ export async function atualizarProcedimento(
     ativo?: boolean;
   }
 ) {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("procedimentos")
     .update({
@@ -88,14 +88,14 @@ export async function atualizarProcedimento(
 }
 
 export async function toggleAtivoProcedimento(id: string, ativo: boolean) {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("procedimentos").update({ ativo }).eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/configuracoes/procedimentos");
 }
 
 export async function excluirProcedimento(id: string) {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("procedimentos").delete().eq("id", id);
   if (error) {
     if (error.code === "23503") {

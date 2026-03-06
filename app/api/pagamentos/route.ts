@@ -13,7 +13,7 @@ const FORMAS_VALIDAS = ["cartao_credito", "cartao_debito", "pix", "dinheiro"];
 
 export async function POST(request: Request) {
   try {
-    const supabase = createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });

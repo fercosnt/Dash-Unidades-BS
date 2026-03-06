@@ -14,7 +14,7 @@ function lastDayOfMonth(mesReferencia: string): string {
 }
 
 export async function fetchKpisAdmin(mesReferencia: string): Promise<KpisAdmin> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   let query = supabase
     .from("resumo_mensal")
     .select("faturamento_bruto, total_recebido_mes, total_a_receber_mes, total_inadimplente, valor_liquido, valor_beauty_smile");
@@ -54,7 +54,7 @@ export async function fetchKpisAdmin(mesReferencia: string): Promise<KpisAdmin> 
 }
 
 export async function fetchRankingClinicas(mesReferencia: string): Promise<RankingClinica[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   let query = supabase
     .from("resumo_mensal")
     .select(`
@@ -102,7 +102,7 @@ export async function fetchRankingClinicas(mesReferencia: string): Promise<Ranki
 }
 
 export async function fetchStatusUploads(mesReferencia: string): Promise<UploadStatusItem[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const { data: clinicas } = await supabase
     .from("clinicas_parceiras")
     .select("id, nome")
@@ -144,7 +144,7 @@ export async function fetchStatusUploads(mesReferencia: string): Promise<UploadS
 
 /** KPIs do parceiro para o mês (RLS filtra pela clínica do usuário) */
 export async function fetchKpisParceiro(mesReferencia: string): Promise<KpisParceiro> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const baseQuery = supabase
     .from("resumo_mensal")
     .select("faturamento_bruto, valor_liquido, valor_clinica, total_inadimplente");
@@ -202,7 +202,7 @@ export async function fetchKpisParceiro(mesReferencia: string): Promise<KpisParc
 
 /** Dados para gráfico parceiro: últimos N meses (RLS filtra pela clínica) */
 export async function fetchChartParceiro(mesesAtras: number = 6): Promise<ChartParceiroPoint[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const now = new Date();
   const points: ChartParceiroPoint[] = [];
   for (let i = mesesAtras - 1; i >= 0; i--) {
@@ -249,7 +249,7 @@ export async function fetchChartDataAdmin(
   mesReferencia: string,
   mesesAtras: number = 12
 ): Promise<ChartDataAdminPoint[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const [y, m] = mesReferencia.split("-").map(Number);
   const points: ChartDataAdminPoint[] = [];
   for (let i = mesesAtras - 1; i >= 0; i--) {
@@ -293,7 +293,7 @@ export async function fetchChartLiquidoAdmin(
   mesReferencia: string,
   mesesAtras: number = 12
 ): Promise<ChartLiquidoAdminPoint[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const [y, m] = mesReferencia.split("-").map(Number);
   const points: ChartLiquidoAdminPoint[] = [];
   for (let i = mesesAtras - 1; i >= 0; i--) {
