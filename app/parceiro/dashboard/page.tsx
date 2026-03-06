@@ -7,7 +7,7 @@ function getDefaultMes(): string {
 }
 
 export default async function ParceiroDashboardPage() {
-  const mes = getDefaultMes();
+  const mes = "all";
   const [kpis, chartData] = await Promise.all([
     fetchKpisParceiro(mes),
     fetchChartParceiro(6),

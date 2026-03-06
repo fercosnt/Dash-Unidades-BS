@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { PeriodoSelector } from "@/components/dashboard/PeriodoSelector";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { ChartFaturamentoRecebimento } from "@/components/dashboard/ChartFaturamentoRecebimento";
@@ -45,11 +45,14 @@ export function DashboardClient({
   const [resumoClinicaId, setResumoClinicaId] = useState("");
   const [resumoLoading, setResumoLoading] = useState(false);
   const [resumoMessage, setResumoMessage] = useState<{ tipo: "ok" | "erro"; texto: string } | null>(null);
+  const ranAutoResumoRef = useRef(false);
 
   useEffect(() => {
+    if (mes !== "all") ranAutoResumoRef.current = false;
     if (mes === initialMes && mes !== "all") return;
     setLoading(true);
-    const mesParaGraficos = mes === "all" ? initialMes : mes;
+    const now = new Date();
+    const mesParaGraficos = mes === "all" ? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}` : mes;
     Promise.all([
       fetchKpisAdmin(mes),
       fetchRankingClinicas(mes),
@@ -65,6 +68,32 @@ export function DashboardClient({
       setLoading(false);
     });
   }, [mes, initialMes]);
+
+  useEffect(() => {
+    if (mes !== "all" || loading) return;
+    if (ranAutoResumoRef.current) return;
+    ranAutoResumoRef.current = true;
+    fetch("/api/resumo/calcular-todos", { method: "POST" })
+      .then((res) => res.json())
+      .then(() => {
+        setTimeout(() => {
+          const now = new Date();
+          const mesParaGraficos = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+          Promise.all([
+            fetchKpisAdmin("all"),
+            fetchRankingClinicas("all"),
+            fetchChartDataAdmin(mesParaGraficos, 12),
+            fetchChartLiquidoAdmin(mesParaGraficos, 12),
+          ]).then(([k, r, cd, cl]) => {
+            setKpis(k);
+            setRanking(r);
+            setChartData(cd);
+            setChartLiquido(cl);
+          });
+        }, 3000);
+      })
+      .catch(() => {});
+  }, [mes, loading]);
 
   async function handleCalcularResumo() {
     if (!resumoClinicaId) return;
@@ -106,8 +135,24 @@ export function DashboardClient({
 
       {!kpis.resumoCalculado && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          Resumo não calculado para este período. Os KPIs abaixo referem-se ao que já foi lançado no sistema.
-          Para gerar o resumo financeiro (valor líquido, parte BS/clínica), use o cálculo abaixo.
+          {mes === "all" ? (
+            <>
+              <strong>Resumo Geral</strong> mostra a soma de todos os resumos já calculados (por clínica e mês).
+              Ainda não há nenhum resumo calculado no sistema. Para gerar os valores: selecione um <strong>mês específico</strong> no filtro acima
+              e use a seção &quot;Calcular resumo mensal&quot; abaixo escolhendo clínica e o mesmo mês — o cálculo não é automático, é preciso disparar por clínica/mês.
+            </>
+          ) : (
+            <>
+              Resumo não calculado para este período. Os KPIs abaixo referem-se ao que já foi lançado no sistema.
+              Para gerar o resumo financeiro (valor líquido, parte BS/clínica), use o cálculo abaixo.
+            </>
+          )}
+        </div>
+      )}
+
+      {mes === "all" && (kpis.valorLiquido === 0 && kpis.valorBeautySmile === 0) && (
+        <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm text-blue-800">
+          Os resumos por clínica e mês estão sendo calculados em segundo plano. Em alguns segundos os valores de &quot;Valor líquido&quot; e &quot;Parte Beauty Smile (60%)&quot; devem atualizar sozinhos.
         </div>
       )}
 
@@ -140,7 +185,7 @@ export function DashboardClient({
             </select>
           </label>
           <span className="text-sm text-neutral-500">
-            Mês: {mes === "all" ? "Todos os meses (não disponível para cálculo)" : mes}
+            {mes === "all" ? "Selecione um mês no filtro acima para calcular um resumo específico." : `Mês: ${mes}`}
           </span>
           <button
             type="button"

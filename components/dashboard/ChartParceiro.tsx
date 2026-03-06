@@ -13,22 +13,32 @@ function formatMonth(iso: string): string {
   return `${MONTHS[Number(m) - 1]}/${y.slice(2)}`;
 }
 
+/** Corta meses vazios à esquerda; mantém a partir do primeiro mês com dado. */
+function trimEmptyMonths(data: ChartParceiroPoint[]): ChartParceiroPoint[] {
+  const firstWithData = data.findIndex(
+    (d) => (d.faturamentoBruto ?? 0) > 0 || (d.valorClinica ?? 0) > 0
+  );
+  if (firstWithData === -1) return data;
+  return data.slice(firstWithData);
+}
+
 type ChartParceiroProps = {
   data: ChartParceiroPoint[];
   className?: string;
 };
 
 export function ChartParceiro({ data, className = "" }: ChartParceiroProps) {
+  const trimmed = trimEmptyMonths(data);
   const maxVal = Math.max(
     1,
-    ...data.map((d) => Math.max(d.faturamentoBruto, d.valorClinica))
+    ...trimmed.map((d) => Math.max(d.faturamentoBruto, d.valorClinica))
   );
 
   return (
     <div className={`rounded-lg bg-white p-6 shadow-md ${className}`}>
       <h3 className="text-sm font-heading font-bold text-neutral-900 mb-4">Últimos 6 meses</h3>
       <div className="space-y-4">
-        {data.map((point) => (
+        {trimmed.map((point) => (
           <div key={point.mesReferencia} className="flex items-center gap-3">
             <span className="w-14 text-xs font-medium text-neutral-500 shrink-0">
               {formatMonth(point.mesReferencia)}

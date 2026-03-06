@@ -8,13 +8,14 @@ function getDefaultMes(): string {
 }
 
 export default async function AdminDashboardPage() {
-  const mes = getDefaultMes();
+  const mes = "all";
+  const chartBaseMes = getDefaultMes();
   const [kpis, ranking, status, chartData, chartLiquido, clinicas] = await Promise.all([
     fetchKpisAdmin(mes),
     fetchRankingClinicas(mes),
     fetchStatusUploads(mes),
-    fetchChartDataAdmin(mes, 12),
-    fetchChartLiquidoAdmin(mes, 12),
+    fetchChartDataAdmin(chartBaseMes, 12),
+    fetchChartLiquidoAdmin(chartBaseMes, 12),
     getClinicasAtivas(),
   ]);
 
