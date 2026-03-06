@@ -6,11 +6,12 @@ type SearchParams = { status?: string; categoria?: string };
 export default async function ProcedimentosPage({
   searchParams,
 }: {
-  searchParams: SearchParams;
+  searchParams: Promise<SearchParams>;
 }) {
-  const status = (searchParams?.status as string) || "todos";
+  const { status: rawStatus, categoria } = await searchParams;
+  const status = (rawStatus as string) || "todos";
   const statusFilter = status === "ativo" || status === "inativo" ? status : "todos";
-  const categoriaFilter = (searchParams?.categoria as string) || "";
+  const categoriaFilter = (categoria as string) || "";
 
   const [procedimentos, categorias] = await Promise.all([
     listarProcedimentos({ categoria: categoriaFilter || undefined, status: statusFilter }),

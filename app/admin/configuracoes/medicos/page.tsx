@@ -6,9 +6,10 @@ type SearchParams = { clinica?: string };
 export default async function MedicosPage({
   searchParams,
 }: {
-  searchParams: SearchParams;
+  searchParams: Promise<SearchParams>;
 }) {
-  const clinicaFilter = (searchParams?.clinica as string) || "";
+  const { clinica } = await searchParams;
+  const clinicaFilter = (clinica as string) || "";
 
   const [medicos, clinicas] = await Promise.all([
     listarMedicos(clinicaFilter || undefined),
