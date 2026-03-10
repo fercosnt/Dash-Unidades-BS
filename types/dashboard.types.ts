@@ -61,3 +61,93 @@ export type ChartLiquidoAdminPoint = {
   mesReferencia: string;
   valorLiquido: number;
 };
+
+/** KPIs expandidos V2 — financeiros + operacionais */
+export type KpisAdminV2 = {
+  faturamentoBruto: number;
+  totalRecebidoMes: number;
+  totalAReceberMes: number;
+  totalInadimplente: number;
+  valorLiquido: number;
+  valorBeautySmile: number;
+  totalImpostoNf: number;
+  totalTaxaCartao: number;
+  totalCustoMaoObra: number;
+  totalCustosProcedimentos: number;
+  totalComissoesMedicas: number;
+  orcamentosFechadosQtde: number;
+  orcamentosFechadosValor: number;
+  orcamentosAbertosQtde: number;
+  orcamentosAbertosValor: number;
+  procedimentosRealizados: number;
+  resumoCalculado: boolean;
+};
+
+/** Dados para DRE cascata */
+export type DreAdminData = {
+  faturamentoBruto: number;
+  custosProcedimentos: number;
+  taxaMaquininha: number;
+  impostosNf: number;
+  custoMaoObra: number;
+  comissoesMedicas: number;
+  valorLiquido: number;
+  valorBeautySmile: number;
+  valorClinica: number;
+  percentualBeautySmile: number;
+  comissaoDentista: number;
+  resultadoLiquidoBS: number;
+};
+
+/** Dados para card de repasse (base caixa) */
+export type RepasseAdminData = {
+  totalRecebido: number;
+  taxaSobreRecebido: number;
+  impostosNf: number;
+  custoMaoObra: number;
+  custosProcedimentos: number;
+  comissoesMedicas: number;
+  disponivelParaSplit: number;
+  valorRepassar: number;
+  valorBeautySmileRetém: number;
+  percentualBeautySmile: number;
+};
+
+/** Item da tabela de orçamentos fechados */
+export type OrcamentoFechadoItem = {
+  id: string;
+  pacienteNome: string;
+  clinicaNome: string;
+  valorTotal: number;
+  valorPago: number;
+  valorEmAberto: number;
+  status: string;
+  dataFechamento: string | null;
+};
+
+/** Item da tabela de orçamentos abertos */
+export type OrcamentoAbertoItem = {
+  id: string;
+  pacienteNome: string;
+  clinicaNome: string;
+  valorTotal: number;
+  dataCriacao: string | null;
+};
+
+/** Item do ranking de procedimentos */
+export type ProcedimentoRankingItem = {
+  procedimentoNome: string;
+  quantidade: number;
+  custoUnitario: number;
+  custoTotal: number;
+  percentualQtde: number;
+};
+
+/** Ponto do gráfico de evolução de vendas (3 meses) */
+export type ChartVendasPoint = {
+  mesReferencia: string;
+  fechadosQtde: number;
+  fechadosValor: number;
+  abertosQtde: number;
+  abertosValor: number;
+};

@@ -527,6 +527,8 @@ export async function fetchDreAdmin(mesReferencia: string, clinicaId?: string): 
     valorBeautySmile: 0,
     valorClinica: 0,
     percentualBeautySmile: 60,
+    comissaoDentista: 0,
+    resultadoLiquidoBS: 0,
   };
 
   if (mesReferencia === "all") return empty;
@@ -541,17 +543,31 @@ export async function fetchDreAdmin(mesReferencia: string, clinicaId?: string): 
     .lte("mes_referencia", end);
   if (clinicaId) dreResumoQ = dreResumoQ.eq("clinica_id", clinicaId);
 
-  const [resumoRes, configRes] = await Promise.all([
+  let comissoesDentistaQ = supabase
+    .from("comissoes_dentista")
+    .select("valor_comissao")
+    .gte("mes_referencia", start)
+    .lte("mes_referencia", end);
+  if (clinicaId) comissoesDentistaQ = comissoesDentistaQ.eq("clinica_id", clinicaId);
+
+  const [resumoRes, configRes, comissoesDentistaRes] = await Promise.all([
     dreResumoQ,
     supabase
       .from("configuracoes_financeiras")
       .select("percentual_beauty_smile")
       .is("vigencia_fim", null)
       .single(),
+    comissoesDentistaQ,
   ]);
 
   const resumo = (resumoRes.data ?? []) as Record<string, unknown>[];
   const sum = (key: string) => resumo.reduce((a, r) => a + Number(r[key] ?? 0), 0);
+
+  const comissaoDentista = ((comissoesDentistaRes.data ?? []) as Record<string, unknown>[]).reduce(
+    (a, r) => a + Number(r.valor_comissao ?? 0),
+    0
+  );
+  const valorBeautySmile = sum("valor_beauty_smile");
 
   return {
     faturamentoBruto: sum("faturamento_bruto"),
@@ -561,9 +577,11 @@ export async function fetchDreAdmin(mesReferencia: string, clinicaId?: string): 
     custoMaoObra: sum("total_custo_mao_obra"),
     comissoesMedicas: sum("total_comissoes_medicas"),
     valorLiquido: sum("valor_liquido"),
-    valorBeautySmile: sum("valor_beauty_smile"),
+    valorBeautySmile,
     valorClinica: sum("valor_clinica"),
     percentualBeautySmile: Number(configRes.data?.percentual_beauty_smile ?? 60),
+    comissaoDentista,
+    resultadoLiquidoBS: valorBeautySmile - comissaoDentista,
   };
 }
 

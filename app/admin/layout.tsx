@@ -25,6 +25,7 @@ const ADMIN_SIDEBAR_GROUPS_BASE = [
       { href: "/admin/pagamentos", label: "Projeção de recebimentos" },
       { href: "/admin/inadimplencia", label: "Inadimplência" },
       { href: "/admin/repasses", label: "Repasses" },
+      { href: "/admin/comissoes-dentista", label: "Comissões Dentista" },
     ],
   },
   {
