@@ -159,6 +159,17 @@ export async function vincularProcedimentoBulk(
   return { ok: true, vinculados };
 }
 
+export async function excluirTratamentos(ids: string[]): Promise<{ ok: boolean; error?: string; excluidos?: number }> {
+  if (ids.length === 0) return { ok: false, error: "Nenhum item selecionado." };
+  const supabase = await createSupabaseServerClient();
+  const { error, count } = await supabase
+    .from("tratamentos_executados")
+    .delete({ count: "exact" })
+    .in("id", ids);
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, excluidos: count ?? ids.length };
+}
+
 export type VincularAutomaticamenteResult = {
   vinculados: number;
   restantes: number;
