@@ -24,6 +24,7 @@ const ADMIN_SIDEBAR_GROUPS_BASE = [
       { href: "/admin/upload/revisao", label: "Revisão de procedimentos", badge: 0 as number },
       { href: "/admin/pagamentos", label: "Projeção de recebimentos" },
       { href: "/admin/inadimplencia", label: "Inadimplência" },
+      { href: "/admin/repasses", label: "Repasses" },
     ],
   },
   {
