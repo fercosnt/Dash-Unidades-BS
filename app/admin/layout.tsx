@@ -34,6 +34,7 @@ const ADMIN_SIDEBAR_GROUPS_BASE = [
       { href: "/admin/configuracoes/procedimentos", label: "Procedimentos" },
       { href: "/admin/configuracoes/medicos", label: "Médicos" },
       { href: "/admin/configuracoes/financeiro", label: "Financeiro" },
+      { href: "/admin/configuracoes/debitos", label: "Débitos parceiros" },
     ],
   },
 ];
