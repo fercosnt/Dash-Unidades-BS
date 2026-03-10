@@ -8,19 +8,12 @@ type PeriodoSelectorProps = {
 
 const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
-export function PeriodoSelector({ selectedPeriodo, onChange, className = "" }: PeriodoSelectorProps) {
-  const now = new Date();
-  const options: { value: string; label: string }[] = [];
-  for (let i = 0; i < 12; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    options.push({
-      value: `${y}-${m}`,
-      label: `${MONTHS[d.getMonth()]}/${y}`,
-    });
-  }
+const OPTIONS_2026 = MONTHS.map((label, i) => ({
+  value: `2026-${String(i + 1).padStart(2, "0")}`,
+  label: `${label}/2026`,
+}));
 
+export function PeriodoSelector({ selectedPeriodo, onChange, className = "" }: PeriodoSelectorProps) {
   return (
     <select
       value={selectedPeriodo}
@@ -28,7 +21,7 @@ export function PeriodoSelector({ selectedPeriodo, onChange, className = "" }: P
       className={`rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 shadow-sm transition-all focus:border-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-600/20 ${className}`}
     >
       <option value="all">Todos os meses</option>
-      {options.map((opt) => (
+      {OPTIONS_2026.map((opt) => (
         <option key={opt.value} value={opt.value}>
           {opt.label}
         </option>

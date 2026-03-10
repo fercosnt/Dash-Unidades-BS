@@ -1,4 +1,16 @@
-import { fetchKpisAdmin, fetchRankingClinicas, fetchStatusUploads, fetchChartDataAdmin, fetchChartLiquidoAdmin } from "@/lib/dashboard-queries";
+import {
+  fetchKpisAdminV2,
+  fetchDreAdmin,
+  fetchRepasseAdmin,
+  fetchRankingClinicas,
+  fetchStatusUploads,
+  fetchChartDataAdmin,
+  fetchChartLiquidoAdmin,
+  fetchOrcamentosFechados,
+  fetchOrcamentosAbertos,
+  fetchVendasEvolucao,
+  fetchProcedimentosRanking,
+} from "@/lib/dashboard-queries";
 import { getClinicasAtivas } from "../upload/actions";
 import { DashboardClient } from "./DashboardClient";
 
@@ -7,25 +19,58 @@ function getDefaultMes(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
-export default async function AdminDashboardPage() {
-  const mes = getDefaultMes();
-  const [kpis, ranking, status, chartData, chartLiquido, clinicas] = await Promise.all([
-    fetchKpisAdmin(mes),
-    fetchRankingClinicas(mes),
-    fetchStatusUploads(mes),
-    fetchChartDataAdmin(mes, 12),
-    fetchChartLiquidoAdmin(mes, 12),
+export default async function AdminDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ mes?: string; clinicaId?: string }>;
+}) {
+  const params = await searchParams;
+  const mes = params.mes ?? getDefaultMes();
+  const clinicaId = params.clinicaId ?? "";
+
+  const [
+    kpis,
+    dre,
+    repasse,
+    ranking,
+    status,
+    chartData,
+    chartLiquido,
+    orcamentosFechados,
+    orcamentosAbertos,
+    evolucao,
+    procedimentos,
+    clinicas,
+  ] = await Promise.all([
+    fetchKpisAdminV2(mes, clinicaId || undefined),
+    fetchDreAdmin(mes, clinicaId || undefined),
+    fetchRepasseAdmin(mes, clinicaId || undefined),
+    fetchRankingClinicas(mes, clinicaId || undefined),
+    fetchStatusUploads(mes, clinicaId || undefined),
+    fetchChartDataAdmin(mes, 12, clinicaId || undefined),
+    fetchChartLiquidoAdmin(mes, 12, clinicaId || undefined),
+    fetchOrcamentosFechados(mes, clinicaId || undefined),
+    fetchOrcamentosAbertos(mes, clinicaId || undefined),
+    fetchVendasEvolucao(mes, 3, clinicaId || undefined),
+    fetchProcedimentosRanking(mes, clinicaId || undefined),
     getClinicasAtivas(),
   ]);
 
   return (
     <DashboardClient
       initialMes={mes}
+      initialClinicaId={clinicaId}
       initialKpis={kpis}
+      initialDre={dre}
+      initialRepasse={repasse}
       initialRanking={ranking}
       initialStatus={status}
       initialChartData={chartData}
       initialChartLiquido={chartLiquido}
+      initialOrcamentosFechados={orcamentosFechados}
+      initialOrcamentosAbertos={orcamentosAbertos}
+      initialEvolucao={evolucao}
+      initialProcedimentos={procedimentos}
       clinicas={clinicas}
     />
   );
