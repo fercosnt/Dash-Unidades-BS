@@ -49,6 +49,55 @@ export async function fetchDebitosAtivos(): Promise<DebitoItem[]> {
   });
 }
 
+export type AbatimentoHistoricoItem = {
+  id: string;
+  valorAbatido: number;
+  mesReferencia: string;
+  createdAt: string;
+  origem: string;
+};
+
+export async function fetchAbatimentosPorDebito(debitoId: string): Promise<AbatimentoHistoricoItem[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("abatimentos_debito")
+    .select("id, valor_abatido, mes_referencia, created_at, repasse_id, repasses_mensais(mes_referencia)")
+    .eq("debito_id", debitoId)
+    .order("created_at", { ascending: false });
+
+  const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+
+  type Row = {
+    id: string;
+    valor_abatido: number;
+    mes_referencia: string;
+    created_at: string;
+    repasse_id: string | null;
+    repasses_mensais: { mes_referencia: string } | { mes_referencia: string }[] | null;
+  };
+
+  return ((data ?? []) as unknown as Row[]).map((r) => {
+    let origem = "Direto";
+    if (r.repasse_id) {
+      const rp = r.repasses_mensais;
+      const repasse = Array.isArray(rp) ? rp[0] : rp;
+      if (repasse) {
+        const [y, mo] = (repasse.mes_referencia as string).slice(0, 7).split("-");
+        origem = `Repasse ${months[Number(mo) - 1]}/${y}`;
+      } else {
+        origem = "Repasse";
+      }
+    }
+    return {
+      id: r.id,
+      valorAbatido: Number(r.valor_abatido),
+      mesReferencia: r.mes_referencia.slice(0, 7),
+      createdAt: r.created_at,
+      origem,
+    };
+  });
+}
+
 export async function fetchDebitoPorClinica(clinicaId: string): Promise<DebitoItem | null> {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase

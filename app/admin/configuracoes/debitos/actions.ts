@@ -23,12 +23,37 @@ export async function criarDebito(input: unknown) {
   return { ok: true };
 }
 
-export async function quitarDebito(id: string) {
+export async function registrarPagamentoDebito(debitoId: string, valor: number) {
   const supabase = await createSupabaseServerClient();
+
+  const { data: debito } = await supabase
+    .from("debito_parceiro")
+    .select("valor_total, valor_pago")
+    .eq("id", debitoId)
+    .maybeSingle();
+
+  if (!debito) return { ok: false, error: "Débito não encontrado." };
+
+  const d = debito as Record<string, unknown>;
+  const novoValorPago = Number(d.valor_pago) + valor;
+  const valorTotal = Number(d.valor_total);
+  const mesAtual = new Date().toISOString().slice(0, 7) + "-01";
+
+  await supabase.from("abatimentos_debito").insert({
+    debito_id: debitoId,
+    mes_referencia: mesAtual,
+    valor_abatido: valor,
+    repasse_id: null,
+  });
+
   const { error } = await supabase
     .from("debito_parceiro")
-    .update({ status: "quitado" })
-    .eq("id", id);
+    .update({
+      valor_pago: novoValorPago,
+      status: novoValorPago >= valorTotal ? "quitado" : "ativo",
+    })
+    .eq("id", debitoId);
+
   if (error) return { ok: false, error: error.message };
-  return { ok: true };
+  return { ok: true, novoValorPago, quitado: novoValorPago >= valorTotal };
 }

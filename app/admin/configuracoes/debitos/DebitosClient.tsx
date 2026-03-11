@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
-import { criarDebito, quitarDebito } from "./actions";
-import type { DebitoItem } from "@/lib/debito-queries";
+import { criarDebito, registrarPagamentoDebito } from "./actions";
+import { fetchAbatimentosPorDebito } from "@/lib/debito-queries";
+import type { DebitoItem, AbatimentoHistoricoItem } from "@/lib/debito-queries";
 
 function formatCurrency(v: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
@@ -21,6 +22,8 @@ function ProgressBar({ pct }: { pct: number }) {
 
 type Clinica = { id: string; nome: string };
 
+type DebitoLocal = DebitoItem & { _historico?: AbatimentoHistoricoItem[]; _historicoOpen?: boolean };
+
 export function DebitosClient({
   debitos: initialDebitos,
   clinicas,
@@ -28,7 +31,7 @@ export function DebitosClient({
   debitos: DebitoItem[];
   clinicas: Clinica[];
 }) {
-  const [debitos, setDebitos] = useState(initialDebitos);
+  const [debitos, setDebitos] = useState<DebitoLocal[]>(initialDebitos);
   const [showForm, setShowForm] = useState(false);
   const [clinicaId, setClinicaId] = useState("");
   const [descricao, setDescricao] = useState("");
@@ -36,6 +39,20 @@ export function DebitosClient({
   const [dataInicio, setDataInicio] = useState(new Date().toISOString().slice(0, 10));
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ tipo: "ok" | "erro"; texto: string } | null>(null);
+
+  // Pagamento modal
+  const [pagamentoDebitoId, setPagamentoDebitoId] = useState<string | null>(null);
+  const [pagamentoValor, setPagamentoValor] = useState("");
+  const [pagandoSaving, setPagandoSaving] = useState(false);
+  const [pagamentoMsg, setPagamentoMsg] = useState<string | null>(null);
+
+  const debitoModal = pagamentoDebitoId ? debitos.find((d) => d.id === pagamentoDebitoId) : null;
+
+  function abrirPagamento(d: DebitoLocal) {
+    setPagamentoDebitoId(d.id);
+    setPagamentoValor(d.saldoRestante.toFixed(2));
+    setPagamentoMsg(null);
+  }
 
   async function handleCriar() {
     setSaving(true);
@@ -74,21 +91,61 @@ export function DebitosClient({
     }
   }
 
-  async function handleQuitar(id: string) {
-    const result = await quitarDebito(id);
+  async function handleRegistrarPagamento() {
+    if (!pagamentoDebitoId || !pagamentoValor) return;
+    const valor = Number(pagamentoValor.replace(",", "."));
+    if (valor <= 0) return;
+
+    setPagandoSaving(true);
+    const result = await registrarPagamentoDebito(pagamentoDebitoId, valor);
+    setPagandoSaving(false);
+
     if (result.ok) {
-      setDebitos((prev) => prev.filter((d) => d.id !== id));
+      setDebitos((prev) =>
+        prev
+          .map((d) => {
+            if (d.id !== pagamentoDebitoId) return d;
+            const novoValorPago = result.novoValorPago ?? d.valorPago + valor;
+            return {
+              ...d,
+              valorPago: novoValorPago,
+              saldoRestante: d.valorTotal - novoValorPago,
+              status: result.quitado ? "quitado" : "ativo",
+            };
+          })
+          .filter((d) => d.status === "ativo")
+      );
+      setPagamentoDebitoId(null);
+      setMsg({ tipo: "ok", texto: result.quitado ? "Débito quitado!" : "Pagamento registrado." });
+      setTimeout(() => setMsg(null), 4000);
+    } else {
+      setPagamentoMsg(result.error ?? "Erro ao registrar.");
     }
   }
+
+  async function toggleHistorico(debitoId: string) {
+    setDebitos((prev) =>
+      prev.map((d) => {
+        if (d.id !== debitoId) return d;
+        return { ...d, _historicoOpen: !d._historicoOpen };
+      })
+    );
+
+    const debito = debitos.find((d) => d.id === debitoId);
+    if (debito && !debito._historico) {
+      const historico = await fetchAbatimentosPorDebito(debitoId);
+      setDebitos((prev) =>
+        prev.map((d) => (d.id === debitoId ? { ...d, _historico: historico } : d))
+      );
+    }
+  }
+
+  const maxPagamento = debitoModal?.saldoRestante ?? 0;
 
   return (
     <div className="space-y-6">
       {msg && (
-        <div
-          className={`rounded px-3 py-2 text-sm ${
-            msg.tipo === "ok" ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"
-          }`}
-        >
+        <div className={`rounded px-3 py-2 text-sm ${msg.tipo === "ok" ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"}`}>
           {msg.texto}
         </div>
       )}
@@ -117,9 +174,7 @@ export function DebitosClient({
               >
                 <option value="">Selecione...</option>
                 {clinicas.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nome}
-                  </option>
+                  <option key={c.id} value={c.id}>{c.nome}</option>
                 ))}
               </select>
             </label>
@@ -188,11 +243,10 @@ export function DebitosClient({
                   </div>
                   <button
                     type="button"
-                    onClick={() => handleQuitar(d.id)}
-                    className="text-xs text-neutral-400 hover:text-red-600 transition-colors"
-                    title="Marcar como quitado"
+                    onClick={() => abrirPagamento(d)}
+                    className="rounded-md bg-primary-600 px-3 py-1 text-xs font-medium text-white hover:opacity-90"
                   >
-                    Quitar
+                    Registrar pagamento
                   </button>
                 </div>
                 <div className="mt-3 flex gap-6 text-xs text-neutral-600">
@@ -211,9 +265,120 @@ export function DebitosClient({
                 </div>
                 <ProgressBar pct={pct} />
                 <p className="mt-1 text-right text-xs text-neutral-400">{pct.toFixed(1)}%</p>
+
+                {/* Histórico expansível */}
+                <div className="mt-3 border-t border-neutral-100 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => toggleHistorico(d.id)}
+                    className="text-xs text-neutral-500 hover:text-primary-600 flex items-center gap-1"
+                  >
+                    <svg
+                      className={`h-3 w-3 transition-transform ${d._historicoOpen ? "rotate-90" : ""}`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={2}
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                    </svg>
+                    {d._historicoOpen ? "Ocultar histórico" : "Ver histórico de abatimentos"}
+                  </button>
+
+                  {d._historicoOpen && (
+                    <div className="mt-2">
+                      {!d._historico ? (
+                        <p className="text-xs text-neutral-400 py-2">Carregando...</p>
+                      ) : d._historico.length === 0 ? (
+                        <p className="text-xs text-neutral-400 py-2">Nenhum pagamento registrado.</p>
+                      ) : (
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="text-neutral-500">
+                              <th className="py-1 text-left font-medium">Data</th>
+                              <th className="py-1 text-right font-medium">Valor</th>
+                              <th className="py-1 text-left font-medium">Origem</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {d._historico.map((ab) => (
+                              <tr key={ab.id} className="border-t border-neutral-50">
+                                <td className="py-1 text-neutral-600">
+                                  {new Date(ab.createdAt).toLocaleDateString("pt-BR")}
+                                </td>
+                                <td className="py-1 text-right tabular-nums font-medium text-green-700">
+                                  {formatCurrency(ab.valorAbatido)}
+                                </td>
+                                <td className="py-1 text-neutral-500">{ab.origem}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Modal Registrar Pagamento */}
+      {debitoModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => !pagandoSaving && setPagamentoDebitoId(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold text-neutral-900">Registrar pagamento</h3>
+            <p className="text-sm text-neutral-600">
+              {debitoModal.clinicaNome} · {debitoModal.descricao}
+            </p>
+            {pagamentoMsg && (
+              <p className="rounded bg-red-50 px-3 py-2 text-sm text-red-800">{pagamentoMsg}</p>
+            )}
+            <label className="block">
+              <span className="text-xs font-medium text-neutral-700">
+                Valor (R$) — Saldo: {formatCurrency(maxPagamento)}
+              </span>
+              <input
+                type="number"
+                step="0.01"
+                min="0.01"
+                max={maxPagamento}
+                value={pagamentoValor}
+                onChange={(e) => setPagamentoValor(e.target.value)}
+                className="mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+              />
+            </label>
+            {Number(pagamentoValor.replace(",", ".")) >= maxPagamento && maxPagamento > 0 && (
+              <p className="rounded bg-green-50 px-3 py-2 text-xs text-green-700">
+                Este pagamento quitará o débito.
+              </p>
+            )}
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setPagamentoDebitoId(null)}
+                disabled={pagandoSaving}
+                className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleRegistrarPagamento}
+                disabled={pagandoSaving || !pagamentoValor || Number(pagamentoValor) <= 0}
+                className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+              >
+                {pagandoSaving ? "Salvando..." : "Confirmar"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
