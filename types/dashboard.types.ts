@@ -151,3 +151,11 @@ export type ChartVendasPoint = {
   abertosQtde: number;
   abertosValor: number;
 };
+
+/** Item da tabela de tratamentos vendidos (agrupado por nome) */
+export type TratamentoVendidoItem = {
+  tratamentoNome: string;
+  quantidade: number;
+  valorTotal: number;
+  percentualFaturamento: number;
+};

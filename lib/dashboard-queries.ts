@@ -16,6 +16,7 @@ import type {
   OrcamentoAbertoItem,
   ProcedimentoRankingItem,
   ChartVendasPoint,
+  TratamentoVendidoItem,
 } from "@/types/dashboard.types";
 
 function firstDayOfMonth(mesReferencia: string): string {
@@ -778,4 +779,43 @@ export async function fetchProcedimentosRanking(mesReferencia: string, clinicaId
       percentualQtde: totalQtde > 0 ? (v.qtde / totalQtde) * 100 : 0,
     }))
     .sort((a, b) => b.quantidade - a.quantidade);
+}
+
+export async function fetchTratamentosVendidos(mesReferencia: string, clinicaId?: string): Promise<TratamentoVendidoItem[]> {
+  const supabase = await createSupabaseServerClient();
+
+  let query = supabase
+    .from("orcamentos_fechados")
+    .select("procedimentos_texto, valor_total");
+
+  if (mesReferencia !== "all") {
+    const start = firstDayOfMonth(mesReferencia);
+    const end = lastDayOfMonth(mesReferencia);
+    query = query.gte("mes_referencia", start).lte("mes_referencia", end);
+  }
+  if (clinicaId) query = query.eq("clinica_id", clinicaId);
+
+  const { data, error } = await query;
+  if (error) return [];
+
+  type Row = { procedimentos_texto: string | null; valor_total: number };
+
+  const grouped: Record<string, { qtde: number; valorTotal: number }> = {};
+  ((data ?? []) as Row[]).forEach((r) => {
+    const nome = r.procedimentos_texto?.trim() || "Não especificado";
+    if (!grouped[nome]) grouped[nome] = { qtde: 0, valorTotal: 0 };
+    grouped[nome]!.qtde += 1;
+    grouped[nome]!.valorTotal += Number(r.valor_total ?? 0);
+  });
+
+  const totalValor = Object.values(grouped).reduce((a, v) => a + v.valorTotal, 0);
+
+  return Object.entries(grouped)
+    .map(([nome, v]) => ({
+      tratamentoNome: nome,
+      quantidade: v.qtde,
+      valorTotal: v.valorTotal,
+      percentualFaturamento: totalValor > 0 ? (v.valorTotal / totalValor) * 100 : 0,
+    }))
+    .sort((a, b) => b.valorTotal - a.valorTotal);
 }

@@ -12,6 +12,7 @@ import { DreCascata } from "@/components/dashboard/DreCascata";
 import { RepasseMes } from "@/components/dashboard/RepasseMes";
 import { ChartVendasEvolucao } from "@/components/dashboard/ChartVendasEvolucao";
 import { ChartProcedimentosPizza } from "@/components/dashboard/ChartProcedimentosPizza";
+import { TabelaTratamentosVendidos } from "@/components/dashboard/TabelaTratamentosVendidos";
 import {
   fetchKpisAdminV2,
   fetchDreAdmin,
@@ -24,6 +25,7 @@ import {
   fetchOrcamentosAbertos,
   fetchVendasEvolucao,
   fetchProcedimentosRanking,
+  fetchTratamentosVendidos,
 } from "@/lib/dashboard-queries";
 import type {
   KpisAdminV2,
@@ -37,6 +39,7 @@ import type {
   OrcamentoAbertoItem,
   ChartVendasPoint,
   ProcedimentoRankingItem,
+  TratamentoVendidoItem,
 } from "@/types/dashboard.types";
 
 type Tab = "resumo" | "vendas" | "procedimentos" | "clinicas";
@@ -55,6 +58,7 @@ type DashboardClientProps = {
   initialOrcamentosAbertos: OrcamentoAbertoItem[];
   initialEvolucao: ChartVendasPoint[];
   initialProcedimentos: ProcedimentoRankingItem[];
+  initialTratamentosVendidos: TratamentoVendidoItem[];
   clinicas: { id: string; nome: string }[];
 };
 
@@ -86,6 +90,7 @@ export function DashboardClient({
   initialOrcamentosAbertos,
   initialEvolucao,
   initialProcedimentos,
+  initialTratamentosVendidos,
   clinicas,
 }: DashboardClientProps) {
   const [mes, setMes] = useState(initialMes);
@@ -102,6 +107,7 @@ export function DashboardClient({
   const [orcamentosAbertos, setOrcamentosAbertos] = useState(initialOrcamentosAbertos);
   const [evolucao, setEvolucao] = useState(initialEvolucao);
   const [procedimentos, setProcedimentos] = useState(initialProcedimentos);
+  const [tratamentosVendidos, setTratamentosVendidos] = useState(initialTratamentosVendidos);
   const [loading, setLoading] = useState(false);
 
   // Calcular resumo modal
@@ -126,7 +132,8 @@ export function DashboardClient({
       fetchOrcamentosAbertos(mes, clinicaId || undefined),
       mes !== "all" ? fetchVendasEvolucao(mes, 3, clinicaId || undefined) : Promise.resolve(initialEvolucao),
       fetchProcedimentosRanking(mes, clinicaId || undefined),
-    ]).then(([k, d, rp, r, s, cd, cl, of, oa, ev, proc]) => {
+      fetchTratamentosVendidos(mes, clinicaId || undefined),
+    ]).then(([k, d, rp, r, s, cd, cl, of, oa, ev, proc, tv]) => {
       setKpis(k);
       setDre(d);
       setRepasse(rp);
@@ -138,6 +145,7 @@ export function DashboardClient({
       setOrcamentosAbertos(oa);
       setEvolucao(ev);
       setProcedimentos(proc);
+      setTratamentosVendidos(tv);
       setLoading(false);
     });
   }, [mes, clinicaId, initialMes, initialClinicaId, initialEvolucao]);
@@ -515,6 +523,9 @@ export function DashboardClient({
                   </table>
                 </div>
               </div>
+
+              {/* Tabela tratamentos vendidos */}
+              <TabelaTratamentosVendidos data={tratamentosVendidos} />
             </div>
           )}
 
