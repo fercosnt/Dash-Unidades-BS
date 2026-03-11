@@ -17,6 +17,7 @@ import type {
   ProcedimentoRankingItem,
   ChartVendasPoint,
   TratamentoVendidoItem,
+  TratamentosEvolucaoData,
 } from "@/types/dashboard.types";
 
 function firstDayOfMonth(mesReferencia: string): string {
@@ -818,4 +819,73 @@ export async function fetchTratamentosVendidos(mesReferencia: string, clinicaId?
       percentualFaturamento: totalValor > 0 ? (v.valorTotal / totalValor) * 100 : 0,
     }))
     .sort((a, b) => b.valorTotal - a.valorTotal);
+}
+
+const MONTHS_LABEL = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+
+export async function fetchTratamentosEvolucao(mesAtual: string, n: number = 6, clinicaId?: string): Promise<TratamentosEvolucaoData> {
+  const supabase = await createSupabaseServerClient();
+
+  // Build last N months ending at mesAtual
+  const meses: string[] = [];
+  const [yy, mm] = mesAtual.split("-").map(Number);
+  for (let i = n - 1; i >= 0; i--) {
+    let mo = mm - i;
+    let yr = yy;
+    while (mo <= 0) { mo += 12; yr -= 1; }
+    meses.push(`${yr}-${String(mo).padStart(2, "0")}`);
+  }
+
+  const start = firstDayOfMonth(meses[0]!);
+  const end = lastDayOfMonth(meses[meses.length - 1]!);
+
+  let query = supabase
+    .from("orcamentos_fechados")
+    .select("procedimentos_texto, valor_total, mes_referencia")
+    .gte("mes_referencia", start)
+    .lte("mes_referencia", end);
+
+  if (clinicaId) query = query.eq("clinica_id", clinicaId);
+
+  const { data, error } = await query;
+  if (error) return { meses: [], top5: [], series: [] };
+
+  type Row = { procedimentos_texto: string | null; valor_total: number; mes_referencia: string };
+
+  // Group by treatment for total ranking
+  const totals: Record<string, number> = {};
+  ((data ?? []) as Row[]).forEach((r) => {
+    const nome = r.procedimentos_texto?.trim() || "Não especificado";
+    totals[nome] = (totals[nome] ?? 0) + Number(r.valor_total ?? 0);
+  });
+  const top5 = Object.entries(totals)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([nome]) => nome);
+
+  // Build series: one point per month
+  const byMes: Record<string, Record<string, { valor: number; qtde: number }>> = {};
+  meses.forEach((m) => { byMes[m] = {}; });
+
+  ((data ?? []) as Row[]).forEach((r) => {
+    const nome = r.procedimentos_texto?.trim() || "Não especificado";
+    if (!top5.includes(nome)) return;
+    const m = r.mes_referencia.slice(0, 7);
+    if (!byMes[m]) return;
+    if (!byMes[m]![nome]) byMes[m]![nome] = { valor: 0, qtde: 0 };
+    byMes[m]![nome]!.valor += Number(r.valor_total ?? 0);
+    byMes[m]![nome]!.qtde += 1;
+  });
+
+  const mesLabels = meses.map((m) => {
+    const [y, mo] = m.split("-");
+    return `${MONTHS_LABEL[Number(mo) - 1]}/${y!.slice(2)}`;
+  });
+
+  const series = meses.map((m, i) => ({
+    mes: mesLabels[i]!,
+    valores: byMes[m] ?? {},
+  }));
+
+  return { meses: mesLabels, top5, series };
 }

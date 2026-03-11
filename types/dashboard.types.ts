@@ -159,3 +159,10 @@ export type TratamentoVendidoItem = {
   valorTotal: number;
   percentualFaturamento: number;
 };
+
+/** Dados para gráfico de evolução por tratamento (top-5 últimos N meses) */
+export type TratamentosEvolucaoData = {
+  meses: string[];
+  top5: string[];
+  series: Array<{ mes: string; valores: Record<string, { valor: number; qtde: number }> }>;
+};

@@ -11,6 +11,7 @@ import {
   fetchVendasEvolucao,
   fetchProcedimentosRanking,
   fetchTratamentosVendidos,
+  fetchTratamentosEvolucao,
 } from "@/lib/dashboard-queries";
 import { getClinicasAtivas } from "../upload/actions";
 import { DashboardClient } from "./DashboardClient";
@@ -42,6 +43,7 @@ export default async function AdminDashboardPage({
     evolucao,
     procedimentos,
     tratamentosVendidos,
+    tratamentosEvolucao,
     clinicas,
   ] = await Promise.all([
     fetchKpisAdminV2(mes, clinicaId || undefined),
@@ -56,6 +58,7 @@ export default async function AdminDashboardPage({
     fetchVendasEvolucao(mes, 3, clinicaId || undefined),
     fetchProcedimentosRanking(mes, clinicaId || undefined),
     fetchTratamentosVendidos(mes, clinicaId || undefined),
+    fetchTratamentosEvolucao(mes, 6, clinicaId || undefined),
     getClinicasAtivas(),
   ]);
 
@@ -75,6 +78,7 @@ export default async function AdminDashboardPage({
       initialEvolucao={evolucao}
       initialProcedimentos={procedimentos}
       initialTratamentosVendidos={tratamentosVendidos}
+      initialTratamentosEvolucao={tratamentosEvolucao}
       clinicas={clinicas}
     />
   );
