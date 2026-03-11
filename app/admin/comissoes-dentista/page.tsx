@@ -1,11 +1,15 @@
 import { fetchComissoesDentista, fetchConfigComissaoDentista } from "@/lib/comissao-dentista-queries";
+import { fetchDentistas } from "@/lib/dentista-queries";
 import { ComissoesDentistaClient } from "./ComissoesDentistaClient";
 
 export default async function ComissoesDentistaPage() {
-  const [comissoes, config] = await Promise.all([
+  const [comissoes, config, allDentistas] = await Promise.all([
     fetchComissoesDentista(),
     fetchConfigComissaoDentista(),
+    fetchDentistas(),
   ]);
+
+  const dentistas = allDentistas.filter((d) => d.ativo);
 
   return (
     <div>
@@ -15,7 +19,7 @@ export default async function ComissoesDentistaPage() {
           Controle de comissões por volume de vendas com tiers configuráveis.
         </p>
       </div>
-      <ComissoesDentistaClient comissoes={comissoes} config={config} />
+      <ComissoesDentistaClient comissoes={comissoes} config={config} dentistas={dentistas} />
     </div>
   );
 }

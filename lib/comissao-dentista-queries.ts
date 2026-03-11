@@ -5,6 +5,8 @@ export type ComissaoDentistaItem = {
   id: string;
   clinicaId: string;
   clinicaNome: string;
+  dentistaId: string | null;
+  dentistaNome: string | null;
   mesReferencia: string;
   qtdeVendas: number;
   tierAplicado: number;
@@ -49,7 +51,7 @@ export async function fetchComissoesDentista(mes?: string, status?: string): Pro
   const supabase = await createSupabaseServerClient();
   let query = supabase
     .from("comissoes_dentista")
-    .select("id, clinica_id, mes_referencia, qtde_vendas, tier_aplicado, percentual, base_calculo, valor_comissao, status, data_pagamento, observacao, clinicas_parceiras(nome)")
+    .select("id, clinica_id, dentista_id, mes_referencia, qtde_vendas, tier_aplicado, percentual, base_calculo, valor_comissao, status, data_pagamento, observacao, clinicas_parceiras(nome), dentistas(nome)")
     .order("mes_referencia", { ascending: false });
 
   if (mes && mes !== "all") {
@@ -65,6 +67,7 @@ export async function fetchComissoesDentista(mes?: string, status?: string): Pro
   type Row = {
     id: string;
     clinica_id: string;
+    dentista_id: string | null;
     mes_referencia: string;
     qtde_vendas: number;
     tier_aplicado: number;
@@ -75,15 +78,20 @@ export async function fetchComissoesDentista(mes?: string, status?: string): Pro
     data_pagamento: string | null;
     observacao: string | null;
     clinicas_parceiras: { nome: string } | { nome: string }[] | null;
+    dentistas: { nome: string } | { nome: string }[] | null;
   };
 
   return ((data ?? []) as unknown as Row[]).map((r) => {
     const cp = r.clinicas_parceiras;
     const clinica = Array.isArray(cp) ? cp[0] : cp;
+    const dp = r.dentistas;
+    const dentista = Array.isArray(dp) ? dp[0] : dp;
     return {
       id: r.id,
       clinicaId: r.clinica_id,
       clinicaNome: clinica?.nome ?? "—",
+      dentistaId: r.dentista_id,
+      dentistaNome: dentista?.nome ?? null,
       mesReferencia: r.mes_referencia.slice(0, 7),
       qtdeVendas: r.qtde_vendas,
       tierAplicado: r.tier_aplicado,
@@ -97,8 +105,20 @@ export async function fetchComissoesDentista(mes?: string, status?: string): Pro
   });
 }
 
-export async function calcularComissaoDentista(clinicaId: string, mes: string) {
+export async function calcularComissaoDentista(dentistaId: string, mes: string) {
   const supabase = await createSupabaseServerClient();
+
+  // Get dentista to find clinica_id
+  const { data: dentistaData } = await supabase
+    .from("dentistas")
+    .select("id, clinica_id")
+    .eq("id", dentistaId)
+    .eq("ativo", true)
+    .maybeSingle();
+
+  if (!dentistaData) return { ok: false, error: "Dentista não encontrada ou inativa." };
+  const clinicaId = (dentistaData as Record<string, unknown>).clinica_id as string;
+
   const start = `${mes}-01`;
   const [y, m] = mes.split("-").map(Number);
   const end = `${mes}-${String(new Date(y, m, 0).getDate()).padStart(2, "0")}`;
@@ -141,6 +161,7 @@ export async function calcularComissaoDentista(clinicaId: string, mes: string) {
   const { error } = await supabase.from("comissoes_dentista").upsert(
     {
       clinica_id: clinicaId,
+      dentista_id: dentistaId,
       mes_referencia: start,
       qtde_vendas: qtdeVendas,
       tier_aplicado: tierAplicado,
