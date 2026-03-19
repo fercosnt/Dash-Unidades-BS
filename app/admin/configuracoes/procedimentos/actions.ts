@@ -8,6 +8,7 @@ export type ProcedimentoRow = {
   nome: string;
   codigo_clinicorp: string | null;
   custo_fixo: number;
+  valor_tabela: number;
   categoria: string | null;
   ativo: boolean;
   created_at: string;
@@ -20,7 +21,7 @@ export async function listarProcedimentos(filtros: {
   const supabase = await createSupabaseServerClient();
   let query = supabase
     .from("procedimentos")
-    .select("id, nome, codigo_clinicorp, custo_fixo, categoria, ativo, created_at")
+    .select("id, nome, codigo_clinicorp, custo_fixo, valor_tabela, categoria, ativo, created_at")
     .order("nome");
 
   if (filtros.categoria?.trim()) query = query.eq("categoria", filtros.categoria.trim());
@@ -47,6 +48,7 @@ export async function criarProcedimento(form: {
   nome: string;
   codigo_clinicorp?: string;
   custo_fixo: number;
+  valor_tabela?: number;
   categoria?: string;
   ativo?: boolean;
 }) {
@@ -55,6 +57,7 @@ export async function criarProcedimento(form: {
     nome: form.nome.trim(),
     codigo_clinicorp: form.codigo_clinicorp?.trim() || null,
     custo_fixo: Number(form.custo_fixo) || 0,
+    valor_tabela: Number(form.valor_tabela) || 0,
     categoria: form.categoria?.trim() || null,
     ativo: form.ativo ?? true,
   });
@@ -68,6 +71,7 @@ export async function atualizarProcedimento(
     nome: string;
     codigo_clinicorp?: string;
     custo_fixo: number;
+    valor_tabela?: number;
     categoria?: string;
     ativo?: boolean;
   }
@@ -79,6 +83,7 @@ export async function atualizarProcedimento(
       nome: form.nome.trim(),
       codigo_clinicorp: form.codigo_clinicorp?.trim() || null,
       custo_fixo: Number(form.custo_fixo) || 0,
+      valor_tabela: Number(form.valor_tabela) || 0,
       categoria: form.categoria?.trim() || null,
       ativo: form.ativo ?? true,
     })

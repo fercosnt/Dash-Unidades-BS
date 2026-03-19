@@ -33,3 +33,13 @@ export async function desativarDentista(id: string) {
   if (error) return { ok: false, error: error.message };
   return { ok: true };
 }
+
+export async function ativarDentista(id: string) {
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.from("dentistas").update({ ativo: true }).eq("id", id);
+  if (error) {
+    if (error.code === "23505") return { ok: false, error: "Esta clínica já tem uma dentista ativa. Desative primeiro." };
+    return { ok: false, error: error.message };
+  }
+  return { ok: true };
+}

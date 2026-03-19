@@ -440,42 +440,22 @@ export async function fetchKpisAdminV2(mesReferencia: string, clinicaId?: string
 export async function fetchRepasseAdmin(mesReferencia: string, clinicaId?: string): Promise<RepasseAdminData> {
   const supabase = await createSupabaseServerClient();
 
-  const empty: RepasseAdminData = {
-    totalRecebido: 0,
-    taxaSobreRecebido: 0,
-    impostosNf: 0,
-    custoMaoObra: 0,
-    custosProcedimentos: 0,
-    comissoesMedicas: 0,
-    disponivelParaSplit: 0,
-    valorRepassar: 0,
-    valorBeautySmileRetém: 0,
-    percentualBeautySmile: 60,
-  };
-
-  if (mesReferencia === "all") return empty;
-
-  const start = firstDayOfMonth(mesReferencia);
-  const end = lastDayOfMonth(mesReferencia);
-
   let resumoQ = supabase
     .from("resumo_mensal")
-    .select("total_recebido_mes, total_imposto_nf, total_custo_mao_obra, total_custos_procedimentos, total_comissoes_medicas")
-    .gte("mes_referencia", start)
-    .lte("mes_referencia", end);
+    .select("total_recebido_mes, total_taxa_cartao, total_imposto_nf, total_custo_mao_obra, total_custos_procedimentos, total_comissoes_medicas");
+
+  if (mesReferencia !== "all") {
+    const start = firstDayOfMonth(mesReferencia);
+    const end = lastDayOfMonth(mesReferencia);
+    resumoQ = resumoQ.gte("mes_referencia", start).lte("mes_referencia", end);
+  }
   if (clinicaId) resumoQ = resumoQ.eq("clinica_id", clinicaId);
 
-  const [resumoRes, parcelasRes, configRes] = await Promise.all([
+  const [resumoRes, configRes] = await Promise.all([
     resumoQ,
     supabase
-      .from("parcelas_cartao")
-      .select("valor_parcela")
-      .eq("status", "recebido")
-      .gte("mes_recebimento", start)
-      .lte("mes_recebimento", end),
-    supabase
       .from("configuracoes_financeiras")
-      .select("taxa_cartao_percentual, percentual_beauty_smile")
+      .select("percentual_beauty_smile")
       .is("vigencia_fim", null)
       .single(),
   ]);
@@ -484,18 +464,14 @@ export async function fetchRepasseAdmin(mesReferencia: string, clinicaId?: strin
   const sum = (key: string) => resumo.reduce((a, r) => a + Number(r[key] ?? 0), 0);
 
   const totalRecebido = sum("total_recebido_mes");
+  const taxaSobreRecebido = sum("total_taxa_cartao");
   const impostosNf = sum("total_imposto_nf");
   const custoMaoObra = sum("total_custo_mao_obra");
   const custosProcedimentos = sum("total_custos_procedimentos");
   const comissoesMedicas = sum("total_comissoes_medicas");
 
-  const parcelas = (parcelasRes.data ?? []) as { valor_parcela: number }[];
-  const totalRecebidoCartao = parcelas.reduce((a, r) => a + Number(r.valor_parcela ?? 0), 0);
-
-  const taxaCartaoPct = Number(configRes.data?.taxa_cartao_percentual ?? 0) / 100;
   const percentualBS = Number(configRes.data?.percentual_beauty_smile ?? 60) / 100;
 
-  const taxaSobreRecebido = totalRecebidoCartao * taxaCartaoPct;
   const disponivel = totalRecebido - taxaSobreRecebido - impostosNf - custoMaoObra - custosProcedimentos - comissoesMedicas;
   const valorRepassar = disponivel * (1 - percentualBS);
   const valorBSRetek = disponivel * percentualBS;
@@ -518,39 +494,24 @@ export async function fetchRepasseAdmin(mesReferencia: string, clinicaId?: strin
 export async function fetchDreAdmin(mesReferencia: string, clinicaId?: string): Promise<DreAdminData> {
   const supabase = await createSupabaseServerClient();
 
-  const empty: DreAdminData = {
-    faturamentoBruto: 0,
-    custosProcedimentos: 0,
-    taxaMaquininha: 0,
-    impostosNf: 0,
-    custoMaoObra: 0,
-    comissoesMedicas: 0,
-    valorLiquido: 0,
-    valorBeautySmile: 0,
-    valorClinica: 0,
-    percentualBeautySmile: 60,
-    comissaoDentista: 0,
-    resultadoLiquidoBS: 0,
-  };
-
-  if (mesReferencia === "all") return empty;
-
-  const start = firstDayOfMonth(mesReferencia);
-  const end = lastDayOfMonth(mesReferencia);
-
   let dreResumoQ = supabase
     .from("resumo_mensal")
-    .select("faturamento_bruto, total_custos_procedimentos, total_taxa_cartao, total_imposto_nf, total_custo_mao_obra, total_comissoes_medicas, valor_liquido, valor_beauty_smile, valor_clinica")
-    .gte("mes_referencia", start)
-    .lte("mes_referencia", end);
-  if (clinicaId) dreResumoQ = dreResumoQ.eq("clinica_id", clinicaId);
+    .select("faturamento_bruto, total_custos_procedimentos, total_taxa_cartao, total_imposto_nf, total_custo_mao_obra, total_comissoes_medicas, valor_liquido, valor_beauty_smile, valor_clinica");
 
   let comissoesDentistaQ = supabase
     .from("comissoes_dentista")
-    .select("valor_comissao")
-    .gte("mes_referencia", start)
-    .lte("mes_referencia", end);
-  if (clinicaId) comissoesDentistaQ = comissoesDentistaQ.eq("clinica_id", clinicaId);
+    .select("valor_comissao");
+
+  if (mesReferencia !== "all") {
+    const start = firstDayOfMonth(mesReferencia);
+    const end = lastDayOfMonth(mesReferencia);
+    dreResumoQ = dreResumoQ.gte("mes_referencia", start).lte("mes_referencia", end);
+    comissoesDentistaQ = comissoesDentistaQ.gte("mes_referencia", start).lte("mes_referencia", end);
+  }
+  if (clinicaId) {
+    dreResumoQ = dreResumoQ.eq("clinica_id", clinicaId);
+    comissoesDentistaQ = comissoesDentistaQ.eq("clinica_id", clinicaId);
+  }
 
   const [resumoRes, configRes, comissoesDentistaRes] = await Promise.all([
     dreResumoQ,
@@ -742,7 +703,8 @@ export async function fetchProcedimentosRanking(mesReferencia: string, clinicaId
 
   let query = supabase
     .from("tratamentos_executados")
-    .select("procedimento_nome, quantidade, procedimento_id, procedimentos(custo_fixo)");
+    .select("procedimento_nome, quantidade, procedimento_id, procedimentos(nome, custo_fixo, categoria)")
+    .not("procedimento_id", "is", null);
 
   if (mesReferencia !== "all") {
     const start = firstDayOfMonth(mesReferencia);
@@ -758,15 +720,17 @@ export async function fetchProcedimentosRanking(mesReferencia: string, clinicaId
     procedimento_nome: string | null;
     quantidade: number;
     procedimento_id: string | null;
-    procedimentos: { custo_fixo: number } | { custo_fixo: number }[] | null;
+    procedimentos: { nome: string; custo_fixo: number; categoria: string | null } | { nome: string; custo_fixo: number; categoria: string | null }[] | null;
   };
 
-  const grouped: Record<string, { qtde: number; custoUnitario: number }> = {};
+  const grouped: Record<string, { qtde: number; custoUnitario: number; categoria: string }> = {};
   ((data ?? []) as unknown as Row[]).forEach((r) => {
-    const nome = r.procedimento_nome ?? "Sem nome";
     const cp = r.procedimentos;
-    const custo = Number((Array.isArray(cp) ? cp[0] : cp)?.custo_fixo ?? 0);
-    if (!grouped[nome]) grouped[nome] = { qtde: 0, custoUnitario: custo };
+    const proc = Array.isArray(cp) ? cp[0] : cp;
+    const nome = proc?.nome ?? r.procedimento_nome ?? "Sem nome";
+    const custo = Number(proc?.custo_fixo ?? 0);
+    const categoria = proc?.categoria ?? "Sem categoria";
+    if (!grouped[nome]) grouped[nome] = { qtde: 0, custoUnitario: custo, categoria };
     grouped[nome]!.qtde += Number(r.quantidade ?? 1);
   });
 
@@ -774,6 +738,7 @@ export async function fetchProcedimentosRanking(mesReferencia: string, clinicaId
   return Object.entries(grouped)
     .map(([nome, v]) => ({
       procedimentoNome: nome,
+      categoria: v.categoria,
       quantidade: v.qtde,
       custoUnitario: v.custoUnitario,
       custoTotal: v.qtde * v.custoUnitario,
@@ -785,6 +750,11 @@ export async function fetchProcedimentosRanking(mesReferencia: string, clinicaId
 export async function fetchTratamentosVendidos(mesReferencia: string, clinicaId?: string): Promise<TratamentoVendidoItem[]> {
   const supabase = await createSupabaseServerClient();
 
+  // Tentar buscar de itens_orcamento (dados desmembrados)
+  const itensResult = await fetchTratamentosVendidosFromItens(supabase, mesReferencia, clinicaId);
+  if (itensResult.length > 0) return itensResult;
+
+  // Fallback: logica antiga agrupando por procedimentos_texto
   let query = supabase
     .from("orcamentos_fechados")
     .select("procedimentos_texto, valor_total");
@@ -814,6 +784,74 @@ export async function fetchTratamentosVendidos(mesReferencia: string, clinicaId?
   return Object.entries(grouped)
     .map(([nome, v]) => ({
       tratamentoNome: nome,
+      categoria: null,
+      quantidade: v.qtde,
+      valorTotal: v.valorTotal,
+      percentualFaturamento: totalValor > 0 ? (v.valorTotal / totalValor) * 100 : 0,
+    }))
+    .sort((a, b) => b.valorTotal - a.valorTotal);
+}
+
+async function fetchTratamentosVendidosFromItens(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  mesReferencia: string,
+  clinicaId?: string
+): Promise<TratamentoVendidoItem[]> {
+  // Buscar itens_orcamento via join com orcamentos_fechados
+  let query = supabase
+    .from("itens_orcamento")
+    .select("procedimento_nome_original, valor_proporcional, categoria, orcamento_fechado_id, clinica_id");
+
+  if (clinicaId) query = query.eq("clinica_id", clinicaId);
+
+  const { data: allItens, error } = await query;
+  if (error || !allItens?.length) return [];
+
+  // Filtrar por mes via orcamentos_fechados
+  let orcQuery = supabase
+    .from("orcamentos_fechados")
+    .select("id")
+    .not("split_status", "is", null);
+
+  if (mesReferencia !== "all") {
+    const start = firstDayOfMonth(mesReferencia);
+    const end = lastDayOfMonth(mesReferencia);
+    orcQuery = orcQuery.gte("mes_referencia", start).lte("mes_referencia", end);
+  }
+  if (clinicaId) orcQuery = orcQuery.eq("clinica_id", clinicaId);
+
+  const { data: orcs } = await orcQuery;
+  if (!orcs?.length) return [];
+
+  const orcIds = new Set(orcs.map((o) => o.id));
+
+  type ItemRow = {
+    procedimento_nome_original: string;
+    valor_proporcional: number;
+    categoria: string | null;
+    orcamento_fechado_id: string;
+  };
+
+  const filtered = (allItens as ItemRow[]).filter((it) =>
+    orcIds.has(it.orcamento_fechado_id)
+  );
+
+  if (filtered.length === 0) return [];
+
+  const grouped: Record<string, { qtde: number; valorTotal: number; categoria: string | null }> = {};
+  for (const it of filtered) {
+    const nome = it.procedimento_nome_original.trim() || "Nao especificado";
+    if (!grouped[nome]) grouped[nome] = { qtde: 0, valorTotal: 0, categoria: it.categoria };
+    grouped[nome]!.qtde += 1;
+    grouped[nome]!.valorTotal += Number(it.valor_proporcional ?? 0);
+  }
+
+  const totalValor = Object.values(grouped).reduce((a, v) => a + v.valorTotal, 0);
+
+  return Object.entries(grouped)
+    .map(([nome, v]) => ({
+      tratamentoNome: nome,
+      categoria: v.categoria,
       quantidade: v.qtde,
       valorTotal: v.valorTotal,
       percentualFaturamento: totalValor > 0 ? (v.valorTotal / totalValor) * 100 : 0,
@@ -839,6 +877,11 @@ export async function fetchTratamentosEvolucao(mesAtual: string, n: number = 6, 
   const start = firstDayOfMonth(meses[0]!);
   const end = lastDayOfMonth(meses[meses.length - 1]!);
 
+  // Tentar buscar de itens_orcamento primeiro
+  const itensResult = await fetchEvolucaoFromItens(supabase, meses, start, end, clinicaId);
+  if (itensResult) return itensResult;
+
+  // Fallback: logica antiga
   let query = supabase
     .from("orcamentos_fechados")
     .select("procedimentos_texto, valor_total, mes_referencia")
@@ -852,7 +895,6 @@ export async function fetchTratamentosEvolucao(mesAtual: string, n: number = 6, 
 
   type Row = { procedimentos_texto: string | null; valor_total: number; mes_referencia: string };
 
-  // Group by treatment for total ranking
   const totals: Record<string, number> = {};
   ((data ?? []) as Row[]).forEach((r) => {
     const nome = r.procedimentos_texto?.trim() || "Não especificado";
@@ -863,7 +905,6 @@ export async function fetchTratamentosEvolucao(mesAtual: string, n: number = 6, 
     .slice(0, 5)
     .map(([nome]) => nome);
 
-  // Build series: one point per month
   const byMes: Record<string, Record<string, { valor: number; qtde: number }>> = {};
   meses.forEach((m) => { byMes[m] = {}; });
 
@@ -876,6 +917,81 @@ export async function fetchTratamentosEvolucao(mesAtual: string, n: number = 6, 
     byMes[m]![nome]!.valor += Number(r.valor_total ?? 0);
     byMes[m]![nome]!.qtde += 1;
   });
+
+  const mesLabels = meses.map((m) => {
+    const [y, mo] = m.split("-");
+    return `${MONTHS_LABEL[Number(mo) - 1]}/${y!.slice(2)}`;
+  });
+
+  const series = meses.map((m, i) => ({
+    mes: mesLabels[i]!,
+    valores: byMes[m] ?? {},
+  }));
+
+  return { meses: mesLabels, top5, series };
+}
+
+async function fetchEvolucaoFromItens(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  meses: string[],
+  start: string,
+  end: string,
+  clinicaId?: string
+): Promise<TratamentosEvolucaoData | null> {
+  // Buscar orcamentos splitados no periodo
+  let orcQuery = supabase
+    .from("orcamentos_fechados")
+    .select("id, mes_referencia")
+    .not("split_status", "is", null)
+    .gte("mes_referencia", start)
+    .lte("mes_referencia", end);
+
+  if (clinicaId) orcQuery = orcQuery.eq("clinica_id", clinicaId);
+
+  const { data: orcs } = await orcQuery;
+  if (!orcs?.length) return null;
+
+  const orcIds = orcs.map((o) => o.id);
+  const orcMesMap = new Map(orcs.map((o) => [o.id, (o.mes_referencia as string).slice(0, 7)]));
+
+  let itensQuery = supabase
+    .from("itens_orcamento")
+    .select("procedimento_nome_original, valor_proporcional, orcamento_fechado_id")
+    .in("orcamento_fechado_id", orcIds);
+
+  const { data: itensData } = await itensQuery;
+  if (!itensData?.length) return null;
+
+  type ItemRow = {
+    procedimento_nome_original: string;
+    valor_proporcional: number;
+    orcamento_fechado_id: string;
+  };
+
+  // Ranking total
+  const totals: Record<string, number> = {};
+  for (const it of itensData as ItemRow[]) {
+    const nome = it.procedimento_nome_original.trim() || "Nao especificado";
+    totals[nome] = (totals[nome] ?? 0) + Number(it.valor_proporcional ?? 0);
+  }
+  const top5 = Object.entries(totals)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([nome]) => nome);
+
+  // Build series
+  const byMes: Record<string, Record<string, { valor: number; qtde: number }>> = {};
+  meses.forEach((m) => { byMes[m] = {}; });
+
+  for (const it of itensData as ItemRow[]) {
+    const nome = it.procedimento_nome_original.trim() || "Nao especificado";
+    if (!top5.includes(nome)) continue;
+    const m = orcMesMap.get(it.orcamento_fechado_id);
+    if (!m || !byMes[m]) continue;
+    if (!byMes[m]![nome]) byMes[m]![nome] = { valor: 0, qtde: 0 };
+    byMes[m]![nome]!.valor += Number(it.valor_proporcional ?? 0);
+    byMes[m]![nome]!.qtde += 1;
+  }
 
   const mesLabels = meses.map((m) => {
     const [y, mo] = m.split("-");

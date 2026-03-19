@@ -38,6 +38,8 @@ const ADMIN_SIDEBAR_GROUPS_BASE = [
       { href: "/admin/configuracoes/financeiro", label: "Financeiro" },
       { href: "/admin/configuracoes/debitos", label: "Débitos parceiros" },
       { href: "/admin/configuracoes/dentistas", label: "Dentistas" },
+      { href: "/admin/configuracoes/fechamento", label: "Fechamento de Mês" },
+      { href: "/admin/configuracoes/usuarios", label: "Usuários" },
     ],
   },
 ];
@@ -89,11 +91,11 @@ export default async function AdminLayout({
   }));
 
   return (
-    <div className="flex min-h-screen gap-2 bg-[url('/68a4d045b130b34b3614881d.jpeg')] bg-cover bg-fixed bg-center">
+    <div className="flex min-h-screen gap-2 bg-[url('/68a4d045b130b34b3614881d.jpeg')] bg-cover bg-fixed bg-center print:bg-none print:bg-white print:gap-0">
       <Sidebar groups={groups} variant="admin" />
-      <div className="flex flex-1 flex-col min-w-0 pr-2">
+      <div className="flex flex-1 flex-col min-w-0 pr-2 print:pr-0">
         <Header userName={displayName} userRole={userRole} variant="admin" />
-        <main className="flex-1 p-6 scrollbar-light overflow-y-auto">{children}</main>
+        <main className="flex-1 p-6 scrollbar-light overflow-y-auto print:p-0 print:overflow-visible">{children}</main>
       </div>
     </div>
   );

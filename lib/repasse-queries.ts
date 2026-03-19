@@ -24,12 +24,20 @@ export async function fetchRepassesPendentes(): Promise<RepassePendente[]> {
   // Get all resumo_mensal records that don't have a repasse yet
   const { data: resumos } = await supabase
     .from("resumo_mensal")
-    .select("clinica_id, mes_referencia, valor_clinica, clinicas_parceiras(nome)")
+    .select("clinica_id, mes_referencia, total_recebido_mes, total_taxa_cartao, total_imposto_nf, total_custo_mao_obra, total_custos_procedimentos, total_comissoes_medicas, clinicas_parceiras(nome)")
     .order("mes_referencia", { ascending: false });
 
   const { data: jaFeitos } = await supabase
     .from("repasses_mensais")
     .select("clinica_id, mes_referencia");
+
+  const { data: configData } = await supabase
+    .from("configuracoes_financeiras")
+    .select("percentual_beauty_smile")
+    .is("vigencia_fim", null)
+    .single();
+
+  const percentualBS = Number(configData?.percentual_beauty_smile ?? 60) / 100;
 
   const feitos = new Set(
     (jaFeitos ?? []).map((r) => `${r.clinica_id}|${(r.mes_referencia as string).slice(0, 7)}`)
@@ -38,7 +46,12 @@ export async function fetchRepassesPendentes(): Promise<RepassePendente[]> {
   type Row = {
     clinica_id: string;
     mes_referencia: string;
-    valor_clinica: number;
+    total_recebido_mes: number;
+    total_taxa_cartao: number;
+    total_imposto_nf: number;
+    total_custo_mao_obra: number;
+    total_custos_procedimentos: number;
+    total_comissoes_medicas: number;
     clinicas_parceiras: { nome: string } | { nome: string }[] | null;
   };
 
@@ -47,11 +60,20 @@ export async function fetchRepassesPendentes(): Promise<RepassePendente[]> {
     .map((r) => {
       const cp = r.clinicas_parceiras;
       const clinica = Array.isArray(cp) ? cp[0] : cp;
+      // Base caixa: calcular sobre o que foi efetivamente recebido
+      const totalRecebido = Number(r.total_recebido_mes ?? 0);
+      const disponivel = totalRecebido
+        - Number(r.total_taxa_cartao ?? 0)
+        - Number(r.total_imposto_nf ?? 0)
+        - Number(r.total_custo_mao_obra ?? 0)
+        - Number(r.total_custos_procedimentos ?? 0)
+        - Number(r.total_comissoes_medicas ?? 0);
+      const valorRepassar = Math.round(disponivel * (1 - percentualBS) * 100) / 100;
       return {
         clinicaId: r.clinica_id,
         clinicaNome: clinica?.nome ?? "—",
         mesReferencia: r.mes_referencia.slice(0, 7),
-        valorCalculado: Number(r.valor_clinica ?? 0),
+        valorCalculado: valorRepassar,
       };
     });
 }

@@ -137,6 +137,7 @@ export type OrcamentoAbertoItem = {
 /** Item do ranking de procedimentos */
 export type ProcedimentoRankingItem = {
   procedimentoNome: string;
+  categoria: string;
   quantidade: number;
   custoUnitario: number;
   custoTotal: number;
@@ -155,6 +156,7 @@ export type ChartVendasPoint = {
 /** Item da tabela de tratamentos vendidos (agrupado por nome) */
 export type TratamentoVendidoItem = {
   tratamentoNome: string;
+  categoria: string | null;
   quantidade: number;
   valorTotal: number;
   percentualFaturamento: number;

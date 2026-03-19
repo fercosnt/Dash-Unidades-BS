@@ -211,6 +211,8 @@ export type BatchDetailRecord = {
   paciente_nome?: string;
   valor_total?: number;
   procedimento_nome?: string;
+  procedimento_vinculado?: string;
+  procedimento_categoria?: string;
   quantidade?: number;
   data_execucao?: string;
   data_fechamento?: string;
@@ -307,16 +309,30 @@ export async function getBatchDetail(batchId: string): Promise<BatchDetail | nul
   } else {
     const { data: rows } = await supabase
       .from("tratamentos_executados")
-      .select("id, paciente_nome, procedimento_nome, quantidade, data_execucao")
+      .select("id, paciente_nome, procedimento_nome, quantidade, data_execucao, procedimento_id, procedimentos(nome, categoria)")
       .eq("upload_batch_id", batchId)
       .limit(limit);
-    registros = (rows ?? []).map((r) => ({
-      id: r.id,
-      paciente_nome: r.paciente_nome,
-      procedimento_nome: r.procedimento_nome,
-      quantidade: r.quantidade,
-      data_execucao: r.data_execucao,
-    }));
+    type TratRow = {
+      id: string;
+      paciente_nome: string;
+      procedimento_nome: string;
+      quantidade: number;
+      data_execucao: string;
+      procedimento_id: string | null;
+      procedimentos: { nome: string; categoria: string | null } | { nome: string; categoria: string | null }[] | null;
+    };
+    registros = ((rows ?? []) as unknown as TratRow[]).map((r) => {
+      const proc = Array.isArray(r.procedimentos) ? r.procedimentos[0] : r.procedimentos;
+      return {
+        id: r.id,
+        paciente_nome: r.paciente_nome,
+        procedimento_nome: r.procedimento_nome,
+        procedimento_vinculado: proc?.nome ?? undefined,
+        procedimento_categoria: proc?.categoria ?? undefined,
+        quantidade: r.quantidade,
+        data_execucao: r.data_execucao,
+      };
+    });
   }
 
   const tableName = tipo === "orcamentos_fechados" ? "orcamentos_fechados" : tipo === "orcamentos_abertos" ? "orcamentos_abertos" : "tratamentos_executados";

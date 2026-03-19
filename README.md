@@ -8,7 +8,7 @@ Dashboard multi-tenant para gestão financeira das clínicas parceiras da Beauty
 
 ## Repositório
 
-- **GitHub:** [https://github.com/Lu1zHenr1qu3/Dash-Unidades-BS](https://github.com/Lu1zHenr1qu3/Dash-Unidades-BS)
+- **GitHub:** [https://github.com/fercosnt/Dash-Unidades-BS](https://github.com/fercosnt/Dash-Unidades-BS)
 
 ---
 
@@ -24,7 +24,7 @@ Dashboard multi-tenant para gestão financeira das clínicas parceiras da Beauty
 ## Instalação
 
 ```bash
-git clone https://github.com/Lu1zHenr1qu3/Dash-Unidades-BS.git
+git clone https://github.com/fercosnt/Dash-Unidades-BS.git
 cd Dash-Unidades-BS
 npm install --legacy-peer-deps
 cp .env.example .env.local

@@ -53,10 +53,6 @@ export async function calcularEPersistirResumo(
     (s, r) => s + Number(r.valor_total ?? 0),
     0
   );
-  const totalAReceberMes = (orcamentosFechados ?? []).reduce(
-    (s, r) => s + Number(r.valor_em_aberto ?? 0),
-    0
-  );
   const totalInadimplente = (orcamentosFechados ?? []).reduce((s, r) => {
     if (r.status === "em_aberto" || r.status === "parcial") {
       return s + Number(r.valor_em_aberto ?? 0);
@@ -73,8 +69,9 @@ export async function calcularEPersistirResumo(
 
   const totalCustosProcedimentos = (tratamentos ?? []).reduce((s, r) => {
     const qtd = Number(r.quantidade ?? 1);
-    const proc = (r as unknown as { procedimentos?: { custo_fixo: number }[] | null }).procedimentos;
-    const custo = proc?.[0]?.custo_fixo;
+    const proc = r.procedimentos as { custo_fixo: number } | { custo_fixo: number }[] | null;
+    const p = Array.isArray(proc) ? proc[0] : proc;
+    const custo = p?.custo_fixo;
     if (custo != null) return s + Number(custo) * qtd;
     return s;
   }, 0);
@@ -149,6 +146,9 @@ export async function calcularEPersistirResumo(
     (s, r) => s + Number(r.valor_parcela ?? 0),
     0
   );
+
+  // A Receber = inadimplente + parcelas futuras projetadas
+  const totalAReceberMes = totalInadimplente + totalRecebimentosFuturos;
 
   const row = {
     clinica_id: clinicaId,

@@ -61,7 +61,7 @@ export function Sidebar({
     <aside
       className={`relative shrink-0 flex flex-col bg-gradient-to-b from-primary-950 via-[#151938] to-[#05071F] text-white shadow-[8px_0_24px_rgba(3,7,18,0.75)] ${
         collapsed ? "w-16" : "w-60"
-      } transition-all duration-300 ease-in-out ${className}`}
+      } transition-all duration-300 ease-in-out print:hidden ${className}`}
     >
       <div
         ref={redeRef}

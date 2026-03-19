@@ -13,7 +13,9 @@ import {
   fetchTratamentosVendidos,
   fetchTratamentosEvolucao,
 } from "@/lib/dashboard-queries";
+import { autoCalcResumoSeNecessario } from "@/lib/resumo-staleness";
 import { getClinicasAtivas } from "../upload/actions";
+import { fetchMesesFechados } from "../configuracoes/fechamento/actions";
 import { DashboardClient } from "./DashboardClient";
 
 function getDefaultMes(): string {
@@ -30,6 +32,9 @@ export default async function AdminDashboardPage({
   const mes = params.mes ?? getDefaultMes();
   const clinicaId = params.clinicaId ?? "";
 
+  // Auto-calc resumo se dados estiverem desatualizados
+  await autoCalcResumoSeNecessario(mes, clinicaId || undefined);
+
   const [
     kpis,
     dre,
@@ -45,6 +50,7 @@ export default async function AdminDashboardPage({
     tratamentosVendidos,
     tratamentosEvolucao,
     clinicas,
+    mesesFechados,
   ] = await Promise.all([
     fetchKpisAdminV2(mes, clinicaId || undefined),
     fetchDreAdmin(mes, clinicaId || undefined),
@@ -60,6 +66,7 @@ export default async function AdminDashboardPage({
     fetchTratamentosVendidos(mes, clinicaId || undefined),
     fetchTratamentosEvolucao(mes, 6, clinicaId || undefined),
     getClinicasAtivas(),
+    fetchMesesFechados(),
   ]);
 
   return (
@@ -80,6 +87,7 @@ export default async function AdminDashboardPage({
       initialTratamentosVendidos={tratamentosVendidos}
       initialTratamentosEvolucao={tratamentosEvolucao}
       clinicas={clinicas}
+      mesesFechados={mesesFechados}
     />
   );
 }

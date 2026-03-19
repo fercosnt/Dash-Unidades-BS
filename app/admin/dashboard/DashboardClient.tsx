@@ -64,6 +64,7 @@ type DashboardClientProps = {
   initialTratamentosVendidos: TratamentoVendidoItem[];
   initialTratamentosEvolucao: TratamentosEvolucaoData;
   clinicas: { id: string; nome: string }[];
+  mesesFechados?: string[];
 };
 
 function formatCurrency(value: number): string {
@@ -97,6 +98,7 @@ export function DashboardClient({
   initialTratamentosVendidos,
   initialTratamentosEvolucao,
   clinicas,
+  mesesFechados = [],
 }: DashboardClientProps) {
   const [mes, setMes] = useState(initialMes);
   const [clinicaId, setClinicaId] = useState(initialClinicaId ?? "");
@@ -115,12 +117,6 @@ export function DashboardClient({
   const [tratamentosVendidos, setTratamentosVendidos] = useState(initialTratamentosVendidos);
   const [tratamentosEvolucao, setTratamentosEvolucao] = useState(initialTratamentosEvolucao);
   const [loading, setLoading] = useState(false);
-
-  // Calcular resumo modal
-  const [showCalculo, setShowCalculo] = useState(false);
-  const [resumoClinicaId, setResumoClinicaId] = useState("");
-  const [resumoLoading, setResumoLoading] = useState(false);
-  const [resumoMessage, setResumoMessage] = useState<{ tipo: "ok" | "erro"; texto: string } | null>(null);
 
   useEffect(() => {
     if (mes === initialMes && clinicaId === (initialClinicaId ?? "")) return;
@@ -158,46 +154,6 @@ export function DashboardClient({
     });
   }, [mes, clinicaId, initialMes, initialClinicaId, initialEvolucao]);
 
-  async function handleCalcularResumo() {
-    if (!resumoClinicaId) return;
-    setResumoLoading(true);
-    setResumoMessage(null);
-    try {
-      const res = await fetch("/api/resumo/calcular", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clinica_id: resumoClinicaId, mes_referencia: mes }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setResumoMessage({ tipo: "ok", texto: data.message ?? "Cálculo iniciado." });
-        setTimeout(() => {
-          Promise.all([
-            fetchKpisAdminV2(mes),
-            fetchDreAdmin(mes),
-            fetchRepasseAdmin(mes),
-            fetchRankingClinicas(mes),
-            fetchChartDataAdmin(mes, 12),
-            fetchChartLiquidoAdmin(mes, 12),
-          ]).then(([k, d, rp, r, cd, cl]) => {
-            setKpis(k);
-            setDre(d);
-            setRepasse(rp);
-            setRanking(r);
-            setChartData(cd);
-            setChartLiquido(cl);
-          });
-        }, 2000);
-      } else {
-        setResumoMessage({ tipo: "erro", texto: data.error ?? "Erro ao disparar cálculo." });
-      }
-    } catch {
-      setResumoMessage({ tipo: "erro", texto: "Erro de conexão." });
-    } finally {
-      setResumoLoading(false);
-    }
-  }
-
   const TABS: { id: Tab; label: string }[] = [
     { id: "resumo", label: "Resumo" },
     { id: "vendas", label: "Vendas" },
@@ -228,7 +184,7 @@ export function DashboardClient({
 
         <div className="flex items-center gap-3">
           <ClinicaSelector clinicas={clinicas} selectedClinicaId={clinicaId} onChange={setClinicaId} />
-          <PeriodoSelector selectedPeriodo={mes} onChange={setMes} />
+          <PeriodoSelector selectedPeriodo={mes} onChange={setMes} mesesFechados={mesesFechados} />
           <button
             type="button"
             onClick={() => {
@@ -244,77 +200,8 @@ export function DashboardClient({
             </svg>
             PDF
           </button>
-          <button
-            type="button"
-            onClick={() => setShowCalculo((v) => !v)}
-            title="Calcular resumo mensal"
-            className="flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-2 text-sm text-white/80 hover:bg-white/20 hover:text-white transition-all"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
-            </svg>
-            Calcular resumo
-          </button>
         </div>
       </div>
-
-      {/* Inline calcular resumo */}
-      {showCalculo && (
-        <div className="rounded-xl border border-neutral-200 bg-white p-4">
-          <div className="flex items-start justify-between mb-3">
-            <div>
-              <h3 className="text-sm font-semibold text-neutral-900">Calcular resumo mensal</h3>
-              <p className="text-xs text-neutral-500 mt-0.5">
-                Recalcula o split financeiro BS/clínica para o mês selecionado.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowCalculo(false)}
-              className="text-neutral-400 hover:text-neutral-600"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          {resumoMessage && (
-            <div
-              className={`mb-3 rounded px-3 py-2 text-sm ${
-                resumoMessage.tipo === "ok" ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"
-              }`}
-            >
-              {resumoMessage.texto}
-            </div>
-          )}
-          <div className="flex flex-wrap items-end gap-3">
-            <label className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-neutral-700">Clínica</span>
-              <select
-                value={resumoClinicaId}
-                onChange={(e) => setResumoClinicaId(e.target.value)}
-                className="rounded-md border border-neutral-300 px-3 py-2 text-sm"
-              >
-                <option value="">Selecione...</option>
-                {clinicas.map((c) => (
-                  <option key={c.id} value={c.id}>{c.nome}</option>
-                ))}
-              </select>
-            </label>
-            <span className="text-sm text-neutral-500">
-              Mês: {mes === "all" ? "Todos (indisponível)" : mes}
-            </span>
-            <button
-              type="button"
-              onClick={handleCalcularResumo}
-              disabled={resumoLoading || !resumoClinicaId || mes === "all"}
-              className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
-            >
-              {resumoLoading ? "Enviando..." : "Calcular"}
-            </button>
-          </div>
-        </div>
-      )}
 
       {loading ? (
         <div className="flex h-40 w-full items-center justify-center text-sm text-white">
@@ -326,8 +213,8 @@ export function DashboardClient({
           {activeTab === "resumo" && (
             <div className="space-y-6">
               {!kpis.resumoCalculado && (
-                <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                  Resumo não calculado para este período. Use o botão "Calcular resumo" para gerar o DRE e o repasse.
+                <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-500">
+                  Nenhum dado encontrado para este período. Verifique se os uploads foram realizados.
                 </div>
               )}
 

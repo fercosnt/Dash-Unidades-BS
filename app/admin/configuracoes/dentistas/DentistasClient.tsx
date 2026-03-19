@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { criarDentista, desativarDentista } from "./actions";
+import { criarDentista, desativarDentista, ativarDentista } from "./actions";
 import type { DentistaItem } from "@/lib/dentista-queries";
 
 export function DentistasClient({
@@ -58,6 +58,17 @@ export function DentistasClient({
       setTimeout(() => setMsg(null), 3000);
     } else {
       setMsg({ tipo: "erro", texto: result.error ?? "Erro ao desativar." });
+    }
+  }
+
+  async function handleAtivar(id: string) {
+    const result = await ativarDentista(id);
+    if (result.ok) {
+      setDentistas((prev) => prev.map((d) => (d.id === id ? { ...d, ativo: true } : d)));
+      setMsg({ tipo: "ok", texto: "Dentista reativada." });
+      setTimeout(() => setMsg(null), 3000);
+    } else {
+      setMsg({ tipo: "erro", texto: result.error ?? "Erro ao reativar." });
     }
   }
 
@@ -160,7 +171,7 @@ export function DentistasClient({
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {d.ativo && (
+                    {d.ativo ? (
                       confirmDesativarId === d.id ? (
                         <span className="flex items-center gap-2 justify-end">
                           <button
@@ -187,6 +198,14 @@ export function DentistasClient({
                           Desativar
                         </button>
                       )
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleAtivar(d.id)}
+                        className="text-xs text-green-600 hover:text-green-800 font-medium"
+                      >
+                        Ativar
+                      </button>
                     )}
                   </td>
                 </tr>

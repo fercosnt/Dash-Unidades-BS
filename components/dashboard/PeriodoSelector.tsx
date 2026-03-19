@@ -3,6 +3,7 @@
 type PeriodoSelectorProps = {
   selectedPeriodo: string;
   onChange: (periodo: string) => void;
+  mesesFechados?: string[];
   className?: string;
 };
 
@@ -13,7 +14,9 @@ const OPTIONS_2026 = MONTHS.map((label, i) => ({
   label: `${label}/2026`,
 }));
 
-export function PeriodoSelector({ selectedPeriodo, onChange, className = "" }: PeriodoSelectorProps) {
+export function PeriodoSelector({ selectedPeriodo, onChange, mesesFechados = [], className = "" }: PeriodoSelectorProps) {
+  const fechados = new Set(mesesFechados);
+
   return (
     <select
       value={selectedPeriodo}
@@ -23,7 +26,7 @@ export function PeriodoSelector({ selectedPeriodo, onChange, className = "" }: P
       <option value="all">Todos os meses</option>
       {OPTIONS_2026.map((opt) => (
         <option key={opt.value} value={opt.value}>
-          {opt.label}
+          {fechados.has(opt.value) ? `\u2705 ${opt.label}` : opt.label}
         </option>
       ))}
     </select>

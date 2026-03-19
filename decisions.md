@@ -21,10 +21,11 @@ Formato: data, decisao, contexto, alternativas consideradas.
 ### 2026-02-11 Stack do projeto
 
 **Contexto**: Escolha de stack para dashboard financeiro multi-tenant com 1-3 clinicas.
-**Decisao**: Next.js 14 (App Router) + Supabase + TypeScript + Tailwind CSS + @beautysmile/design-system.
+**Decisao**: Next.js 15 (App Router) + React 19 + Supabase + TypeScript + Tailwind CSS.
 **Alternativas**:
 - Vite + Express + PostgreSQL — mais controle, mas mais setup e infra para gerenciar
 - Remix — bom DX mas ecossistema menor
+- @beautysmile/design-system — considerado mas NAO instalado; UI feita com Tailwind puro
 **Consequencias**: Deploy simplificado via Vercel, auth e DB gerenciados, RLS nativo. Custo R$0-5/mes no MVP.
 
 ### 2026-02-11 Multi-tenancy via RLS
@@ -37,14 +38,14 @@ Formato: data, decisao, contexto, alternativas consideradas.
 - Banco separado por tenant — custo proibitivo
 **Consequencias**: Seguranca no nivel do banco. Mesmo com bug no frontend, dados ficam isolados. Admin ve tudo, parceiro ve so sua clinica.
 
-### 2026-02-11 UI com @beautysmile/design-system (Admin Theme)
+### 2026-02-11 UI com Tailwind puro (sem design-system externo)
 
 **Contexto**: Necessidade de interface consistente com identidade Beauty Smile.
-**Decisao**: Usar pacote publico @beautysmile/design-system com Admin Theme (Deep Blue #0A2463).
+**Decisao**: Tailwind CSS puro com tema escuro customizado. @beautysmile/design-system foi descartado.
 **Alternativas**:
-- Tailwind puro + shadcn/ui — flexivel mas sem identidade visual BS
+- @beautysmile/design-system — considerado inicialmente mas NAO instalado (pacote indisponivel)
 - Material UI — pesado, estilo diferente
-**Consequencias**: 26+ componentes prontos, templates admin (Login, Dashboard, CRUD, List, Detail, Settings). Glass morphism disponivel para diferenciar visao parceiro.
+**Consequencias**: Sidebar com gradiente escuro (primary-950 / #151938 / #05071F), componentes feitos do zero com Tailwind. Mais controle visual, sem dependencia externa de UI.
 
 ### 2026-02-11 Processamento de planilhas hibrido (browser + n8n)
 
@@ -79,6 +80,15 @@ Formato: data, decisao, contexto, alternativas consideradas.
 **Alternativas**:
 - Comissao sobre valor bruto — mais simples mas menos justo
 **Consequencias**: Calculo mais complexo (proporcionalidade por orcamento), mas resultado mais preciso e justo para todas as partes.
+
+### 2026-03-07 Dashboard Admin V2 — estrutura em abas com DRE e Repasse
+
+**Contexto**: Dashboard admin original tinha 6 KPI cards + 2 gráficos + ranking/status em layout único. Sem visibilidade do resultado financeiro (DRE), sem detalhamento de vendas por mês e sem tabelas de orçamentos/procedimentos.
+**Decisao**: Reformular com 4 abas (Resumo, Vendas, Procedimentos, Clínicas). Aba Resumo inclui DRE cascata e card de Repasse do Mês. Novas queries com `Promise.all` para manter performance. Tipos separados por finalidade (`KpisAdminV2` com campos operacionais + financeiros).
+**Alternativas**:
+- Expandir o layout único com seções colapsáveis — visual poluído, não escala para mais dados
+- Nova rota `/admin/dashboard/v2` — duplicação desnecessária
+**Consequencias**: `DashboardClient.tsx` refatorado com estado `activeTab`. Novas funções de query independentes e reutilizáveis. `KpiCard` recebe prop `subtitle` opcional para exibir contagens operacionais (ex: "15 fechados"). DRE e Repasse calculados sobre dados do `resumo_mensal` (base materializados, não tempo real).
 
 ### 2026-02-11 Notificacoes via Telegram
 

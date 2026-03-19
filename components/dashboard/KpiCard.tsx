@@ -5,6 +5,7 @@ type KpiCardProps = {
   value: number;
   format: "currency" | "percent" | "number";
   previousValue?: number;
+  subtitle?: string;
   icon?: "money" | "receive" | "pending" | "alert" | "chart" | "percent";
   accentColor?: "primary" | "accent" | "secondary" | "success" | "warning" | "danger";
   className?: string;
@@ -81,6 +82,7 @@ export function KpiCard({
   value,
   format,
   previousValue,
+  subtitle,
   icon = "money",
   accentColor = "primary",
   className = "",
@@ -108,6 +110,9 @@ export function KpiCard({
           >
             {formatValue(value, format)}
           </p>
+          {subtitle && (
+            <p className="mt-1 text-[11px] text-neutral-500">{subtitle}</p>
+          )}
           {trend != null && (
             <div className="mt-2 flex items-center gap-1.5">
               <span
