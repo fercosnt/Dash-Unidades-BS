@@ -114,7 +114,8 @@ export function DashboardClient({
   useEffect(() => {
     if (mes === initialMes && clinicaId === (initialClinicaId ?? "")) return;
     setLoading(true);
-    const mesParaGraficos = mes === "all" ? initialMes : mes;
+    const now = new Date();
+    const mesParaGraficos = mes === "all" ? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}` : mes;
     Promise.all([
       fetchKpisAdminV2(mes, clinicaId || undefined),
       fetchDreAdmin(mes, clinicaId || undefined),

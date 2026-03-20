@@ -24,15 +24,16 @@ import type {
 
 export async function fetchKpisAdmin(mesReferencia: string): Promise<KpisAdmin> {
   const supabase = await createSupabaseServerClient();
+
+  if (mesReferencia === "all") {
+    return fetchKpisAdminResumoGeral(supabase);
+  }
+
   let query = supabase
     .from("resumo_mensal")
-    .select("faturamento_bruto, total_recebido_mes, total_a_receber_mes, total_inadimplente, valor_liquido, valor_beauty_smile");
-
-  if (mesReferencia !== "all") {
-    const start = firstDayOfMonth(mesReferencia);
-    const end = lastDayOfMonth(mesReferencia);
-    query = query.gte("mes_referencia", start).lte("mes_referencia", end);
-  }
+    .select("faturamento_bruto, total_recebido_mes, total_a_receber_mes, total_inadimplente, valor_liquido, valor_beauty_smile")
+    .gte("mes_referencia", firstDayOfMonth(mesReferencia))
+    .lte("mes_referencia", lastDayOfMonth(mesReferencia));
 
   const { data, error } = await query;
 
@@ -62,8 +63,71 @@ export async function fetchKpisAdmin(mesReferencia: string): Promise<KpisAdmin> 
   };
 }
 
+/** Resumo Geral: agrega todas as clínicas a partir dos dados brutos (sem depender de resumo_mensal calculado). */
+async function fetchKpisAdminResumoGeral(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>): Promise<KpisAdmin> {
+  const { data: orcamentos } = await supabase
+    .from("orcamentos_fechados")
+    .select("valor_total, valor_em_aberto, valor_pago, status");
+
+  let faturamentoBruto = 0;
+  let totalAReceberMes = 0;
+  let totalInadimplente = 0;
+  (orcamentos ?? []).forEach((r: Record<string, unknown>) => {
+    const total = Number(r.valor_total ?? 0);
+    const emAberto = Number(r.valor_em_aberto ?? 0);
+    faturamentoBruto += total;
+    totalAReceberMes += emAberto;
+    const st = String(r.status ?? "");
+    if (st === "em_aberto" || st === "parcial") {
+      totalInadimplente += emAberto;
+    }
+  });
+
+  const formasCartao = ["cartao_credito", "cartao_debito"];
+  const { data: pagamentos } = await supabase.from("pagamentos").select("valor, forma");
+  let totalRecebidoDireto = 0;
+  (pagamentos ?? []).forEach((r: Record<string, unknown>) => {
+    if (formasCartao.includes(String(r.forma ?? ""))) return;
+    totalRecebidoDireto += Number(r.valor ?? 0);
+  });
+
+  const { data: parcelas } = await supabase
+    .from("parcelas_cartao")
+    .select("valor_parcela")
+    .eq("status", "recebido");
+  const totalRecebidoParcelas = (parcelas ?? []).reduce((s, r: Record<string, unknown>) => s + Number(r.valor_parcela ?? 0), 0);
+  const totalRecebidoMes = Math.round((totalRecebidoDireto + totalRecebidoParcelas) * 100) / 100;
+
+  const { data: resumoRows } = await supabase
+    .from("resumo_mensal")
+    .select("valor_liquido, valor_beauty_smile");
+  let valorLiquido = 0;
+  let valorBeautySmile = 0;
+  (resumoRows ?? []).forEach((r: Record<string, unknown>) => {
+    valorLiquido += Number(r.valor_liquido ?? 0);
+    valorBeautySmile += Number(r.valor_beauty_smile ?? 0);
+  });
+
+  return {
+    faturamentoBruto: Math.round(faturamentoBruto * 100) / 100,
+    totalRecebidoMes,
+    totalAReceberMes: Math.round(totalAReceberMes * 100) / 100,
+    totalInadimplente: Math.round(totalInadimplente * 100) / 100,
+    valorLiquido: Math.round(valorLiquido * 100) / 100,
+    valorBeautySmile: Math.round(valorBeautySmile * 100) / 100,
+    resumoCalculado: true,
+  };
+}
+
 export async function fetchRankingClinicas(mesReferencia: string, clinicaId?: string): Promise<RankingClinica[]> {
   const supabase = await createSupabaseServerClient();
+
+  if (mesReferencia === "all") {
+    return fetchRankingClinicasResumoGeral(supabase);
+  }
+
+  const start = firstDayOfMonth(mesReferencia);
+  const end = lastDayOfMonth(mesReferencia);
   let query = supabase
     .from("resumo_mensal")
     .select(`
@@ -74,13 +138,10 @@ export async function fetchRankingClinicas(mesReferencia: string, clinicaId?: st
       valor_clinica,
       clinicas_parceiras(nome, ativo)
     `)
+    .gte("mes_referencia", start)
+    .lte("mes_referencia", end)
     .order("faturamento_bruto", { ascending: false });
 
-  if (mesReferencia !== "all") {
-    const start = firstDayOfMonth(mesReferencia);
-    const end = lastDayOfMonth(mesReferencia);
-    query = query.gte("mes_referencia", start).lte("mes_referencia", end);
-  }
   if (clinicaId) query = query.eq("clinica_id", clinicaId);
 
   const { data, error } = await query;
@@ -109,6 +170,51 @@ export async function fetchRankingClinicas(mesReferencia: string, clinicaId?: st
       ativo: clinica?.ativo ?? true,
     };
   });
+}
+
+/** Ranking no Resumo Geral: faturamento de orcamentos_fechados por clínica + valores de resumo_mensal quando existirem. */
+async function fetchRankingClinicasResumoGeral(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>): Promise<RankingClinica[]> {
+  const { data: clinicas } = await supabase
+    .from("clinicas_parceiras")
+    .select("id, nome, ativo")
+    .order("nome");
+  if (!clinicas?.length) return [];
+
+  const { data: orcamentos } = await supabase
+    .from("orcamentos_fechados")
+    .select("clinica_id, valor_total");
+  const faturamentoByClinica: Record<string, number> = {};
+  clinicas.forEach((c) => { faturamentoByClinica[c.id] = 0; });
+  (orcamentos ?? []).forEach((r: Record<string, unknown>) => {
+    const id = r.clinica_id as string;
+    if (faturamentoByClinica[id] != null) {
+      faturamentoByClinica[id] += Number(r.valor_total ?? 0);
+    }
+  });
+
+  const { data: resumoRows } = await supabase.from("resumo_mensal").select("clinica_id, valor_liquido, valor_beauty_smile, valor_clinica");
+  const resumoByClinica: Record<string, { valorLiquido: number; valorBeautySmile: number; valorClinica: number }> = {};
+  clinicas.forEach((c) => { resumoByClinica[c.id] = { valorLiquido: 0, valorBeautySmile: 0, valorClinica: 0 }; });
+  (resumoRows ?? []).forEach((r: Record<string, unknown>) => {
+    const id = r.clinica_id as string;
+    if (resumoByClinica[id]) {
+      resumoByClinica[id].valorLiquido += Number(r.valor_liquido ?? 0);
+      resumoByClinica[id].valorBeautySmile += Number(r.valor_beauty_smile ?? 0);
+      resumoByClinica[id].valorClinica += Number(r.valor_clinica ?? 0);
+    }
+  });
+
+  return clinicas
+    .map((c) => ({
+      clinicaId: c.id,
+      clinicaNome: c.nome ?? "—",
+      faturamentoBruto: Math.round((faturamentoByClinica[c.id] ?? 0) * 100) / 100,
+      valorLiquido: resumoByClinica[c.id]?.valorLiquido ?? 0,
+      valorBeautySmile: resumoByClinica[c.id]?.valorBeautySmile ?? 0,
+      valorClinica: resumoByClinica[c.id]?.valorClinica ?? 0,
+      ativo: c.ativo ?? true,
+    }))
+    .sort((a, b) => b.faturamentoBruto - a.faturamentoBruto);
 }
 
 export async function fetchStatusUploads(mesReferencia: string, clinicaId?: string): Promise<UploadStatusItem[]> {
