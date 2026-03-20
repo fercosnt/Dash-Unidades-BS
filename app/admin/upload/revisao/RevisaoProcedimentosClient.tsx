@@ -29,6 +29,8 @@ type Props = {
   initialTratamentos: TratamentoPendenteRow[];
   procedimentos: ProcedimentoOption[];
   clinicas: { id: string; nome: string }[];
+  initialFilters?: RevisaoFilters;
+  compact?: boolean;
 };
 
 function formatMonthRef(iso: string) {
@@ -41,10 +43,12 @@ export function RevisaoProcedimentosClient({
   initialTratamentos,
   procedimentos: initialProcedimentos,
   clinicas,
+  initialFilters,
+  compact,
 }: Props) {
   const [tratamentos, setTratamentos] = useState<TratamentoPendenteRow[]>(initialTratamentos);
   const [procedimentos, setProcedimentos] = useState<ProcedimentoOption[]>(initialProcedimentos);
-  const [filters, setFilters] = useState<RevisaoFilters>({});
+  const [filters, setFilters] = useState<RevisaoFilters>(initialFilters ?? {});
   const [loading, setLoading] = useState(false);
   const [modalTratamento, setModalTratamento] = useState<TratamentoPendenteRow | null>(null);
   const [selectedProcedimentoId, setSelectedProcedimentoId] = useState("");
@@ -309,12 +313,14 @@ export function RevisaoProcedimentosClient({
           >
             {autoLinking ? "Vinculando..." : "Vincular automaticamente"}
           </button>
-          <Link
-            href="/admin/upload/historico"
-            className="rounded-md border border-white/30 bg-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-white/20"
-          >
-            Editar planilha e valores
-          </Link>
+          {!compact && (
+            <Link
+              href="/admin/upload/historico"
+              className="rounded-md border border-white/30 bg-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-white/20"
+            >
+              Editar planilha e valores
+            </Link>
+          )}
         </div>
       </div>
 
