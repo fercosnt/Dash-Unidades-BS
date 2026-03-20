@@ -7,14 +7,11 @@ import { NextResponse } from "next/server";
  * Marca como "recebido" todas as parcelas de cartão cujo mês de recebimento já passou
  * (mes_recebimento <= primeiro dia do mês atual). Usado pelo n8n em cron diário.
  *
- * Autenticação: header X-Webhook-Secret ou query ?X-Webhook-Secret (igual a N8N_WEBHOOK_SECRET).
+ * Autenticação: header X-Webhook-Secret (igual a N8N_WEBHOOK_SECRET).
  */
 export async function POST(request: Request) {
   const expected = process.env.N8N_WEBHOOK_SECRET;
-  const secretFromHeader = request.headers.get("X-Webhook-Secret");
-  const url = new URL(request.url);
-  const secretFromQuery = url.searchParams.get("X-Webhook-Secret");
-  const secret = secretFromHeader ?? secretFromQuery;
+  const secret = request.headers.get("X-Webhook-Secret");
 
   if (!expected || secret !== expected) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });

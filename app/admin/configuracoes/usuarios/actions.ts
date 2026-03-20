@@ -2,6 +2,7 @@
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import { revalidatePath } from "next/cache";
 
 export type UsuarioRow = {
@@ -86,6 +87,8 @@ export async function criarUsuario(form: {
   role: "admin" | "parceiro";
   clinica_id?: string;
 }) {
+  await requireAdmin();
+
   if (!form.email.trim()) throw new Error("E-mail é obrigatório.");
   if (!form.senha || form.senha.length < 6)
     throw new Error("Senha deve ter no mínimo 6 caracteres.");
@@ -138,6 +141,8 @@ export async function atualizarUsuario(
     clinica_id?: string;
   }
 ) {
+  await requireAdmin();
+
   if (!form.nome.trim()) throw new Error("Nome é obrigatório.");
   if (form.role === "parceiro" && !form.clinica_id)
     throw new Error("Parceiro precisa estar vinculado a uma clínica.");
@@ -157,6 +162,7 @@ export async function atualizarUsuario(
 }
 
 export async function toggleAtivoUsuario(id: string, ativo: boolean) {
+  await requireAdmin();
   const supabase = createSupabaseAdminClient();
 
   // Atualiza perfil
@@ -179,6 +185,8 @@ export async function toggleAtivoUsuario(id: string, ativo: boolean) {
 }
 
 export async function resetarSenha(id: string, novaSenha: string) {
+  await requireAdmin();
+
   if (!novaSenha || novaSenha.length < 6)
     throw new Error("Senha deve ter no mínimo 6 caracteres.");
 

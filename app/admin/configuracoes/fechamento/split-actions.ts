@@ -1,6 +1,7 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import { revalidatePath } from "next/cache";
 import {
   splitOrcamento,
@@ -74,7 +75,7 @@ export async function splitOrcamentosMes(
   mesReferencia: string,
   clinicaId?: string
 ): Promise<{ processados: number; matched: number; unmatched: number }> {
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
 
   const start = firstDayOfMonth(mesReferencia);
   const end = lastDayOfMonth(mesReferencia);
@@ -144,6 +145,7 @@ export async function splitOrcamentosMes(
   if (uErr) throw new Error(uErr.message);
 
   revalidatePath("/admin/configuracoes/fechamento");
+  revalidatePath("/admin/fechamento");
   return {
     processados: orcamentos.length,
     matched: totalMatched,
@@ -258,7 +260,7 @@ export async function updateItemOrcamento(
     categoria?: string | null;
   }
 ) {
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
 
   const updateData: Record<string, unknown> = { match_status: "manual" };
   if (updates.procedimento_id !== undefined) updateData.procedimento_id = updates.procedimento_id;
@@ -288,6 +290,7 @@ export async function updateItemOrcamento(
   }
 
   revalidatePath("/admin/configuracoes/fechamento");
+  revalidatePath("/admin/fechamento");
 }
 
 /** Adicionar item a um orcamento */
@@ -301,7 +304,7 @@ export async function addItemOrcamento(
     categoria?: string | null;
   }
 ) {
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
 
   // Buscar clinica_id do orcamento
   const { data: orc } = await supabase
@@ -330,11 +333,12 @@ export async function addItemOrcamento(
     .eq("id", orcamentoId);
 
   revalidatePath("/admin/configuracoes/fechamento");
+  revalidatePath("/admin/fechamento");
 }
 
 /** Remover item de um orcamento */
 export async function removeItemOrcamento(itemId: string) {
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
 
   const { data: item } = await supabase
     .from("itens_orcamento")
@@ -356,11 +360,12 @@ export async function removeItemOrcamento(itemId: string) {
   }
 
   revalidatePath("/admin/configuracoes/fechamento");
+  revalidatePath("/admin/fechamento");
 }
 
 /** Deletar itens e re-processar split de um orcamento */
 export async function resplitOrcamento(orcamentoId: string) {
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
 
   // Deletar itens existentes
   await supabase
@@ -410,4 +415,5 @@ export async function resplitOrcamento(orcamentoId: string) {
     .eq("id", orcamentoId);
 
   revalidatePath("/admin/configuracoes/fechamento");
+  revalidatePath("/admin/fechamento");
 }

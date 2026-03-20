@@ -1,6 +1,7 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import { revalidatePath } from "next/cache";
 
 export type ClinicaOption = { id: string; nome: string };
@@ -358,7 +359,7 @@ type UpdateBatchRecordInput = {
 export async function updateBatchRecord(
   input: UpdateBatchRecordInput,
 ): Promise<{ ok: boolean; error?: string }> {
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
 
   const updates: Record<string, unknown> = {};
   if (input.paciente_nome !== undefined) updates.paciente_nome = input.paciente_nome;
@@ -384,6 +385,7 @@ export async function updateBatchRecord(
   if (error) return { ok: false, error: error.message };
 
   revalidatePath("/admin/upload/historico");
+  revalidatePath("/admin/fechamento");
   revalidatePath("/admin/dashboard");
   return { ok: true };
 }
@@ -398,7 +400,7 @@ type CreateBatchRecordInput = {
 export async function createBatchRecord(
   input: CreateBatchRecordInput,
 ): Promise<{ ok: boolean; error?: string; record?: BatchDetailRecord }> {
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
 
   const { data: batch, error: batchError } = await supabase
     .from("upload_batches")
@@ -466,6 +468,7 @@ export async function createBatchRecord(
     .eq("id", input.batchId);
 
   revalidatePath("/admin/upload/historico");
+  revalidatePath("/admin/fechamento");
   revalidatePath("/admin/dashboard");
 
   return { ok: true, record };
@@ -476,7 +479,7 @@ export async function deleteBatchRecord(
   tipo: TipoPlanilha,
   recordId: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
 
   const tableName =
     tipo === "orcamentos_fechados"
@@ -494,6 +497,7 @@ export async function deleteBatchRecord(
   if (error) return { ok: false, error: error.message };
 
   revalidatePath("/admin/upload/historico");
+  revalidatePath("/admin/fechamento");
   revalidatePath("/admin/dashboard");
   return { ok: true };
 }
@@ -506,7 +510,7 @@ export async function updateUploadBatchMonth(
     return { ok: false, error: "Mês inválido. Use o formato AAAA-MM." };
   }
 
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
 
   const { data: batch, error: fetchError } = await supabase
     .from("upload_batches")
@@ -559,6 +563,7 @@ export async function updateUploadBatchMonth(
   }
 
   revalidatePath("/admin/upload/historico");
+  revalidatePath("/admin/fechamento");
   revalidatePath("/admin/upload");
   revalidatePath("/admin/upload/revisao");
 
@@ -566,7 +571,7 @@ export async function updateUploadBatchMonth(
 }
 
 export async function deleteUploadBatch(batchId: string): Promise<{ ok: boolean; error?: string }> {
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
 
   // Remove dependentes na ordem correta (funciona mesmo sem ON DELETE CASCADE no banco)
   const { data: orcamentosIds } = await supabase
@@ -602,6 +607,7 @@ export async function deleteUploadBatch(batchId: string): Promise<{ ok: boolean;
   if (error) return { ok: false, error: error.message };
 
   revalidatePath("/admin/upload/historico");
+  revalidatePath("/admin/fechamento");
   revalidatePath("/admin/upload");
   revalidatePath("/admin/upload/revisao");
 

@@ -1,6 +1,7 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import { revalidatePath } from "next/cache";
 
 export type ConfigFinanceiraRow = {
@@ -42,7 +43,7 @@ export async function salvarConfigFinanceira(form: {
   imposto_nf_percentual: number;
   percentual_beauty_smile: number;
 }) {
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
 
   const hoje = new Date().toISOString().slice(0, 10);
   const ontem = new Date(Date.now() - 864e5).toISOString().slice(0, 10);

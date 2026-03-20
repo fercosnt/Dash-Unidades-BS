@@ -1,5 +1,5 @@
 "use server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import { z } from "zod";
 
 const CriarDebitoSchema = z.object({
@@ -12,7 +12,7 @@ const CriarDebitoSchema = z.object({
 export async function criarDebito(input: unknown) {
   const parsed = CriarDebitoSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Dados inválidos." };
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
   const { error } = await supabase.from("debito_parceiro").insert({
     clinica_id: parsed.data.clinicaId,
     descricao: parsed.data.descricao,
@@ -24,7 +24,7 @@ export async function criarDebito(input: unknown) {
 }
 
 export async function registrarPagamentoDebito(debitoId: string, valor: number) {
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
 
   const { data: debito } = await supabase
     .from("debito_parceiro")

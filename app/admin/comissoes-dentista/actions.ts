@@ -1,5 +1,5 @@
 "use server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import { calcularComissaoDentista } from "@/lib/comissao-dentista-queries";
 
 export { calcularComissaoDentista };
@@ -9,7 +9,7 @@ export async function darBaixaComissaoDentista(
   dataPagamento: string,
   observacao?: string
 ) {
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
   const { error } = await supabase
     .from("comissoes_dentista")
     .update({ status: "pago", data_pagamento: dataPagamento, observacao: observacao ?? null })

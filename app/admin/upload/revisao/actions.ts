@@ -1,6 +1,7 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import { revalidatePath } from "next/cache";
 import { matchProcedimentoPorNome } from "@/lib/utils/match-procedimento";
 
@@ -93,12 +94,12 @@ export async function getProcedimentosAtivos(): Promise<ProcedimentoOption[]> {
     .eq("ativo", true)
     .order("nome");
   if (error) return [];
-  return (data ?? []).map((r) => ({ id: r.id, nome: r.nome }));
+  return (data ?? []).map((r) => ({ id: r.id, nome: r.nome, custo_fixo: r.custo_fixo ?? 0 }));
 }
 
 /** Vincula um tratamento a um procedimento */
 export async function vincularProcedimento(tratamentoId: string, procedimentoId: string): Promise<{ ok: boolean; error?: string }> {
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
   const { data: proc } = await supabase.from("procedimentos").select("nome").eq("id", procedimentoId).single();
   const { error } = await supabase
     .from("tratamentos_executados")
@@ -109,12 +110,13 @@ export async function vincularProcedimento(tratamentoId: string, procedimentoId:
     .eq("id", tratamentoId);
   if (error) return { ok: false, error: error.message };
   revalidatePath("/admin/upload/revisao");
+  revalidatePath("/admin/fechamento");
   return { ok: true };
 }
 
 /** Cria um procedimento rápido e retorna o id */
 export async function criarProcedimentoRapido(nome: string): Promise<{ id: string } | { error: string }> {
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
   const trimmed = nome.trim();
   if (!trimmed) return { error: "Nome é obrigatório" };
   const { data, error } = await supabase
@@ -124,6 +126,7 @@ export async function criarProcedimentoRapido(nome: string): Promise<{ id: strin
     .single();
   if (error) return { error: error.message };
   revalidatePath("/admin/upload/revisao");
+  revalidatePath("/admin/fechamento");
   revalidatePath("/admin/configuracoes/procedimentos");
   return { id: data!.id };
 }
@@ -145,7 +148,7 @@ export async function vincularProcedimentoBulk(
   procedimentoId: string
 ): Promise<{ ok: boolean; vinculados: number; error?: string }> {
   if (tratamentoIds.length === 0) return { ok: true, vinculados: 0 };
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
   const { data: proc } = await supabase.from("procedimentos").select("nome").eq("id", procedimentoId).single();
   let vinculados = 0;
   for (const id of tratamentoIds) {
@@ -156,12 +159,13 @@ export async function vincularProcedimentoBulk(
     if (!error) vinculados++;
   }
   revalidatePath("/admin/upload/revisao");
+  revalidatePath("/admin/fechamento");
   return { ok: true, vinculados };
 }
 
 export async function excluirTratamentos(ids: string[]): Promise<{ ok: boolean; error?: string; excluidos?: number }> {
   if (ids.length === 0) return { ok: false, error: "Nenhum item selecionado." };
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
   const { error, count } = await supabase
     .from("tratamentos_executados")
     .delete({ count: "exact" })
@@ -183,7 +187,7 @@ export type VincularAutomaticamenteResult = {
 export async function vincularAutomaticamente(
   filters: RevisaoFilters = {}
 ): Promise<VincularAutomaticamenteResult> {
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
 
   const [tratamentosRes, procedimentosRes] = await Promise.all([
     (async () => {
@@ -232,6 +236,7 @@ export async function vincularAutomaticamente(
   }
 
   revalidatePath("/admin/upload/revisao");
+  revalidatePath("/admin/fechamento");
   return {
     vinculados: toUpdate.length,
     restantes: pendentes.length - toUpdate.length,

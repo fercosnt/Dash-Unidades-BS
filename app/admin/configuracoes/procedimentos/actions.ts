@@ -1,6 +1,7 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import { revalidatePath } from "next/cache";
 
 export type ProcedimentoRow = {
@@ -52,7 +53,7 @@ export async function criarProcedimento(form: {
   categoria?: string;
   ativo?: boolean;
 }) {
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
   const { error } = await supabase.from("procedimentos").insert({
     nome: form.nome.trim(),
     codigo_clinicorp: form.codigo_clinicorp?.trim() || null,
@@ -76,7 +77,7 @@ export async function atualizarProcedimento(
     ativo?: boolean;
   }
 ) {
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
   const { error } = await supabase
     .from("procedimentos")
     .update({
@@ -93,14 +94,14 @@ export async function atualizarProcedimento(
 }
 
 export async function toggleAtivoProcedimento(id: string, ativo: boolean) {
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
   const { error } = await supabase.from("procedimentos").update({ ativo }).eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/configuracoes/procedimentos");
 }
 
 export async function excluirProcedimento(id: string) {
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
   const { error } = await supabase.from("procedimentos").delete().eq("id", id);
   if (error) {
     if (error.code === "23503") {

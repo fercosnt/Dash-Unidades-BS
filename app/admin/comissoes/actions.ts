@@ -1,8 +1,8 @@
 "use server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth/require-admin";
 
 export async function calcularComissoesMes(mes: string) {
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
 
   const { data: medicos } = await supabase
     .from("medicos_indicadores")
@@ -53,7 +53,7 @@ export async function calcularComissoesMes(mes: string) {
 }
 
 export async function darBaixaComissao(id: string, observacao?: string) {
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
   const { error } = await supabase
     .from("pagamentos_comissao")
     .update({

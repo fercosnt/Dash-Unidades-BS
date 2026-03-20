@@ -19,9 +19,7 @@ const ADMIN_SIDEBAR_GROUPS_BASE = [
     label: "Principal",
     items: [
       { href: "/admin/dashboard", label: "Dashboard" },
-      { href: "/admin/upload", label: "Upload" },
-      { href: "/admin/upload/historico", label: "Histórico de uploads" },
-      { href: "/admin/upload/revisao", label: "Revisão de procedimentos", badge: 0 as number },
+      { href: "/admin/fechamento", label: "Fechamento do Mês", badge: 0 as number },
       { href: "/admin/pagamentos", label: "Projeção de recebimentos" },
       { href: "/admin/inadimplencia", label: "Inadimplência" },
       { href: "/admin/repasses", label: "Repasses" },
@@ -38,7 +36,6 @@ const ADMIN_SIDEBAR_GROUPS_BASE = [
       { href: "/admin/configuracoes/financeiro", label: "Financeiro" },
       { href: "/admin/configuracoes/debitos", label: "Débitos parceiros" },
       { href: "/admin/configuracoes/dentistas", label: "Dentistas" },
-      { href: "/admin/configuracoes/fechamento", label: "Fechamento de Mês" },
       { href: "/admin/configuracoes/usuarios", label: "Usuários" },
     ],
   },
@@ -73,6 +70,9 @@ export default async function AdminLayout({
       countPendentesRevisao(),
     ]);
     const profile = profileResult.data;
+    if (profile?.role !== "admin") {
+      redirect("/parceiro/dashboard");
+    }
     pendentes = pendentesCount;
     const authDisplayName = typeof user?.user_metadata?.display_name === "string"
       ? user.user_metadata.display_name
@@ -86,7 +86,7 @@ export default async function AdminLayout({
   const groups = ADMIN_SIDEBAR_GROUPS_BASE.map((group) => ({
     ...group,
     items: group.items.map((item) =>
-      item.href === "/admin/upload/revisao" ? { ...item, badge: pendentes } : item
+      item.href === "/admin/fechamento" ? { ...item, badge: pendentes } : item
     ),
   }));
 

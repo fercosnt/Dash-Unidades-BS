@@ -11,7 +11,13 @@ import type { ClinicaOption } from "@/components/shared/ClinicaSelect";
 
 type Step = 1 | 2 | 3 | 4;
 
-export function UploadPageClient({ clinicas }: { clinicas: ClinicaOption[] }) {
+type Props = {
+  clinicas: ClinicaOption[];
+  onUploadComplete?: (clinicaId: string, mesReferencia: string) => void;
+  compact?: boolean;
+};
+
+export function UploadPageClient({ clinicas, onUploadComplete, compact }: Props) {
   const router = useRouter();
   const [step, setStep] = useState<Step>(1);
   const [parsedResult, setParsedResult] = useState<ParsedResult | null>(null);
@@ -47,7 +53,7 @@ export function UploadPageClient({ clinicas }: { clinicas: ClinicaOption[] }) {
     await doUpload();
   }
 
-  async function doUpload() {
+  async function doUpload(overrideSubstituir?: boolean) {
     if (!parsedResult || !clinicaId || !mesReferencia) return;
     setShowReplaceConfirm(false);
     setStep(3);
@@ -68,7 +74,7 @@ export function UploadPageClient({ clinicas }: { clinicas: ClinicaOption[] }) {
               tipo: "orcamentos_fechados",
               registros: fechados,
               arquivo_nome: arquivoNome,
-              substituir,
+              substituir: overrideSubstituir ?? substituir,
             }),
           });
           const data = await res.json();
@@ -85,7 +91,7 @@ export function UploadPageClient({ clinicas }: { clinicas: ClinicaOption[] }) {
               tipo: "orcamentos_abertos",
               registros: abertos,
               arquivo_nome: arquivoNome,
-              substituir,
+              substituir: overrideSubstituir ?? substituir,
             }),
           });
           const data = await res.json();
@@ -102,7 +108,7 @@ export function UploadPageClient({ clinicas }: { clinicas: ClinicaOption[] }) {
             tipo: "tratamentos_executados",
             registros: parsedResult.data,
             arquivo_nome: arquivoNome,
-            substituir,
+            substituir: overrideSubstituir ?? substituir,
           }),
         });
         const data = await res.json();
@@ -113,6 +119,7 @@ export function UploadPageClient({ clinicas }: { clinicas: ClinicaOption[] }) {
       setTotalRegistros(total);
       setProgressStatus("success");
       setStep(4);
+      onUploadComplete?.(clinicaId, mesReferencia);
       router.refresh();
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : "Erro ao enviar");
@@ -128,7 +135,7 @@ export function UploadPageClient({ clinicas }: { clinicas: ClinicaOption[] }) {
 
   function handleConfirmReplace() {
     setSubstituir(true);
-    doUpload();
+    doUpload(true);
   }
 
   function handleNewUpload() {
@@ -146,12 +153,14 @@ export function UploadPageClient({ clinicas }: { clinicas: ClinicaOption[] }) {
 
   return (
     <div>
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-white">Upload de planilhas</h2>
-        <p className="mt-1 text-sm text-white/80">
-          Selecione a clínica, o mês, o tipo e o arquivo XLSX. Os dados são processados no navegador antes do envio.
-        </p>
-      </div>
+      {!compact && (
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold text-white">Upload de planilhas</h2>
+          <p className="mt-1 text-sm text-white/80">
+            Selecione a clínica, o mês, o tipo e o arquivo XLSX. Os dados são processados no navegador antes do envio.
+          </p>
+        </div>
+      )}
 
       {step === 1 && (
         <UploadForm
@@ -201,12 +210,14 @@ export function UploadPageClient({ clinicas }: { clinicas: ClinicaOption[] }) {
               >
                 Novo upload
               </button>
-              <Link
-                href="/admin/upload/historico"
-                className="inline-flex items-center text-sm font-medium text-white/90 hover:text-white hover:underline"
-              >
-                Ver histórico de uploads →
-              </Link>
+              {!compact && (
+                <Link
+                  href="/admin/upload/historico"
+                  className="inline-flex items-center text-sm font-medium text-white/90 hover:text-white hover:underline"
+                >
+                  Ver histórico de uploads →
+                </Link>
+              )}
             </div>
           )}
         </div>

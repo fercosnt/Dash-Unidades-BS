@@ -1,5 +1,5 @@
 "use server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import { z } from "zod";
 
 const DarBaixaSchema = z.object({
@@ -16,7 +16,7 @@ export async function darBaixaRepasse(input: unknown) {
   if (!parsed.success) return { ok: false, error: "Dados inválidos." };
   const { clinicaId, mesReferencia, valorRepasse, dataTransferencia, observacao, abatimento } = parsed.data;
 
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
 
   // Insert repasse
   const { data: repasseData, error: repasseError } = await supabase
@@ -71,7 +71,7 @@ export async function darBaixaRepasse(input: unknown) {
 }
 
 export async function desfazerRepasse(id: string) {
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
 
   // Find abatimentos linked to this repasse
   const { data: abatimentos } = await supabase

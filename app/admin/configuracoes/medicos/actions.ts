@@ -1,6 +1,7 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import { revalidatePath } from "next/cache";
 
 export type MedicoRow = {
@@ -74,11 +75,11 @@ export async function criarMedico(form: {
   percentual_comissao: number;
   ativo?: boolean;
 }) {
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
   const { error } = await supabase.from("medicos_indicadores").insert({
     nome: form.nome.trim(),
     clinica_id: form.clinica_id,
-    percentual_comissao: Number(form.percentual_comissao) ?? 10,
+    percentual_comissao: Number(form.percentual_comissao) || 10,
     ativo: form.ativo ?? true,
   });
   if (error) throw new Error(error.message);
@@ -94,13 +95,13 @@ export async function atualizarMedico(
     ativo?: boolean;
   }
 ) {
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
   const { error } = await supabase
     .from("medicos_indicadores")
     .update({
       nome: form.nome.trim(),
       clinica_id: form.clinica_id,
-      percentual_comissao: Number(form.percentual_comissao) ?? 10,
+      percentual_comissao: Number(form.percentual_comissao) || 10,
       ativo: form.ativo ?? true,
     })
     .eq("id", id);
@@ -109,14 +110,14 @@ export async function atualizarMedico(
 }
 
 export async function toggleAtivoMedico(id: string, ativo: boolean) {
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
   const { error } = await supabase.from("medicos_indicadores").update({ ativo }).eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/configuracoes/medicos");
 }
 
 export async function excluirMedico(id: string) {
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
   const { error } = await supabase.from("medicos_indicadores").delete().eq("id", id);
   if (error) {
     if (error.code === "23503") {
