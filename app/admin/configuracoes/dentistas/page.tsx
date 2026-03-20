@@ -2,6 +2,9 @@ import { fetchDentistas } from "@/lib/dentista-queries";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { DentistasClient } from "./DentistasClient";
 
+export const dynamic = "force-dynamic";
+export const maxDuration = 30;
+
 export default async function DentistasPage() {
   const supabase = await createSupabaseServerClient();
   const [dentistas, clinicasRes] = await Promise.all([

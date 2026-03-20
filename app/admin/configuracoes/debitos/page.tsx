@@ -2,6 +2,9 @@ import { fetchDebitosAtivos } from "@/lib/debito-queries";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { DebitosClient } from "./DebitosClient";
 
+export const dynamic = "force-dynamic";
+export const maxDuration = 30;
+
 export default async function DebitosPage() {
   const supabase = await createSupabaseServerClient();
   const [debitos, clinicasRes] = await Promise.all([

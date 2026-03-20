@@ -2,6 +2,9 @@ import { fetchComissoesMedicos } from "@/lib/comissao-medicos-queries";
 import { listarMedicos } from "@/app/admin/configuracoes/medicos/actions";
 import { ComissoesMedicosClient } from "./ComissoesMedicosClient";
 
+export const dynamic = "force-dynamic";
+export const maxDuration = 30;
+
 export default async function ComissoesMedicosPage() {
   const [comissoes, medicos] = await Promise.all([
     fetchComissoesMedicos(),

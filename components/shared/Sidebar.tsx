@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 
 const REDE_LINKS_EXTERNOS = [
   { href: "https://beautysleep.bslabs.com.br/", label: "Beauty Sleep", sublabel: "Protótipo", external: true },
@@ -30,9 +30,37 @@ export function Sidebar({
   const isAdmin = variant === "admin";
   const [collapsed, setCollapsed] = useState(false);
   const [redeOpen, setRedeOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const redeRef = useRef<HTMLDivElement>(null);
 
   const redeLinks = REDE_LINKS_EXTERNOS;
+
+  // Detect mobile (<768px) and auto-collapse
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 767px)");
+    const onChange = (e: MediaQueryListEvent | MediaQueryList) => {
+      setIsMobile(e.matches);
+      if (e.matches) {
+        setCollapsed(true);
+        setMobileOpen(false);
+      }
+    };
+    onChange(mql);
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
+
+  // Close sidebar when route changes on mobile
+  useEffect(() => {
+    if (isMobile) {
+      setMobileOpen(false);
+    }
+  }, [pathname, isMobile]);
+
+  const closeMobile = useCallback(() => {
+    if (isMobile) setMobileOpen(false);
+  }, [isMobile]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -57,23 +85,55 @@ export function Sidebar({
     return !hasBetterMatch;
   }
 
+  // On mobile: sidebar is hidden (collapsed) and opens as fixed overlay
+  // On desktop: sidebar is inline with collapse toggle
+  const showExpanded = isMobile ? mobileOpen : !collapsed;
+
   return (
-    <aside
-      className={`relative shrink-0 flex flex-col bg-gradient-to-b from-primary-950 via-[#151938] to-[#05071F] text-white shadow-[8px_0_24px_rgba(3,7,18,0.75)] ${
-        collapsed ? "w-16" : "w-60"
-      } transition-all duration-300 ease-in-out print:hidden ${className}`}
-    >
+    <>
+      {/* Mobile hamburger toggle */}
+      {isMobile && !mobileOpen && (
+        <button
+          type="button"
+          aria-label="Abrir menu"
+          onClick={() => setMobileOpen(true)}
+          className="fixed top-4 left-4 z-[60] flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-b from-primary-950 to-[#151938] text-white shadow-lg print:hidden"
+        >
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+          </svg>
+        </button>
+      )}
+
+      {/* Mobile backdrop overlay */}
+      {isMobile && mobileOpen && (
+        <div
+          className="fixed inset-0 z-[69] bg-black/60 backdrop-blur-sm print:hidden"
+          onClick={() => setMobileOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside
+        className={`${
+          isMobile
+            ? `fixed inset-y-0 left-0 z-[70] w-60 transform transition-transform duration-300 ease-in-out ${
+                mobileOpen ? "translate-x-0" : "-translate-x-full"
+              }`
+            : `relative shrink-0 ${collapsed ? "w-16" : "w-60"} transition-all duration-300 ease-in-out`
+        } flex flex-col bg-gradient-to-b from-primary-950 via-[#151938] to-[#05071F] text-white shadow-[8px_0_24px_rgba(3,7,18,0.75)] print:hidden ${className}`}
+      >
       <div
         ref={redeRef}
         className={`relative flex shrink-0 flex-col pt-5 pb-2 ${
-          collapsed ? "items-center gap-3 px-2" : "px-3"
+          !showExpanded ? "items-center gap-3 px-2" : "px-3"
         }`}
       >
         <button
           type="button"
           onClick={() => setRedeOpen((v) => !v)}
           className={`flex items-center gap-3 rounded-xl outline-none focus:outline-none ${
-            collapsed ? "justify-center" : ""
+            !showExpanded ? "justify-center" : ""
           }`}
           aria-expanded={redeOpen}
           aria-haspopup="true"
@@ -92,7 +152,7 @@ export function Sidebar({
               <path d="M158.89,155.78c26.94,2,62.23,18.13,74.49,43.37,11.75,24.19-8.11,44.32-32.46,32.46-22.83-11.12-39.12-42.87-42.3-67.24-.24-1.8-1.52-8.33.27-8.59Z" />
             </svg>
           </div>
-          {!collapsed && (
+          {showExpanded && (
             <div className="flex flex-col items-start text-left">
               <p className="text-sm font-semibold leading-tight text-white">
                 {homeLabel}
@@ -137,38 +197,39 @@ export function Sidebar({
           </div>
         )}
       </div>
-      <div className={`flex shrink-0 items-center ${collapsed ? "justify-center pb-3 px-2" : "justify-end pb-3 pr-3"}`}>
-        <button
-          type="button"
-          aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
-          onClick={() => setCollapsed((v) => !v)}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold bg-white/10 text-white/80 border border-white/25 shadow-[0_0_0_1px_rgba(15,23,42,0.6)] transition-colors hover:bg-white/20 hover:text-white"
-        >
-          {collapsed ? (
-            <svg
-              className="h-3.5 w-3.5"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={2}
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+      <div className={`flex shrink-0 items-center ${(!showExpanded && !isMobile) ? "justify-center pb-3 px-2" : "justify-end pb-3 pr-3"}`}>
+        {isMobile ? (
+          <button
+            type="button"
+            aria-label="Fechar menu"
+            onClick={() => setMobileOpen(false)}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold bg-white/10 text-white/80 border border-white/25 shadow-[0_0_0_1px_rgba(15,23,42,0.6)] transition-colors hover:bg-white/20 hover:text-white"
+          >
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
-          ) : (
-            <svg
-              className="h-3.5 w-3.5"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={2}
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-          )}
-        </button>
+          </button>
+        ) : (
+          <button
+            type="button"
+            aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
+            onClick={() => setCollapsed((v) => !v)}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold bg-white/10 text-white/80 border border-white/25 shadow-[0_0_0_1px_rgba(15,23,42,0.6)] transition-colors hover:bg-white/20 hover:text-white"
+          >
+            {collapsed ? (
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            ) : (
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            )}
+          </button>
+        )}
       </div>
 
-      {!collapsed && (
+      {showExpanded && (
         <>
           <nav className="flex-1 overflow-y-auto px-3 py-4 scrollbar-light">
             {groups.map((group) => (
@@ -184,6 +245,7 @@ export function Sidebar({
                       <li key={item.href}>
                         <Link
                           href={item.href}
+                          onClick={closeMobile}
                           className={`flex items-center justify-between rounded-xl px-3 py-2 text-sm font-medium transition-all duration-150 ${
                             isActive
                               ? "bg-white/20 text-white shadow-[0_0_0_1px_rgba(255,255,255,0.35)]"
@@ -209,5 +271,6 @@ export function Sidebar({
         </>
       )}
     </aside>
+    </>
   );
 }
