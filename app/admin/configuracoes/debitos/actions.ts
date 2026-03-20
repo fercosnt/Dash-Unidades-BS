@@ -23,6 +23,46 @@ export async function criarDebito(input: unknown) {
   return { ok: true };
 }
 
+const EditarDebitoSchema = z.object({
+  debitoId: z.string().uuid(),
+  descricao: z.string().min(1).optional(),
+  valorTotal: z.number().positive("Valor deve ser positivo"),
+});
+
+export async function editarDebito(input: unknown) {
+  const parsed = EditarDebitoSchema.safeParse(input);
+  if (!parsed.success) return { ok: false as const, error: "Dados inválidos." };
+  const { supabase } = await requireAdmin();
+
+  const { data: debito } = await supabase
+    .from("debito_parceiro")
+    .select("valor_pago")
+    .eq("id", parsed.data.debitoId)
+    .maybeSingle();
+
+  if (!debito) return { ok: false as const, error: "Débito não encontrado." };
+
+  const valorPago = Number((debito as Record<string, unknown>).valor_pago);
+  if (parsed.data.valorTotal < valorPago) {
+    return { ok: false as const, error: `Valor total não pode ser menor que o já pago (${valorPago.toFixed(2)}).` };
+  }
+
+  const update: Record<string, unknown> = { valor_total: parsed.data.valorTotal };
+  if (parsed.data.descricao) update.descricao = parsed.data.descricao;
+
+  if (parsed.data.valorTotal <= valorPago && valorPago > 0) {
+    update.status = "quitado";
+  }
+
+  const { error } = await supabase
+    .from("debito_parceiro")
+    .update(update)
+    .eq("id", parsed.data.debitoId);
+
+  if (error) return { ok: false as const, error: error.message };
+  return { ok: true as const };
+}
+
 const PagamentoDebitoSchema = z.object({
   debitoId: z.string().uuid("ID de débito inválido"),
   valor: z.number().positive("Valor deve ser positivo"),

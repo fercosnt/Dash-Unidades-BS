@@ -108,6 +108,16 @@ Auditoria completa com 6 agentes especializados — 52 issues identificados, tod
 - `eslint.config.mjs` — ESLint 9 flat config (Next.js + TypeScript + React Hooks)
 - CLAUDE.md corrigido: comissão médica é sobre valor bruto
 
+### Auditoria Visual + Correções (2026-03-20)
+
+Auditoria visual completa via Chrome em produção (16 páginas, zero erros JS no console).
+
+**Correções aplicadas:**
+- 5 rotas com 503 no prefetch RSC: `dynamic = 'force-dynamic'`, `maxDuration = 30` e `loading.tsx` com skeleton
+- Sidebar mobile: auto-colapsa em <768px, backdrop, hamburger, fecha ao navegar
+- `seed.sql` com email real do admin (placeholder removido no Supabase produção)
+- Edição de débito parceiro: botão "Editar" + modal para alterar valor total e descrição
+
 ---
 
 ## Pendente — Outros

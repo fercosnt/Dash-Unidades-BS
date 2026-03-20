@@ -110,6 +110,15 @@ Formato: data, decisao, contexto, alternativas consideradas.
 - Corrigir incrementalmente — mais seguro mas mais lento
 **Consequencias**: Projeto significativamente mais seguro e robusto. `requireAdmin()` como padrao para todo Server Action admin. Error handling previne corrupcao de dados financeiros. ESLint configurado para CI.
 
+### 2026-03-20 Edição de débito parceiro pelo admin
+
+**Contexto**: Admin precisava corrigir o valor total de um débito já cadastrado (ex: renegociação, erro de digitação), mas a tela de configurações/débitos só permitia criar e registrar pagamentos.
+**Decisão**: Adicionar server action `editarDebito` com validação Zod + modal de edição no `DebitosClient.tsx`. Validação impede que o novo valor total seja menor que o já pago.
+**Alternativas**:
+- Excluir e recriar o débito — perderia histórico de abatimentos
+- Edição inline direto na tabela — UX inconsistente com o padrão de modais do projeto
+**Consequências**: Admin pode alterar descrição e valor total de qualquer débito ativo. Saldo restante recalculado automaticamente. Se novo valor ≤ valor pago, débito é marcado como quitado.
+
 ### 2026-02-11 Notificacoes via Telegram
 
 **Contexto**: Canal de comunicacao para alertas do sistema.

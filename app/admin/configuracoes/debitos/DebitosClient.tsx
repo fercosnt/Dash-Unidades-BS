@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { criarDebito, registrarPagamentoDebito } from "./actions";
+import { criarDebito, editarDebito, registrarPagamentoDebito } from "./actions";
 import { fetchAbatimentosPorDebito } from "@/lib/debito-queries";
 import type { DebitoItem, AbatimentoHistoricoItem } from "@/lib/debito-queries";
 
@@ -46,7 +46,55 @@ export function DebitosClient({
   const [pagandoSaving, setPagandoSaving] = useState(false);
   const [pagamentoMsg, setPagamentoMsg] = useState<string | null>(null);
 
+  // Edição modal
+  const [editDebitoId, setEditDebitoId] = useState<string | null>(null);
+  const [editDescricao, setEditDescricao] = useState("");
+  const [editValorTotal, setEditValorTotal] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+  const [editMsg, setEditMsg] = useState<string | null>(null);
+
+  const debitoEdit = editDebitoId ? debitos.find((d) => d.id === editDebitoId) : null;
   const debitoModal = pagamentoDebitoId ? debitos.find((d) => d.id === pagamentoDebitoId) : null;
+
+  function abrirEdicao(d: DebitoLocal) {
+    setEditDebitoId(d.id);
+    setEditDescricao(d.descricao);
+    setEditValorTotal(d.valorTotal.toFixed(2));
+    setEditMsg(null);
+  }
+
+  async function handleEditar() {
+    if (!editDebitoId) return;
+    const valor = Number(editValorTotal.replace(",", "."));
+    if (valor <= 0) return;
+
+    setEditSaving(true);
+    const result = await editarDebito({
+      debitoId: editDebitoId,
+      descricao: editDescricao,
+      valorTotal: valor,
+    });
+    setEditSaving(false);
+
+    if (result.ok) {
+      setDebitos((prev) =>
+        prev.map((d) => {
+          if (d.id !== editDebitoId) return d;
+          return {
+            ...d,
+            descricao: editDescricao,
+            valorTotal: valor,
+            saldoRestante: valor - d.valorPago,
+          };
+        })
+      );
+      setEditDebitoId(null);
+      setMsg({ tipo: "ok", texto: "Débito atualizado com sucesso." });
+      setTimeout(() => setMsg(null), 4000);
+    } else {
+      setEditMsg(result.error ?? "Erro ao atualizar.");
+    }
+  }
 
   function abrirPagamento(d: DebitoLocal) {
     setPagamentoDebitoId(d.id);
@@ -241,13 +289,22 @@ export function DebitosClient({
                     <p className="text-sm font-semibold text-neutral-900">{d.clinicaNome}</p>
                     <p className="text-xs text-neutral-500 mt-0.5">{d.descricao}</p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => abrirPagamento(d)}
-                    className="rounded-md bg-primary-600 px-3 py-1 text-xs font-medium text-white hover:opacity-90"
-                  >
-                    Registrar pagamento
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => abrirEdicao(d)}
+                      className="rounded-md border border-neutral-300 px-3 py-1 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => abrirPagamento(d)}
+                      className="rounded-md bg-primary-600 px-3 py-1 text-xs font-medium text-white hover:opacity-90"
+                    >
+                      Registrar pagamento
+                    </button>
+                  </div>
                 </div>
                 <div className="mt-3 flex gap-6 text-xs text-neutral-600">
                   <span>
@@ -321,6 +378,72 @@ export function DebitosClient({
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Modal Editar Débito */}
+      {debitoEdit && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => !editSaving && setEditDebitoId(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold text-neutral-900">Editar débito</h3>
+            <p className="text-sm text-neutral-600">
+              {debitoEdit.clinicaNome}
+            </p>
+            {editMsg && (
+              <p className="rounded bg-red-50 px-3 py-2 text-sm text-red-800">{editMsg}</p>
+            )}
+            <label className="block">
+              <span className="text-xs font-medium text-neutral-700">Descrição</span>
+              <input
+                type="text"
+                value={editDescricao}
+                onChange={(e) => setEditDescricao(e.target.value)}
+                className="mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs font-medium text-neutral-700">
+                Valor total (R$) — Já pago: {formatCurrency(debitoEdit.valorPago)}
+              </span>
+              <input
+                type="number"
+                step="0.01"
+                min={debitoEdit.valorPago || 0.01}
+                value={editValorTotal}
+                onChange={(e) => setEditValorTotal(e.target.value)}
+                className="mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+              />
+            </label>
+            {Number(editValorTotal.replace(",", ".")) < debitoEdit.valorPago && debitoEdit.valorPago > 0 && (
+              <p className="rounded bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                Valor não pode ser menor que o já pago ({formatCurrency(debitoEdit.valorPago)}).
+              </p>
+            )}
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setEditDebitoId(null)}
+                disabled={editSaving}
+                className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleEditar}
+                disabled={editSaving || !editDescricao || !editValorTotal || Number(editValorTotal.replace(",", ".")) <= 0}
+                className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+              >
+                {editSaving ? "Salvando..." : "Salvar"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
