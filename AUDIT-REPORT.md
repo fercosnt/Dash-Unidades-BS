@@ -278,29 +278,29 @@ Nenhum arquivo `error.tsx` ou `loading.tsx` em todo o `app/`. Se um Server Compo
 
 ### ANTES DO DEPLOY (Bloqueantes)
 
-| # | Acao | Esforco | Impacto |
-|---|------|---------|---------|
-| 1 | Criar `requireAdmin()` e adicionar em todos admin actions | 2h | Seguranca CRITICO |
-| 2 | Adicionar role check no `AdminLayout` | 5min | Seguranca CRITICO |
-| 3 | Fix bug `custo_fixo` em `getProcedimentosAtivos` | 5min | Bug dados |
-| 4 | Fix race condition `handleConfirmReplace` | 10min | Bug upload |
-| 5 | Fix `Number() ?? fallback` → `Number() \|\| fallback` | 10min | Bug NaN |
-| 6 | Remover secret de query params em webhook | 5min | Seguranca |
-| 7 | Adicionar redirect no parceiro layout quando user null | 5min | Seguranca |
+| # | Acao | Status |
+|---|------|--------|
+| 1 | Criar `requireAdmin()` e adicionar em todos admin actions | ✅ `ea08b37` |
+| 2 | Adicionar role check no `AdminLayout` | ✅ `ea08b37` |
+| 3 | Fix bug `custo_fixo` em `getProcedimentosAtivos` | ✅ `ea08b37` |
+| 4 | Fix race condition `handleConfirmReplace` | ✅ `ea08b37` |
+| 5 | Fix `Number() ?? fallback` → `Number() \|\| fallback` | ✅ `ea08b37` |
+| 6 | Remover secret de query params em webhook | ✅ `ea08b37` |
+| 7 | Adicionar redirect no parceiro layout quando user null | ✅ `ea08b37` |
 
 ### POS-DEPLOY (Importantes)
 
-| # | Acao | Esforco | Impacto |
-|---|------|---------|---------|
-| 8 | Gerar `types/database.types.ts` | 30min | Type safety |
-| 9 | Checar `{ error }` em todas as queries Supabase | 3h | Erros silenciosos |
-| 10 | Adicionar `console.error` em todos os catch blocks | 1h | Observabilidade |
-| 11 | Converter queries N+1 para bulk | 1h | Performance |
-| 12 | Adicionar Zod em todas as mutations | 2h | Validacao |
-| 13 | Centralizar `firstDayOfMonth` e `formatCurrency` | 1h | DRY |
-| 14 | Configurar ESLint | 30min | Qualidade |
-| 15 | Fix comissao medica (bruto → liquido) | 1h | Regra de negocio |
-| 16 | Aplicar migrations 011-014 no Supabase remoto | 15min | Schema sync |
+| # | Acao | Status |
+|---|------|--------|
+| 8 | Gerar `types/database.types.ts` | ✅ `3160c4a` |
+| 9 | Checar `{ error }` em todas as queries Supabase | ✅ `3160c4a` |
+| 10 | Adicionar `console.error` em todos os catch blocks | ✅ `3160c4a` |
+| 11 | Converter queries N+1 para bulk | ✅ `3160c4a` |
+| 12 | Adicionar Zod em todas as mutations | ✅ `3160c4a` |
+| 13 | Centralizar `firstDayOfMonth` e `formatCurrency` | ✅ `3160c4a` |
+| 14 | Configurar ESLint | ✅ `3160c4a` |
+| 15 | Comissao medica sobre valor bruto | ✅ Documentacao corrigida (era regra correta, CLAUDE.md estava errado) |
+| 16 | Aplicar migrations 011-014 no Supabase remoto | ⏳ Manual via Supabase Studio |
 
 ### FUTURO (Nice to have)
 

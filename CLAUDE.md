@@ -115,9 +115,13 @@ npm run test:e2e  # Playwright
 | `lib/dashboard-queries.ts` | Queries Supabase para dashboards |
 | `lib/utils/xlsx-parser.ts` | Parse de XLSX com ExcelJS |
 | `lib/utils/xlsx-transforms.ts` | Transformações dos dados brutos |
-| `supabase/migrations/` | 6 migrations SQL (schema + RLS + colunas + RPCs) |
+| `lib/auth/require-admin.ts` | Guard de autorização admin para Server Actions |
+| `lib/utils/date-helpers.ts` | Helpers centralizados de data (firstDayOfMonth, lastDayOfMonth) |
+| `lib/utils/formatting.ts` | Formatação centralizada (formatCurrency, parseCurrencyBR, etc.) |
+| `supabase/migrations/` | 14 migrations SQL (schema + RLS + colunas + RPCs) |
 | `supabase/seed.sql` | Dados de teste (admin, parceiro, clínica, etc.) |
-| `types/database.types.ts` | Types gerados do Supabase |
+| `types/database.types.ts` | Types gerados do Supabase (19 tabelas, 2 views, 5 RPCs, 6 enums) |
+| `eslint.config.mjs` | ESLint 9 flat config (Next.js + TypeScript + React Hooks) |
 | `ROADMAP.md` | O que foi feito e o que falta |
 | `decisions.md` | Log de decisões arquiteturais |
 | `docs/framework-original.md` | Spec completa original do sistema |

@@ -53,7 +53,7 @@
 
 ---
 
-## Em Andamento — V3 Melhorias Dashboard
+### ✅ V3 — Melhorias Dashboard (2026-03-11)
 
 Plano completo: `docs/plans/2026-03-10-melhorias-dashboard-v3.md`
 
@@ -61,13 +61,52 @@ Plano completo: `docs/plans/2026-03-10-melhorias-dashboard-v3.md`
 |---|---------|--------|
 | 1 | Filtros: meses 2026 + seletor de unidade + auto-recálculo | ✅ `59bd0a1` |
 | 2 | Excluir tratamentos na revisão de procedimentos | ✅ `3a0e706` |
-| 3 | Baixa de repasse mensal | 🔲 pendente (requer `007_repasses.sql`) |
-| 4 | Saldo devedor por unidade (Franquia Fee) | 🔲 pendente (requer `007_debito.sql`) |
-| 5 | Comissão da dentista — tiers + baixa + DRE | 🔲 pendente (requer `009_comissoes_dentista.sql`) |
-| 6 | Página de comissões médicos indicadores | 🔲 pendente (requer `008_pagamentos_comissao.sql`) |
-| 7 | Aba Vendas: tratamentos vendidos | 🔲 pendente |
-| 8 | Exportar PDF | 🔲 pendente |
-| 9 | Gráfico evolução por tratamento | 🔲 pendente |
+| 3 | Baixa de repasse mensal | ✅ `44ed721` |
+| 4 | Saldo devedor por unidade (Franquia Fee) | ✅ `ed9476e` |
+| 5 | Comissão da dentista — tiers + baixa + DRE | ✅ `3b7edb1` |
+| 6 | Página de comissões médicos indicadores | ✅ `462c4ce` |
+| 7 | Aba Vendas: tratamentos vendidos | ✅ `98c3c6a` |
+| 8 | Exportar PDF | ✅ `2baa71d` |
+| 9 | Gráfico evolução por tratamento | ✅ `e626e4f` |
+
+### ✅ Testes abrangentes de cálculos financeiros (2026-03-19)
+
+101 testes unitários cobrindo todos os módulos de cálculo:
+- `lib/utils/split-orcamento.test.ts` — 14 testes (distribuição proporcional, centavos, edge cases)
+- `lib/utils/match-procedimento.test.ts` — 14 testes (match exato, prefixo, acentos, migration 014)
+- `lib/utils/calculos-financeiros.test.ts` — 53 testes (parcelas, resumo 60/40, comissões, migration 014)
+- `lib/utils/formatting.test.ts` — 12 testes (moeda BR, datas, nomes)
+- `lib/utils/xlsx-parser.test.ts` — 5 testes (parse XLSX)
+- `lib/utils/xlsx-transforms.test.ts` — 3 testes (transforms orçamentos/tratamentos)
+
+Bug corrigido: `comissao-dentista-queries.ts` — valorComissao sem arredondamento (floating point)
+
+### ✅ Auditoria de Segurança e Qualidade (2026-03-19)
+
+Auditoria completa com 6 agentes especializados — 52 issues identificados, todos bloqueantes e importantes corrigidos.
+
+**Segurança (CRÍTICO):**
+- `lib/auth/require-admin.ts` — guard compartilhado para admin Server Actions
+- `requireAdmin()` adicionado em ~40 funções de 13 arquivos de actions
+- Role check no `AdminLayout` — parceiro não acessa mais `/admin/*`
+- Redirect no parceiro layout quando sessão expira
+- Webhook secret aceito apenas via header (removido query param)
+
+**Bugs corrigidos:**
+- `custo_fixo` removido do `.map()` em `getProcedimentosAtivos` (KPIs mostravam R$ 0)
+- Race condition em `handleConfirmReplace` (substituição nunca funcionava)
+- `Number() ?? fallback` → `|| fallback` (NaN não é null)
+
+**Qualidade:**
+- `types/database.types.ts` — 1.221 linhas (19 tabelas, 2 views, 5 RPCs, 6 enums)
+- Error handling em ~30 queries Supabase — `resumo-calculo.ts` aborta em vez de gravar zeros
+- `console.error` em 14 catch blocks vazios nos API routes
+- Zod validation em 7 arquivos de admin actions
+- N+1 → bulk: `vincularProcedimentoBulk`, `vincularAutomaticamente`, `calcularComissoesMes`
+- `lib/utils/date-helpers.ts` — centralizado (removido de 8 arquivos)
+- `formatCurrency` centralizado de `lib/utils/formatting.ts` (removido de 13 componentes)
+- `eslint.config.mjs` — ESLint 9 flat config (Next.js + TypeScript + React Hooks)
+- CLAUDE.md corrigido: comissão médica é sobre valor bruto
 
 ---
 
@@ -76,7 +115,6 @@ Plano completo: `docs/plans/2026-03-10-melhorias-dashboard-v3.md`
 ### Testes
 - Validação RLS com usuário parceiro real
 - Testes E2E com Playwright (`npm run test:e2e`)
-- Validação dos cálculos financeiros vs planilha Excel manual
 
 ### Operacional
 - Notificações Telegram via WF4 (bot n8n)
