@@ -30,7 +30,7 @@ export function Header({ userName, userRole }: HeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-10 flex h-16 items-center justify-end px-6 bg-[#05071F]/96 backdrop-blur-md shadow-[0_10px_30px_rgba(3,7,18,0.85)] rounded-bl-3xl rounded-br-3xl">
+    <header className="sticky top-0 z-10 flex h-16 items-center justify-end px-6 bg-[#05071F]/96 backdrop-blur-md shadow-[0_10px_30px_rgba(3,7,18,0.85)] rounded-bl-3xl rounded-br-3xl print:hidden">
       <div className="flex items-center gap-3">
         <div className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold bg-white text-primary-600">
           {getInitials(userName)}

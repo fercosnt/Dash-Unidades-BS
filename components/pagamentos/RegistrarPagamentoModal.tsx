@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatCurrency } from "@/lib/utils/formatting";
 
 type Props = {
   orcamentoId: string;
@@ -18,10 +19,6 @@ const FORMAS = [
   { value: "cartao_debito", label: "Cartão débito" },
   { value: "cartao_credito", label: "Cartão crédito" },
 ] as const;
-
-function formatCurrency(v: number): string {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
-}
 
 export function RegistrarPagamentoModal({
   orcamentoId,

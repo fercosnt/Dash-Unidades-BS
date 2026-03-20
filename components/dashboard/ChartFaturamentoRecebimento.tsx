@@ -13,6 +13,7 @@ import {
   Text as RechartsText,
 } from "recharts";
 import type { ChartDataAdminPoint } from "@/types/dashboard.types";
+import { formatCurrency } from "@/lib/utils/formatting";
 import { CHART_MARGIN_BOTTOM, CHART_MARGIN_LEFT, CHART_MARGIN_RIGHT, CHART_X_LABEL_AREA_HEIGHT, CHART_X_PADDING_LEFT, CHART_X_PADDING_RIGHT_BAR, CHART_Y_AXIS_WIDTH } from "./chartConstants";
 
 const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -73,10 +74,6 @@ const MIN_BAR_HEIGHT_PX = 14; // altura mínima para qualquer barra quando valor
 function formatMonth(iso: string): string {
   const [y, m] = iso.split("-");
   return `${MONTHS[Number(m) - 1]}/${y.slice(2)}`;
-}
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 }
 
 /** Corta meses vazios à esquerda; mantém a partir do primeiro mês com dado. */
@@ -146,6 +143,7 @@ function BarShapeWithMinHeight(props: BarShapeProps) {
     <rect x={x} y={y2} width={width} height={h} fill={fill} rx={radius[0]} ry={radius[1]} />
   );
 }
+
 
 type ChartFaturamentoRecebimentoProps = {
   data: ChartDataAdminPoint[];

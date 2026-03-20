@@ -21,6 +21,7 @@ type FormState = {
   nome: string;
   codigo_clinicorp: string;
   custo_fixo: string;
+  valor_tabela: string;
   categoria: string;
   ativo: boolean;
 };
@@ -29,6 +30,7 @@ const emptyForm: FormState = {
   nome: "",
   codigo_clinicorp: "",
   custo_fixo: "0",
+  valor_tabela: "0",
   categoria: "",
   ativo: true,
 };
@@ -38,6 +40,7 @@ function rowToForm(r: ProcedimentoRow): FormState {
     nome: r.nome,
     codigo_clinicorp: r.codigo_clinicorp ?? "",
     custo_fixo: String(r.custo_fixo),
+    valor_tabela: String(r.valor_tabela),
     categoria: r.categoria ?? "",
     ativo: r.ativo,
   };
@@ -108,13 +111,16 @@ export function ProcedimentosClient({
     setSaving(true);
     try {
       const custo = parseFloat(form.custo_fixo);
+      const valorTab = parseFloat(form.valor_tabela);
       if (!form.nome.trim()) throw new Error("Nome é obrigatório.");
       if (isNaN(custo) || custo < 0) throw new Error("Custo fixo deve ser ≥ 0.");
+      if (isNaN(valorTab) || valorTab < 0) throw new Error("Valor tabela deve ser ≥ 0.");
       if (editing) {
         await atualizarProcedimento(editing.id, {
           nome: form.nome,
           codigo_clinicorp: form.codigo_clinicorp || undefined,
           custo_fixo: custo,
+          valor_tabela: valorTab,
           categoria: form.categoria || undefined,
           ativo: form.ativo,
         });
@@ -123,6 +129,7 @@ export function ProcedimentosClient({
           nome: form.nome,
           codigo_clinicorp: form.codigo_clinicorp || undefined,
           custo_fixo: custo,
+          valor_tabela: valorTab,
           categoria: form.categoria || undefined,
           ativo: form.ativo,
         });
@@ -231,6 +238,7 @@ export function ProcedimentosClient({
               <th className="px-4 py-3 text-left text-xs font-medium uppercase text-neutral-600">Nome</th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase text-neutral-600">Código Clinicorp</th>
               <th className="px-4 py-3 text-right text-xs font-medium uppercase text-neutral-600">Custo fixo</th>
+              <th className="px-4 py-3 text-right text-xs font-medium uppercase text-neutral-600">Valor tabela</th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase text-neutral-600">Categoria</th>
               <th className="px-4 py-3 text-center text-xs font-medium uppercase text-neutral-600">Status</th>
               <th className="px-4 py-3 text-right text-xs font-medium uppercase text-neutral-600">Ações</th>
@@ -239,7 +247,7 @@ export function ProcedimentosClient({
           <tbody className="divide-y divide-neutral-200">
             {procedimentos.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-neutral-500">Nenhum procedimento encontrado.</td>
+                <td colSpan={7} className="px-4 py-8 text-center text-neutral-500">Nenhum procedimento encontrado.</td>
               </tr>
             ) : (
               procedimentos.map((p) => (
@@ -247,6 +255,7 @@ export function ProcedimentosClient({
                   <td className="px-4 py-3 text-sm font-medium text-neutral-900">{p.nome}</td>
                   <td className="px-4 py-3 text-sm text-neutral-600">{p.codigo_clinicorp ?? "—"}</td>
                   <td className="px-4 py-3 text-right text-sm text-neutral-600">{formatMoney(p.custo_fixo)}</td>
+                  <td className="px-4 py-3 text-right text-sm text-neutral-600">{formatMoney(p.valor_tabela)}</td>
                   <td className="px-4 py-3 text-sm text-neutral-600">{p.categoria ?? "—"}</td>
                   <td className="px-4 py-3 text-center">
                     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${p.ativo ? "bg-green-100 text-green-800" : "bg-neutral-100 text-neutral-600"}`}>
@@ -280,9 +289,15 @@ export function ProcedimentosClient({
                 <label className="block text-sm font-medium text-neutral-700 mb-1">Código Clinicorp</label>
                 <input type="text" value={form.codigo_clinicorp} onChange={(e) => setForm((f) => ({ ...f, codigo_clinicorp: e.target.value }))} className="w-full rounded-md border border-neutral-300 px-3 py-2 text-neutral-900 focus:border-primary-600 focus:ring-1 focus:ring-primary-600" />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1">Custo fixo (R$) *</label>
-                <input type="number" min={0} step={0.01} value={form.custo_fixo} onChange={(e) => setForm((f) => ({ ...f, custo_fixo: e.target.value }))} className="w-full rounded-md border border-neutral-300 px-3 py-2 text-neutral-900 focus:border-primary-600 focus:ring-1 focus:ring-primary-600" />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Custo fixo (R$) *</label>
+                  <input type="number" min={0} step={0.01} value={form.custo_fixo} onChange={(e) => setForm((f) => ({ ...f, custo_fixo: e.target.value }))} className="w-full rounded-md border border-neutral-300 px-3 py-2 text-neutral-900 focus:border-primary-600 focus:ring-1 focus:ring-primary-600" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Valor tabela (R$)</label>
+                  <input type="number" min={0} step={0.01} value={form.valor_tabela} onChange={(e) => setForm((f) => ({ ...f, valor_tabela: e.target.value }))} className="w-full rounded-md border border-neutral-300 px-3 py-2 text-neutral-900 focus:border-primary-600 focus:ring-1 focus:ring-primary-600" />
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1">Categoria</label>

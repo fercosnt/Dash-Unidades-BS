@@ -1,6 +1,8 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { matchProcedimentoPorNome } from "@/lib/utils/match-procedimento";
+import { splitOrcamento, type ProcedimentoRef, type OrcamentoParaSplit } from "@/lib/utils/split-orcamento";
+import { isMesFechado } from "@/app/admin/configuracoes/fechamento/actions";
 import type {
   TransformedOrcamentoFechado,
   TransformedOrcamentoAberto,
@@ -40,6 +42,15 @@ export async function POST(request: Request) {
     if (!clinica_id || !mes_referencia || !tipo || !Array.isArray(registros)) {
       return NextResponse.json(
         { error: "clinica_id, mes_referencia, tipo e registros são obrigatórios" },
+        { status: 400 }
+      );
+    }
+
+    // Bloquear upload para meses fechados
+    const mesFechado = await isMesFechado(mes_referencia.slice(0, 7));
+    if (mesFechado) {
+      return NextResponse.json(
+        { error: `O mês ${mes_referencia.slice(0, 7)} está fechado. Reabra em Configurações > Fechamento de Mês antes de fazer upload.` },
         { status: 400 }
       );
     }
@@ -130,6 +141,56 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: insertError.message }, { status: 500 });
         }
       }
+
+      // Auto-split: desmembrar orcamentos em itens individuais (best-effort)
+      try {
+        const { data: insertedOrcs } = await supabase
+          .from("orcamentos_fechados")
+          .select("id, clinica_id, procedimentos_texto, valor_total, valor_bruto, desconto_reais")
+          .eq("upload_batch_id", batchId);
+
+        if (insertedOrcs?.length) {
+          const { data: procList } = await supabase
+            .from("procedimentos")
+            .select("id, nome, codigo_clinicorp, valor_tabela, categoria")
+            .eq("ativo", true);
+          const procs = (procList ?? []) as ProcedimentoRef[];
+
+          const allItems: Array<Record<string, unknown>> = [];
+          const orcIds: string[] = [];
+
+          for (const orc of insertedOrcs as OrcamentoParaSplit[]) {
+            const result = splitOrcamento(orc, procs);
+            orcIds.push(orc.id);
+            for (const item of result.items) {
+              allItems.push({
+                orcamento_fechado_id: orc.id,
+                clinica_id: orc.clinica_id,
+                procedimento_id: item.procedimento_id,
+                procedimento_nome_original: item.procedimento_nome_original,
+                quantidade: 1,
+                valor_tabela: item.valor_tabela,
+                valor_proporcional: item.valor_proporcional,
+                categoria: item.categoria,
+                match_status: item.match_status,
+              });
+            }
+          }
+
+          if (allItems.length > 0) {
+            await supabase.from("itens_orcamento").insert(allItems);
+          }
+          if (orcIds.length > 0) {
+            await supabase
+              .from("orcamentos_fechados")
+              .update({ split_status: "auto" })
+              .in("id", orcIds);
+          }
+        }
+      } catch (err) {
+        console.error("[api/upload] Erro no auto-split de orçamentos:", err instanceof Error ? err.message : err);
+        // Auto-split falhou — nao bloqueia upload, admin faz split manual no Fechamento
+      }
     } else if (tipo === "orcamentos_abertos") {
       const rowsFull = (registros as TransformedOrcamentoAberto[]).map((r) => ({
         clinica_id,
@@ -164,9 +225,9 @@ export async function POST(request: Request) {
     } else {
       const { data: procedimentosList } = await supabase
         .from("procedimentos")
-        .select("id, nome")
+        .select("id, nome, codigo_clinicorp")
         .eq("ativo", true);
-      const procedimentos = (procedimentosList ?? []) as { id: string; nome: string }[];
+      const procedimentos = (procedimentosList ?? []) as { id: string; nome: string; codigo_clinicorp?: string | null }[];
 
       const rowsFull = (registros as TransformedTratamento[]).map((r) => {
         const nomePlanilha = r.procedimento_nome || "(vazio)";
@@ -229,7 +290,8 @@ export async function POST(request: Request) {
           },
           body: JSON.stringify({ upload_batch_id: batchId, tipo }),
         });
-      } catch {
+      } catch (err) {
+        console.error("[api/upload] Erro ao enviar webhook n8n:", err instanceof Error ? err.message : err);
         // não bloqueia o fluxo
       }
     }
@@ -239,6 +301,7 @@ export async function POST(request: Request) {
       total_registros: registros.length,
     });
   } catch (err) {
+    console.error("[api/upload] Erro interno no upload:", err instanceof Error ? err.message : err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Erro interno" },
       { status: 500 }

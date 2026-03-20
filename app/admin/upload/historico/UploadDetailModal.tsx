@@ -220,7 +220,9 @@ export function UploadDetailModal({
                   )}
                   {tipo === "tratamentos_executados" && (
                     <>
-                      <th className="px-3 py-2 text-left font-medium text-neutral-700">Procedimento</th>
+                      <th className="px-3 py-2 text-left font-medium text-neutral-700">Procedimento (planilha)</th>
+                      <th className="px-3 py-2 text-left font-medium text-neutral-700">Vínculo</th>
+                      <th className="px-3 py-2 text-left font-medium text-neutral-700">Categoria</th>
                       <th className="px-3 py-2 text-right font-medium text-neutral-700">Qtd</th>
                       <th className="px-3 py-2 text-left font-medium text-neutral-700">Data execução</th>
                     </>
@@ -268,6 +270,17 @@ export function UploadDetailModal({
                     {tipo === "tratamentos_executados" && (
                       <>
                         <td className="px-3 py-2 text-neutral-700">{r.procedimento_nome ?? "—"}</td>
+                        <td className="px-3 py-2 text-neutral-700">
+                          {r.procedimento_vinculado ? (
+                            <span className="inline-flex items-center gap-1">
+                              <span className="inline-block h-1.5 w-1.5 rounded-full bg-green-500" />
+                              {r.procedimento_vinculado}
+                            </span>
+                          ) : (
+                            <span className="text-amber-600 text-xs">Não vinculado</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2 text-neutral-500 text-xs">{r.procedimento_categoria ?? "—"}</td>
                         <td className="px-3 py-2 text-right text-neutral-700">{r.quantidade ?? "—"}</td>
                         <td className="px-3 py-2 text-neutral-600">{r.data_execucao ?? "—"}</td>
                       </>

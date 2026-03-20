@@ -1,7 +1,15 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
+
+const ConfigSchema = z.object({
+  taxa_cartao_percentual: z.coerce.number().min(0).max(100),
+  imposto_nf_percentual: z.coerce.number().min(0).max(100),
+  percentual_beauty_smile: z.coerce.number().min(0).max(100),
+});
 
 export type ConfigFinanceiraRow = {
   id: string;
@@ -42,7 +50,9 @@ export async function salvarConfigFinanceira(form: {
   imposto_nf_percentual: number;
   percentual_beauty_smile: number;
 }) {
-  const supabase = await createSupabaseServerClient();
+  const parsed = ConfigSchema.safeParse(form);
+  if (!parsed.success) throw new Error(parsed.error.issues[0].message);
+  const { supabase } = await requireAdmin();
 
   const hoje = new Date().toISOString().slice(0, 10);
   const ontem = new Date(Date.now() - 864e5).toISOString().slice(0, 10);

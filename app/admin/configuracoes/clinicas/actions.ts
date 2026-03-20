@@ -1,8 +1,19 @@
 "use server";
 
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
+
+const ClinicaSchema = z.object({
+  nome: z.string().min(1, "Nome obrigatório"),
+  cnpj: z.string().optional(),
+  responsavel: z.string().optional(),
+  email: z.string().optional(),
+  telefone: z.string().optional(),
+  custo_mao_de_obra: z.coerce.number().min(0),
+  percentual_split: z.coerce.number().min(0).max(100),
+});
 
 export type ClinicaRow = {
   id: string;
@@ -18,7 +29,7 @@ export type ClinicaRow = {
 };
 
 export async function listarClinicas(filtroStatus: "todas" | "ativa" | "inativa" = "todas") {
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
   let query = supabase
     .from("clinicas_parceiras")
     .select("id, nome, cnpj, responsavel, email, telefone, custo_mao_de_obra, percentual_split, ativo, created_at")
@@ -41,6 +52,9 @@ export async function criarClinica(form: {
   custo_mao_de_obra: number;
   percentual_split: number;
 }) {
+  const parsed = ClinicaSchema.safeParse(form);
+  if (!parsed.success) throw new Error(parsed.error.issues[0].message);
+  await requireAdmin();
   const supabase = createSupabaseAdminClient();
   const { error } = await supabase.from("clinicas_parceiras").insert({
     nome: form.nome.trim(),
@@ -49,7 +63,7 @@ export async function criarClinica(form: {
     email: form.email?.trim() || null,
     telefone: form.telefone?.trim() || null,
     custo_mao_de_obra: Number(form.custo_mao_de_obra) || 0,
-    percentual_split: Number(form.percentual_split) ?? 40,
+    percentual_split: Number(form.percentual_split) || 40,
     ativo: true,
   });
   if (error) throw new Error(error.message);
@@ -68,6 +82,10 @@ export async function atualizarClinica(
     percentual_split: number;
   }
 ) {
+  const parsed = ClinicaSchema.safeParse(form);
+  if (!parsed.success) throw new Error(parsed.error.issues[0].message);
+  z.string().uuid("ID inválido").parse(id);
+  await requireAdmin();
   const supabase = createSupabaseAdminClient();
   const { error } = await supabase
     .from("clinicas_parceiras")
@@ -78,7 +96,7 @@ export async function atualizarClinica(
       email: form.email?.trim() || null,
       telefone: form.telefone?.trim() || null,
       custo_mao_de_obra: Number(form.custo_mao_de_obra) || 0,
-      percentual_split: Number(form.percentual_split) ?? 40,
+      percentual_split: Number(form.percentual_split) || 40,
     })
     .eq("id", id);
   if (error) throw new Error(error.message);
@@ -86,6 +104,7 @@ export async function atualizarClinica(
 }
 
 export async function toggleAtivoClinica(id: string, ativo: boolean) {
+  await requireAdmin();
   const supabase = createSupabaseAdminClient();
   const { error } = await supabase
     .from("clinicas_parceiras")
@@ -97,6 +116,7 @@ export async function toggleAtivoClinica(id: string, ativo: boolean) {
 
 /** Exclui a clínica permanentemente. Falha se houver perfis ou médicos vinculados. */
 export async function excluirClinica(id: string) {
+  await requireAdmin();
   const supabase = createSupabaseAdminClient();
 
   const [profilesRes, medicosRes] = await Promise.all([

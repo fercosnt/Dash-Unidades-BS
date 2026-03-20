@@ -38,6 +38,9 @@ export default async function ParceiroLayout({
     if (code === "refresh_token_not_found") redirect("/login");
     throw err;
   }
+  if (!user) {
+    redirect("/login");
+  }
   const { data: profile } = await supabase
     .from("profiles")
     .select("nome, email, clinica_id")

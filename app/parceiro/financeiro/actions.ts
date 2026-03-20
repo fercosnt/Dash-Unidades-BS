@@ -1,15 +1,7 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-
-function firstDay(mesRef: string) {
-  return `${mesRef}-01`;
-}
-function lastDay(mesRef: string) {
-  const [y, m] = mesRef.split("-").map(Number);
-  const last = new Date(y, m, 0).getDate();
-  return `${mesRef}-${String(last).padStart(2, "0")}`;
-}
+import { firstDayOfMonth, lastDayOfMonth } from "@/lib/utils/date-helpers";
 
 export type ResumoMensal = {
   mesReferencia: string;
@@ -29,8 +21,8 @@ export type ResumoMensal = {
 
 export async function getResumoMes(mesRef: string): Promise<ResumoMensal | null> {
   const supabase = await createSupabaseServerClient();
-  const start = firstDay(mesRef);
-  const end = lastDay(mesRef);
+  const start = firstDayOfMonth(mesRef);
+  const end = lastDayOfMonth(mesRef);
   const { data, error } = await supabase
     .from("resumo_mensal")
     .select("*")
@@ -62,7 +54,7 @@ export async function getHistoricoResumos(mesesAtras: number = 12): Promise<Resu
   const startDate = new Date(now.getFullYear(), now.getMonth() - mesesAtras + 1, 1);
   const startStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, "0")}-01`;
   const endMes = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  const endStr = lastDay(endMes);
+  const endStr = lastDayOfMonth(endMes);
 
   const { data, error } = await supabase
     .from("resumo_mensal")

@@ -2,15 +2,12 @@
 
 import Link from "next/link";
 import type { RankingClinica } from "@/types/dashboard.types";
+import { formatCurrency } from "@/lib/utils/formatting";
 
 type RankingClinicasProps = {
   items: RankingClinica[];
   className?: string;
 };
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
-}
 
 export function RankingClinicas({ items, className = "" }: RankingClinicasProps) {
   return (

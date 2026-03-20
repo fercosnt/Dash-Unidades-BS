@@ -100,13 +100,15 @@ export async function POST(request: Request) {
             action: "recalcular",
           }),
         });
-      } catch {
+      } catch (err) {
+        console.error("[api/pagamentos] Erro ao enviar webhook n8n:", err instanceof Error ? err.message : err);
         // não bloqueia a resposta
       }
     }
 
     return NextResponse.json(rpcResult ?? { pagamento: null, parcelas: [] }, { status: 201 });
   } catch (err) {
+    console.error("[api/pagamentos] Erro interno ao registrar pagamento:", err instanceof Error ? err.message : err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Erro interno" },
       { status: 500 }

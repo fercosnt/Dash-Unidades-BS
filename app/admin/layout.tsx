@@ -19,11 +19,12 @@ const ADMIN_SIDEBAR_GROUPS_BASE = [
     label: "Principal",
     items: [
       { href: "/admin/dashboard", label: "Dashboard" },
-      { href: "/admin/upload", label: "Upload" },
-      { href: "/admin/upload/historico", label: "Histórico de uploads" },
-      { href: "/admin/upload/revisao", label: "Revisão de procedimentos", badge: 0 as number },
+      { href: "/admin/fechamento", label: "Fechamento do Mês", badge: 0 as number },
       { href: "/admin/pagamentos", label: "Projeção de recebimentos" },
       { href: "/admin/inadimplencia", label: "Inadimplência" },
+      { href: "/admin/repasses", label: "Repasses" },
+      { href: "/admin/comissoes-dentista", label: "Comissões Dentista" },
+      { href: "/admin/comissoes", label: "Comissões Médicos" },
     ],
   },
   {
@@ -33,6 +34,9 @@ const ADMIN_SIDEBAR_GROUPS_BASE = [
       { href: "/admin/configuracoes/procedimentos", label: "Procedimentos" },
       { href: "/admin/configuracoes/medicos", label: "Médicos" },
       { href: "/admin/configuracoes/financeiro", label: "Financeiro" },
+      { href: "/admin/configuracoes/debitos", label: "Débitos parceiros" },
+      { href: "/admin/configuracoes/dentistas", label: "Dentistas" },
+      { href: "/admin/configuracoes/usuarios", label: "Usuários" },
     ],
   },
 ];
@@ -66,6 +70,9 @@ export default async function AdminLayout({
       countPendentesRevisao(),
     ]);
     const profile = profileResult.data;
+    if (profile?.role !== "admin") {
+      redirect("/parceiro/dashboard");
+    }
     pendentes = pendentesCount;
     const authDisplayName = typeof user?.user_metadata?.display_name === "string"
       ? user.user_metadata.display_name
@@ -79,16 +86,16 @@ export default async function AdminLayout({
   const groups = ADMIN_SIDEBAR_GROUPS_BASE.map((group) => ({
     ...group,
     items: group.items.map((item) =>
-      item.href === "/admin/upload/revisao" ? { ...item, badge: pendentes } : item
+      item.href === "/admin/fechamento" ? { ...item, badge: pendentes } : item
     ),
   }));
 
   return (
-    <div className="flex min-h-screen gap-2 bg-[url('/68a4d045b130b34b3614881d.jpeg')] bg-cover bg-fixed bg-center">
+    <div className="flex min-h-screen gap-2 bg-[url('/68a4d045b130b34b3614881d.jpeg')] bg-cover bg-fixed bg-center print:bg-none print:bg-white print:gap-0">
       <Sidebar groups={groups} variant="admin" />
-      <div className="flex flex-1 flex-col min-w-0 pr-2">
+      <div className="flex flex-1 flex-col min-w-0 pr-2 print:pr-0">
         <Header userName={displayName} userRole={userRole} variant="admin" />
-        <main className="flex-1 p-6 scrollbar-light overflow-y-auto">{children}</main>
+        <main className="flex-1 p-6 scrollbar-light overflow-y-auto print:p-0 print:overflow-visible">{children}</main>
       </div>
     </div>
   );

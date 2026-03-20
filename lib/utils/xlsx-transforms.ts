@@ -48,8 +48,8 @@ export function transformOrcamentos(
         paciente_telefone: getCol(row, "Telefone", "telefone") || undefined,
         procedimentos_texto: getCol(row, "Procedimentos", "procedimentos") || undefined,
         valor_bruto: parseCurrencyBR(getCol(row, "Valor", "valor")) || undefined,
-        desconto_percentual: parseCurrencyBR(getCol(row, "Desconto-Porcentagem", "Desconto-Porcentagem")) || undefined,
-        desconto_reais: parseCurrencyBR(getCol(row, "Desconto-Reais", "Desconto-Reais")) || undefined,
+        desconto_percentual: parseCurrencyBR(getCol(row, "Desconto-Porcentagem", "Desconto (%)", "Desconto Porcentagem", "desconto_percentual")) || undefined,
+        desconto_reais: parseCurrencyBR(getCol(row, "Desconto-Reais", "Desconto (R$)", "Desconto Reais", "desconto_reais")) || undefined,
         observacoes: getCol(row, "Observações", "Observacoes", "observacoes") || undefined,
       });
     } else {

@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import type { ChartLiquidoAdminPoint } from "@/types/dashboard.types";
+import { formatCurrency } from "@/lib/utils/formatting";
 import { CHART_MARGIN_LEFT, CHART_MARGIN_BOTTOM, CHART_MARGIN_RIGHT, CHART_X_PADDING_LEFT, CHART_X_PADDING_RIGHT_LINE, CHART_Y_AXIS_WIDTH } from "./chartConstants";
 
 const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -19,16 +20,13 @@ function formatMonth(iso: string): string {
   return `${MONTHS[Number(m) - 1]}/${y.slice(2)}`;
 }
 
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
-}
-
 /** Corta meses vazios à esquerda; mantém a partir do primeiro mês com valor líquido. */
 function trimEmptyMonths(data: ChartLiquidoAdminPoint[]): ChartLiquidoAdminPoint[] {
   const firstWithData = data.findIndex((d) => (d.valorLiquido ?? 0) > 0);
   if (firstWithData === -1) return data;
   return data.slice(firstWithData);
 }
+
 
 type ChartEvolucaoLiquidoProps = {
   data: ChartLiquidoAdminPoint[];

@@ -1,13 +1,25 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
+
+const ProcedimentoSchema = z.object({
+  nome: z.string().min(1, "Nome obrigatório"),
+  codigo_clinicorp: z.string().optional(),
+  custo_fixo: z.coerce.number().min(0),
+  valor_tabela: z.coerce.number().min(0).optional(),
+  categoria: z.string().optional(),
+  ativo: z.boolean().optional(),
+});
 
 export type ProcedimentoRow = {
   id: string;
   nome: string;
   codigo_clinicorp: string | null;
   custo_fixo: number;
+  valor_tabela: number;
   categoria: string | null;
   ativo: boolean;
   created_at: string;
@@ -20,7 +32,7 @@ export async function listarProcedimentos(filtros: {
   const supabase = await createSupabaseServerClient();
   let query = supabase
     .from("procedimentos")
-    .select("id, nome, codigo_clinicorp, custo_fixo, categoria, ativo, created_at")
+    .select("id, nome, codigo_clinicorp, custo_fixo, valor_tabela, categoria, ativo, created_at")
     .order("nome");
 
   if (filtros.categoria?.trim()) query = query.eq("categoria", filtros.categoria.trim());
@@ -47,14 +59,18 @@ export async function criarProcedimento(form: {
   nome: string;
   codigo_clinicorp?: string;
   custo_fixo: number;
+  valor_tabela?: number;
   categoria?: string;
   ativo?: boolean;
 }) {
-  const supabase = await createSupabaseServerClient();
+  const parsed = ProcedimentoSchema.safeParse(form);
+  if (!parsed.success) throw new Error(parsed.error.issues[0].message);
+  const { supabase } = await requireAdmin();
   const { error } = await supabase.from("procedimentos").insert({
     nome: form.nome.trim(),
     codigo_clinicorp: form.codigo_clinicorp?.trim() || null,
     custo_fixo: Number(form.custo_fixo) || 0,
+    valor_tabela: Number(form.valor_tabela) || 0,
     categoria: form.categoria?.trim() || null,
     ativo: form.ativo ?? true,
   });
@@ -68,17 +84,22 @@ export async function atualizarProcedimento(
     nome: string;
     codigo_clinicorp?: string;
     custo_fixo: number;
+    valor_tabela?: number;
     categoria?: string;
     ativo?: boolean;
   }
 ) {
-  const supabase = await createSupabaseServerClient();
+  const parsed = ProcedimentoSchema.safeParse(form);
+  if (!parsed.success) throw new Error(parsed.error.issues[0].message);
+  z.string().uuid("ID inválido").parse(id);
+  const { supabase } = await requireAdmin();
   const { error } = await supabase
     .from("procedimentos")
     .update({
       nome: form.nome.trim(),
       codigo_clinicorp: form.codigo_clinicorp?.trim() || null,
       custo_fixo: Number(form.custo_fixo) || 0,
+      valor_tabela: Number(form.valor_tabela) || 0,
       categoria: form.categoria?.trim() || null,
       ativo: form.ativo ?? true,
     })
@@ -88,14 +109,14 @@ export async function atualizarProcedimento(
 }
 
 export async function toggleAtivoProcedimento(id: string, ativo: boolean) {
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
   const { error } = await supabase.from("procedimentos").update({ ativo }).eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/configuracoes/procedimentos");
 }
 
 export async function excluirProcedimento(id: string) {
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
   const { error } = await supabase.from("procedimentos").delete().eq("id", id);
   if (error) {
     if (error.code === "23503") {

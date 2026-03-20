@@ -1,7 +1,9 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 
 export type ClinicaOption = { id: string; nome: string };
 
@@ -211,6 +213,8 @@ export type BatchDetailRecord = {
   paciente_nome?: string;
   valor_total?: number;
   procedimento_nome?: string;
+  procedimento_vinculado?: string;
+  procedimento_categoria?: string;
   quantidade?: number;
   data_execucao?: string;
   data_fechamento?: string;
@@ -307,16 +311,30 @@ export async function getBatchDetail(batchId: string): Promise<BatchDetail | nul
   } else {
     const { data: rows } = await supabase
       .from("tratamentos_executados")
-      .select("id, paciente_nome, procedimento_nome, quantidade, data_execucao")
+      .select("id, paciente_nome, procedimento_nome, quantidade, data_execucao, procedimento_id, procedimentos(nome, categoria)")
       .eq("upload_batch_id", batchId)
       .limit(limit);
-    registros = (rows ?? []).map((r) => ({
-      id: r.id,
-      paciente_nome: r.paciente_nome,
-      procedimento_nome: r.procedimento_nome,
-      quantidade: r.quantidade,
-      data_execucao: r.data_execucao,
-    }));
+    type TratRow = {
+      id: string;
+      paciente_nome: string;
+      procedimento_nome: string;
+      quantidade: number;
+      data_execucao: string;
+      procedimento_id: string | null;
+      procedimentos: { nome: string; categoria: string | null } | { nome: string; categoria: string | null }[] | null;
+    };
+    registros = ((rows ?? []) as unknown as TratRow[]).map((r) => {
+      const proc = Array.isArray(r.procedimentos) ? r.procedimentos[0] : r.procedimentos;
+      return {
+        id: r.id,
+        paciente_nome: r.paciente_nome,
+        procedimento_nome: r.procedimento_nome,
+        procedimento_vinculado: proc?.nome ?? undefined,
+        procedimento_categoria: proc?.categoria ?? undefined,
+        quantidade: r.quantidade,
+        data_execucao: r.data_execucao,
+      };
+    });
   }
 
   const tableName = tipo === "orcamentos_fechados" ? "orcamentos_fechados" : tipo === "orcamentos_abertos" ? "orcamentos_abertos" : "tratamentos_executados";
@@ -342,7 +360,7 @@ type UpdateBatchRecordInput = {
 export async function updateBatchRecord(
   input: UpdateBatchRecordInput,
 ): Promise<{ ok: boolean; error?: string }> {
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
 
   const updates: Record<string, unknown> = {};
   if (input.paciente_nome !== undefined) updates.paciente_nome = input.paciente_nome;
@@ -368,6 +386,7 @@ export async function updateBatchRecord(
   if (error) return { ok: false, error: error.message };
 
   revalidatePath("/admin/upload/historico");
+  revalidatePath("/admin/fechamento");
   revalidatePath("/admin/dashboard");
   return { ok: true };
 }
@@ -382,7 +401,7 @@ type CreateBatchRecordInput = {
 export async function createBatchRecord(
   input: CreateBatchRecordInput,
 ): Promise<{ ok: boolean; error?: string; record?: BatchDetailRecord }> {
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
 
   const { data: batch, error: batchError } = await supabase
     .from("upload_batches")
@@ -450,6 +469,7 @@ export async function createBatchRecord(
     .eq("id", input.batchId);
 
   revalidatePath("/admin/upload/historico");
+  revalidatePath("/admin/fechamento");
   revalidatePath("/admin/dashboard");
 
   return { ok: true, record };
@@ -460,7 +480,10 @@ export async function deleteBatchRecord(
   tipo: TipoPlanilha,
   recordId: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  const supabase = await createSupabaseServerClient();
+  const batchParsed = z.string().uuid().safeParse(batchId);
+  const recordParsed = z.string().uuid().safeParse(recordId);
+  if (!batchParsed.success || !recordParsed.success) return { ok: false, error: "ID inválido" };
+  const { supabase } = await requireAdmin();
 
   const tableName =
     tipo === "orcamentos_fechados"
@@ -478,6 +501,7 @@ export async function deleteBatchRecord(
   if (error) return { ok: false, error: error.message };
 
   revalidatePath("/admin/upload/historico");
+  revalidatePath("/admin/fechamento");
   revalidatePath("/admin/dashboard");
   return { ok: true };
 }
@@ -490,7 +514,7 @@ export async function updateUploadBatchMonth(
     return { ok: false, error: "Mês inválido. Use o formato AAAA-MM." };
   }
 
-  const supabase = await createSupabaseServerClient();
+  const { supabase } = await requireAdmin();
 
   const { data: batch, error: fetchError } = await supabase
     .from("upload_batches")
@@ -543,6 +567,7 @@ export async function updateUploadBatchMonth(
   }
 
   revalidatePath("/admin/upload/historico");
+  revalidatePath("/admin/fechamento");
   revalidatePath("/admin/upload");
   revalidatePath("/admin/upload/revisao");
 
@@ -550,7 +575,9 @@ export async function updateUploadBatchMonth(
 }
 
 export async function deleteUploadBatch(batchId: string): Promise<{ ok: boolean; error?: string }> {
-  const supabase = await createSupabaseServerClient();
+  const idParsed = z.string().uuid("ID de batch inválido").safeParse(batchId);
+  if (!idParsed.success) return { ok: false, error: idParsed.error.issues[0].message };
+  const { supabase } = await requireAdmin();
 
   // Remove dependentes na ordem correta (funciona mesmo sem ON DELETE CASCADE no banco)
   const { data: orcamentosIds } = await supabase
@@ -586,6 +613,7 @@ export async function deleteUploadBatch(batchId: string): Promise<{ ok: boolean;
   if (error) return { ok: false, error: error.message };
 
   revalidatePath("/admin/upload/historico");
+  revalidatePath("/admin/fechamento");
   revalidatePath("/admin/upload");
   revalidatePath("/admin/upload/revisao");
 
