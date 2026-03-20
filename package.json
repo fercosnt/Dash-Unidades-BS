@@ -7,9 +7,9 @@
     "glob": ">=10.4.6"
   },
   "scripts": {
-    "predev": "npx rimraf .next",
+    "predev": "rm -rf .next",
     "dev": "next dev",
-    "prebuild": "npx rimraf .next",
+    "prebuild": "rm -rf .next",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
