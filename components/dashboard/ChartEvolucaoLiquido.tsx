@@ -10,16 +10,13 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import type { ChartLiquidoAdminPoint } from "@/types/dashboard.types";
+import { formatCurrency } from "@/lib/utils/formatting";
 
 const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
 function formatMonth(iso: string): string {
   const [y, m] = iso.split("-");
   return `${MONTHS[Number(m) - 1]}/${y.slice(2)}`;
-}
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 }
 
 type ChartEvolucaoLiquidoProps = {

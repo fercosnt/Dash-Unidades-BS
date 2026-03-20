@@ -29,12 +29,16 @@ export type ConfigComissaoDentista = {
 
 export async function fetchConfigComissaoDentista(): Promise<ConfigComissaoDentista | null> {
   const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("config_comissao_dentista")
     .select("*")
     .is("vigencia_fim", null)
     .maybeSingle();
 
+  if (error) {
+    console.error("[fetchConfigComissaoDentista] Erro ao buscar config_comissao_dentista:", error.message);
+    return null;
+  }
   if (!data) return null;
   const r = data as Record<string, unknown>;
   return {
@@ -62,7 +66,12 @@ export async function fetchComissoesDentista(mes?: string, status?: string): Pro
   }
   if (status) query = query.eq("status", status);
 
-  const { data } = await query;
+  const { data, error } = await query;
+
+  if (error) {
+    console.error("[fetchComissoesDentista] Erro ao buscar comissoes_dentista:", error.message);
+    return [];
+  }
 
   type Row = {
     id: string;
@@ -109,13 +118,17 @@ export async function calcularComissaoDentista(dentistaId: string, mes: string) 
   const supabase = await createSupabaseServerClient();
 
   // Get dentista to find clinica_id
-  const { data: dentistaData } = await supabase
+  const { data: dentistaData, error: errDentista } = await supabase
     .from("dentistas")
     .select("id, clinica_id")
     .eq("id", dentistaId)
     .eq("ativo", true)
     .maybeSingle();
 
+  if (errDentista) {
+    console.error("[calcularComissaoDentista] Erro ao buscar dentistas:", errDentista.message);
+    return { ok: false, error: "Erro ao buscar dentista: " + errDentista.message };
+  }
   if (!dentistaData) return { ok: false, error: "Dentista não encontrada ou inativa." };
   const clinicaId = (dentistaData as Record<string, unknown>).clinica_id as string;
 
@@ -140,6 +153,19 @@ export async function calcularComissaoDentista(dentistaId: string, mes: string) 
       .maybeSingle(),
   ]);
 
+  if (configRes.error) {
+    console.error("[calcularComissaoDentista] Erro ao buscar config_comissao_dentista:", configRes.error.message);
+    return { ok: false, error: "Erro ao buscar configuração: " + configRes.error.message };
+  }
+  if (vendas.error) {
+    console.error("[calcularComissaoDentista] Erro ao buscar orcamentos_fechados:", vendas.error.message);
+    return { ok: false, error: "Erro ao buscar vendas: " + vendas.error.message };
+  }
+  if (resumo.error) {
+    console.error("[calcularComissaoDentista] Erro ao buscar resumo_mensal:", resumo.error.message);
+    return { ok: false, error: "Erro ao buscar resumo mensal: " + resumo.error.message };
+  }
+
   const config = configRes.data as Record<string, unknown> | null;
   if (!config) return { ok: false, error: "Configuração de tiers não encontrada." };
 
@@ -156,7 +182,7 @@ export async function calcularComissaoDentista(dentistaId: string, mes: string) 
     percentual = Number(config.tier2_percentual);
   }
 
-  const valorComissao = faturamentoBruto * (percentual / 100);
+  const valorComissao = Math.round(faturamentoBruto * (percentual / 100) * 100) / 100;
 
   const { error } = await supabase.from("comissoes_dentista").upsert(
     {

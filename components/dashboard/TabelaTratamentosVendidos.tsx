@@ -2,10 +2,7 @@
 
 import { useState, useMemo } from "react";
 import type { TratamentoVendidoItem } from "@/types/dashboard.types";
-
-function formatCurrency(v: number) {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
-}
+import { formatCurrency } from "@/lib/utils/formatting";
 
 function PercentBadge({ pct }: { pct: number }) {
   const cls =

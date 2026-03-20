@@ -1,15 +1,7 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-
-function firstDay(mesRef: string) {
-  return `${mesRef}-01`;
-}
-function lastDay(mesRef: string) {
-  const [y, m] = mesRef.split("-").map(Number);
-  const last = new Date(y, m, 0).getDate();
-  return `${mesRef}-${String(last).padStart(2, "0")}`;
-}
+import { firstDayOfMonth, lastDayOfMonth } from "@/lib/utils/date-helpers";
 
 export type ClinicaInfo = {
   id: string;
@@ -88,8 +80,8 @@ export async function getResumoClinicaMes(
   mesRef: string
 ): Promise<ResumoClinica | null> {
   const supabase = await createSupabaseServerClient();
-  const start = firstDay(mesRef);
-  const end = lastDay(mesRef);
+  const start = firstDayOfMonth(mesRef);
+  const end = lastDayOfMonth(mesRef);
   const { data, error } = await supabase
     .from("resumo_mensal")
     .select("*")
@@ -119,8 +111,8 @@ export async function getOrcamentosFechadosClinicaMes(
   statusFilter?: string
 ): Promise<OrcamentoFechadoRow[]> {
   const supabase = await createSupabaseServerClient();
-  const start = firstDay(mesRef);
-  const end = lastDay(mesRef);
+  const start = firstDayOfMonth(mesRef);
+  const end = lastDayOfMonth(mesRef);
   let q = supabase
     .from("orcamentos_fechados")
     .select("id, paciente_nome, valor_total, valor_pago, valor_em_aberto, status, data_fechamento, medico_indicador_id")
@@ -150,8 +142,8 @@ export async function getOrcamentosAbertosClinicaMes(
   mesRef: string
 ): Promise<OrcamentoAbertoRow[]> {
   const supabase = await createSupabaseServerClient();
-  const start = firstDay(mesRef);
-  const end = lastDay(mesRef);
+  const start = firstDayOfMonth(mesRef);
+  const end = lastDayOfMonth(mesRef);
   const { data, error } = await supabase
     .from("orcamentos_abertos")
     .select("id, paciente_nome, valor_total, status, data_criacao")
@@ -174,8 +166,8 @@ export async function getTratamentosClinicaMes(
   mesRef: string
 ): Promise<TratamentoRow[]> {
   const supabase = await createSupabaseServerClient();
-  const start = firstDay(mesRef);
-  const end = lastDay(mesRef);
+  const start = firstDayOfMonth(mesRef);
+  const end = lastDayOfMonth(mesRef);
   const { data, error } = await supabase
     .from("tratamentos_executados")
     .select("id, paciente_nome, procedimento_nome, procedimento_id, quantidade, data_execucao, procedimentos(custo_fixo)")

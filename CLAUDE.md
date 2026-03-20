@@ -73,8 +73,8 @@ Dois tipos de planilha importadas mensalmente por clínica:
 - RPC functions atômicas: `registrar_pagamento` e `estornar_pagamento`
 
 ### Comissão médica
-- Calculada sobre **valor líquido proporcional** do orçamento (com deduções proporcionais de custos, taxas e impostos)
-- Não sobre valor bruto
+- Calculada sobre **valor bruto** do orçamento (`valor_total`)
+- Percentual configurável por médico (`percentual_comissao`)
 
 ### Multi-tenancy
 - **RLS no Supabase** isola dados por `clinica_id` — admin vê tudo, parceiro vê só sua clínica

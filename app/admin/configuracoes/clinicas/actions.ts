@@ -3,6 +3,17 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
+
+const ClinicaSchema = z.object({
+  nome: z.string().min(1, "Nome obrigatório"),
+  cnpj: z.string().optional(),
+  responsavel: z.string().optional(),
+  email: z.string().optional(),
+  telefone: z.string().optional(),
+  custo_mao_de_obra: z.coerce.number().min(0),
+  percentual_split: z.coerce.number().min(0).max(100),
+});
 
 export type ClinicaRow = {
   id: string;
@@ -41,6 +52,8 @@ export async function criarClinica(form: {
   custo_mao_de_obra: number;
   percentual_split: number;
 }) {
+  const parsed = ClinicaSchema.safeParse(form);
+  if (!parsed.success) throw new Error(parsed.error.issues[0].message);
   await requireAdmin();
   const supabase = createSupabaseAdminClient();
   const { error } = await supabase.from("clinicas_parceiras").insert({
@@ -69,6 +82,9 @@ export async function atualizarClinica(
     percentual_split: number;
   }
 ) {
+  const parsed = ClinicaSchema.safeParse(form);
+  if (!parsed.success) throw new Error(parsed.error.issues[0].message);
+  z.string().uuid("ID inválido").parse(id);
   await requireAdmin();
   const supabase = createSupabaseAdminClient();
   const { error } = await supabase

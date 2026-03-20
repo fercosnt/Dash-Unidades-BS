@@ -3,6 +3,14 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
+
+const MedicoSchema = z.object({
+  nome: z.string().min(1, "Nome obrigatório"),
+  clinica_id: z.string().uuid("Clínica inválida"),
+  percentual_comissao: z.coerce.number().min(0).max(100),
+  ativo: z.boolean().optional(),
+});
 
 export type MedicoRow = {
   id: string;
@@ -75,6 +83,8 @@ export async function criarMedico(form: {
   percentual_comissao: number;
   ativo?: boolean;
 }) {
+  const parsed = MedicoSchema.safeParse(form);
+  if (!parsed.success) throw new Error(parsed.error.issues[0].message);
   const { supabase } = await requireAdmin();
   const { error } = await supabase.from("medicos_indicadores").insert({
     nome: form.nome.trim(),
@@ -95,6 +105,9 @@ export async function atualizarMedico(
     ativo?: boolean;
   }
 ) {
+  const parsed = MedicoSchema.safeParse(form);
+  if (!parsed.success) throw new Error(parsed.error.issues[0].message);
+  z.string().uuid("ID inválido").parse(id);
   const { supabase } = await requireAdmin();
   const { error } = await supabase
     .from("medicos_indicadores")

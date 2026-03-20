@@ -9,6 +9,7 @@ import {
   type OrcamentoParaSplit,
   type SplitItem,
 } from "@/lib/utils/split-orcamento";
+import { firstDayOfMonth, lastDayOfMonth } from "@/lib/utils/date-helpers";
 
 // ---------- Types ----------
 
@@ -46,16 +47,6 @@ export type OrcamentoReviewRow = {
 };
 
 // ---------- Helpers ----------
-
-function firstDayOfMonth(mes: string): string {
-  return `${mes}-01`;
-}
-
-function lastDayOfMonth(mes: string): string {
-  const [y, m] = mes.split("-").map(Number);
-  const d = new Date(y!, m!, 0);
-  return `${y}-${String(m).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
 
 async function fetchProcedimentosRef(
   supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>

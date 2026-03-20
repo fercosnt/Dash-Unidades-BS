@@ -52,6 +52,7 @@ export async function POST(request: Request) {
       { status: 200 }
     );
   } catch (err) {
+    console.error("[api/resumo/calcular] Erro interno ao calcular resumo:", err instanceof Error ? err.message : err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Erro interno" },
       { status: 500 }

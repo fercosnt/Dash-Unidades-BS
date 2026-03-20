@@ -15,11 +15,16 @@ export type DebitoItem = {
 
 export async function fetchDebitosAtivos(): Promise<DebitoItem[]> {
   const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("debito_parceiro")
     .select("id, clinica_id, descricao, valor_total, valor_pago, data_inicio, status, clinicas_parceiras(nome)")
     .eq("status", "ativo")
     .order("data_inicio", { ascending: false });
+
+  if (error) {
+    console.error("[fetchDebitosAtivos] Erro ao buscar debito_parceiro:", error.message);
+    return [];
+  }
 
   type Row = {
     id: string;
@@ -59,11 +64,16 @@ export type AbatimentoHistoricoItem = {
 
 export async function fetchAbatimentosPorDebito(debitoId: string): Promise<AbatimentoHistoricoItem[]> {
   const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("abatimentos_debito")
     .select("id, valor_abatido, mes_referencia, created_at, repasse_id, repasses_mensais(mes_referencia)")
     .eq("debito_id", debitoId)
     .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("[fetchAbatimentosPorDebito] Erro ao buscar abatimentos_debito:", error.message);
+    return [];
+  }
 
   const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
@@ -100,13 +110,17 @@ export async function fetchAbatimentosPorDebito(debitoId: string): Promise<Abati
 
 export async function fetchDebitoPorClinica(clinicaId: string): Promise<DebitoItem | null> {
   const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("debito_parceiro")
     .select("id, clinica_id, descricao, valor_total, valor_pago, data_inicio, status")
     .eq("clinica_id", clinicaId)
     .eq("status", "ativo")
     .maybeSingle();
 
+  if (error) {
+    console.error("[fetchDebitoPorClinica] Erro ao buscar debito_parceiro:", error.message);
+    return null;
+  }
   if (!data) return null;
   const r = data as Record<string, unknown>;
   return {

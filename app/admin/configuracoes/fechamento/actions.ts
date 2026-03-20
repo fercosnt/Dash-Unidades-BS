@@ -3,15 +3,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { calcularEPersistirResumo } from "@/lib/resumo-calculo";
-
-function firstDay(mes: string): string {
-  return `${mes}-01`;
-}
-
-function lastDay(mes: string): string {
-  const [y, m] = mes.split("-").map(Number);
-  return `${mes}-${String(new Date(y, m, 0).getDate()).padStart(2, "0")}`;
-}
+import { firstDayOfMonth, lastDayOfMonth } from "@/lib/utils/date-helpers";
 
 const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
@@ -99,8 +91,8 @@ export async function fetchFechamentoStatus(): Promise<FechamentoMesItem[]> {
   const splitByMes: Record<string, { total: number; feitos: number; unmatched: number }> = {};
 
   for (const mes of mesesList) {
-    const s = firstDay(mes);
-    const e = lastDay(mes);
+    const s = firstDayOfMonth(mes);
+    const e = lastDayOfMonth(mes);
     const { data: orcs } = await admin
       .from("orcamentos_fechados")
       .select("id, split_status")
@@ -174,8 +166,8 @@ export async function fecharMes(mesReferencia: string): Promise<{
   }
 
   // Marcar como fechado
-  const start = firstDay(mesReferencia);
-  const end = lastDay(mesReferencia);
+  const start = firstDayOfMonth(mesReferencia);
+  const end = lastDayOfMonth(mesReferencia);
   await admin
     .from("resumo_mensal")
     .update({ fechado_em: new Date().toISOString(), fechado_por: userId })
@@ -189,8 +181,8 @@ export async function reabrirMes(mesReferencia: string): Promise<{ ok: boolean }
   await requireAdmin();
   const admin = createSupabaseAdminClient();
 
-  const start = firstDay(mesReferencia);
-  const end = lastDay(mesReferencia);
+  const start = firstDayOfMonth(mesReferencia);
+  const end = lastDayOfMonth(mesReferencia);
 
   const { error } = await admin
     .from("resumo_mensal")
@@ -228,8 +220,8 @@ export async function fetchMesesFechados(): Promise<string[]> {
 /** Verifica se um mês específico está fechado (para bloqueio de upload) */
 export async function isMesFechado(mesReferencia: string): Promise<boolean> {
   const admin = createSupabaseAdminClient();
-  const start = firstDay(mesReferencia);
-  const end = lastDay(mesReferencia);
+  const start = firstDayOfMonth(mesReferencia);
+  const end = lastDayOfMonth(mesReferencia);
 
   const { data } = await admin
     .from("resumo_mensal")

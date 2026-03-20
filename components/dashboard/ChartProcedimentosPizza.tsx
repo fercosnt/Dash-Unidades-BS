@@ -10,6 +10,7 @@ import {
 } from "recharts";
 import { useState } from "react";
 import type { ProcedimentoRankingItem } from "@/types/dashboard.types";
+import { formatCurrency } from "@/lib/utils/formatting";
 
 const COLORS = [
   "#00109E",
@@ -23,10 +24,6 @@ const COLORS = [
   "#F97316",
   "#06B6D4",
 ];
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
-}
 
 type Props = {
   data: ProcedimentoRankingItem[];

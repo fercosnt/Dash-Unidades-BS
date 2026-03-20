@@ -22,20 +22,32 @@ export type RepassePendente = {
 export async function fetchRepassesPendentes(): Promise<RepassePendente[]> {
   const supabase = await createSupabaseServerClient();
   // Get all resumo_mensal records that don't have a repasse yet
-  const { data: resumos } = await supabase
+  const { data: resumos, error: errResumos } = await supabase
     .from("resumo_mensal")
     .select("clinica_id, mes_referencia, total_recebido_mes, total_taxa_cartao, total_imposto_nf, total_custo_mao_obra, total_custos_procedimentos, total_comissoes_medicas, clinicas_parceiras(nome)")
     .order("mes_referencia", { ascending: false });
+  if (errResumos) {
+    console.error("[fetchRepassesPendentes] Erro ao buscar resumo_mensal:", errResumos.message);
+    return [];
+  }
 
-  const { data: jaFeitos } = await supabase
+  const { data: jaFeitos, error: errFeitos } = await supabase
     .from("repasses_mensais")
     .select("clinica_id, mes_referencia");
+  if (errFeitos) {
+    console.error("[fetchRepassesPendentes] Erro ao buscar repasses_mensais:", errFeitos.message);
+    return [];
+  }
 
-  const { data: configData } = await supabase
+  const { data: configData, error: errConfig } = await supabase
     .from("configuracoes_financeiras")
     .select("percentual_beauty_smile")
     .is("vigencia_fim", null)
     .single();
+  if (errConfig) {
+    console.error("[fetchRepassesPendentes] Erro ao buscar configuracoes_financeiras:", errConfig.message);
+    return [];
+  }
 
   const percentualBS = Number(configData?.percentual_beauty_smile ?? 60) / 100;
 
@@ -80,12 +92,17 @@ export async function fetchRepassesPendentes(): Promise<RepassePendente[]> {
 
 export async function fetchRepassesFeitos(): Promise<RepasseItem[]> {
   const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("repasses_mensais")
     .select(
       "id, clinica_id, mes_referencia, valor_repasse, data_transferencia, observacao, status, clinicas_parceiras(nome)"
     )
     .order("mes_referencia", { ascending: false });
+
+  if (error) {
+    console.error("[fetchRepassesFeitos] Erro ao buscar repasses_mensais:", error.message);
+    return [];
+  }
 
   type Row = {
     id: string;

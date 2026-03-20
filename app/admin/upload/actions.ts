@@ -3,6 +3,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 
 export type ClinicaOption = { id: string; nome: string };
 
@@ -479,6 +480,9 @@ export async function deleteBatchRecord(
   tipo: TipoPlanilha,
   recordId: string,
 ): Promise<{ ok: boolean; error?: string }> {
+  const batchParsed = z.string().uuid().safeParse(batchId);
+  const recordParsed = z.string().uuid().safeParse(recordId);
+  if (!batchParsed.success || !recordParsed.success) return { ok: false, error: "ID inválido" };
   const { supabase } = await requireAdmin();
 
   const tableName =
@@ -571,6 +575,8 @@ export async function updateUploadBatchMonth(
 }
 
 export async function deleteUploadBatch(batchId: string): Promise<{ ok: boolean; error?: string }> {
+  const idParsed = z.string().uuid("ID de batch inválido").safeParse(batchId);
+  if (!idParsed.success) return { ok: false, error: idParsed.error.issues[0].message };
   const { supabase } = await requireAdmin();
 
   // Remove dependentes na ordem correta (funciona mesmo sem ON DELETE CASCADE no banco)

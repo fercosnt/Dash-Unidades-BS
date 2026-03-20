@@ -1,14 +1,7 @@
 "use client";
 
 import type { RepasseAdminData } from "@/types/dashboard.types";
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    minimumFractionDigits: 2,
-  }).format(value);
-}
+import { formatCurrency } from "@/lib/utils/formatting";
 
 type Props = {
   data: RepasseAdminData;

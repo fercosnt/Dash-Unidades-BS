@@ -23,7 +23,14 @@ export async function criarDebito(input: unknown) {
   return { ok: true };
 }
 
+const PagamentoDebitoSchema = z.object({
+  debitoId: z.string().uuid("ID de débito inválido"),
+  valor: z.number().positive("Valor deve ser positivo"),
+});
+
 export async function registrarPagamentoDebito(debitoId: string, valor: number) {
+  const parsed = PagamentoDebitoSchema.safeParse({ debitoId, valor });
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
   const { supabase } = await requireAdmin();
 
   const { data: debito } = await supabase

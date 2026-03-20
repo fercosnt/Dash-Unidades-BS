@@ -187,7 +187,8 @@ export async function POST(request: Request) {
               .in("id", orcIds);
           }
         }
-      } catch {
+      } catch (err) {
+        console.error("[api/upload] Erro no auto-split de orçamentos:", err instanceof Error ? err.message : err);
         // Auto-split falhou — nao bloqueia upload, admin faz split manual no Fechamento
       }
     } else if (tipo === "orcamentos_abertos") {
@@ -289,7 +290,8 @@ export async function POST(request: Request) {
           },
           body: JSON.stringify({ upload_batch_id: batchId, tipo }),
         });
-      } catch {
+      } catch (err) {
+        console.error("[api/upload] Erro ao enviar webhook n8n:", err instanceof Error ? err.message : err);
         // não bloqueia o fluxo
       }
     }
@@ -299,6 +301,7 @@ export async function POST(request: Request) {
       total_registros: registros.length,
     });
   } catch (err) {
+    console.error("[api/upload] Erro interno no upload:", err instanceof Error ? err.message : err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Erro interno" },
       { status: 500 }

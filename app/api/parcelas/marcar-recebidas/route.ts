@@ -62,6 +62,7 @@ export async function POST(request: Request) {
       message: `${ids.length} parcela(s) marcada(s) como recebida(s)`,
     });
   } catch (err) {
+    console.error("[api/parcelas/marcar-recebidas] Erro interno ao marcar parcelas:", err instanceof Error ? err.message : err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Erro interno" },
       { status: 500 }

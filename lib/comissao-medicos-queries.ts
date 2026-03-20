@@ -35,7 +35,12 @@ export async function fetchComissoesMedicos(params?: {
   if (params?.medicoId) query = query.eq("medico_indicador_id", params.medicoId);
   if (params?.status) query = query.eq("status", params.status);
 
-  const { data } = await query;
+  const { data, error } = await query;
+
+  if (error) {
+    console.error("[fetchComissoesMedicos] Erro ao buscar pagamentos_comissao:", error.message);
+    return [];
+  }
 
   type Row = {
     id: string;

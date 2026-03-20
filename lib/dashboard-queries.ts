@@ -1,6 +1,7 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { firstDayOfMonth, lastDayOfMonth } from "@/lib/utils/date-helpers";
 import type {
   KpisAdmin,
   RankingClinica,
@@ -20,15 +21,6 @@ import type {
   TratamentosEvolucaoData,
 } from "@/types/dashboard.types";
 
-function firstDayOfMonth(mesReferencia: string): string {
-  return `${mesReferencia}-01`;
-}
-
-function lastDayOfMonth(mesReferencia: string): string {
-  const [y, m] = mesReferencia.split("-").map(Number);
-  const last = new Date(y, m, 0).getDate();
-  return `${mesReferencia}-${String(last).padStart(2, "0")}`;
-}
 
 export async function fetchKpisAdmin(mesReferencia: string): Promise<KpisAdmin> {
   const supabase = await createSupabaseServerClient();
@@ -126,7 +118,11 @@ export async function fetchStatusUploads(mesReferencia: string, clinicaId?: stri
     .select("id, nome")
     .order("nome");
   if (clinicaId) clinicasQuery = clinicasQuery.eq("id", clinicaId);
-  const { data: clinicas } = await clinicasQuery;
+  const { data: clinicas, error: errClinicas } = await clinicasQuery;
+  if (errClinicas) {
+    console.error("[fetchStatusUploads] Erro ao buscar clinicas_parceiras:", errClinicas.message);
+    return [];
+  }
 
   let query = supabase
     .from("upload_batches")
@@ -139,7 +135,11 @@ export async function fetchStatusUploads(mesReferencia: string, clinicaId?: stri
     query = query.gte("mes_referencia", start).lte("mes_referencia", end);
   }
 
-  const { data: batches } = await query;
+  const { data: batches, error: errBatches } = await query;
+  if (errBatches) {
+    console.error("[fetchStatusUploads] Erro ao buscar upload_batches:", errBatches.message);
+    return [];
+  }
 
   const byClinica: Record<string, { orcamentosFechados: boolean; orcamentosAbertos: boolean; tratamentos: boolean }> = {};
   (clinicas ?? []).forEach((c) => {
@@ -408,6 +408,23 @@ export async function fetchKpisAdminV2(mesReferencia: string, clinicaId?: string
     resumoCalculado: false,
   };
 
+  if (resumoRes.error) {
+    console.error("[fetchKpisAdminV2] Erro ao buscar resumo_mensal:", resumoRes.error.message);
+    return empty;
+  }
+  if (fechadosRes.error) {
+    console.error("[fetchKpisAdminV2] Erro ao buscar orcamentos_fechados:", fechadosRes.error.message);
+    return empty;
+  }
+  if (abertosRes.error) {
+    console.error("[fetchKpisAdminV2] Erro ao buscar orcamentos_abertos:", abertosRes.error.message);
+    return empty;
+  }
+  if (tratamentosRes.error) {
+    console.error("[fetchKpisAdminV2] Erro ao buscar tratamentos_executados:", tratamentosRes.error.message);
+    return empty;
+  }
+
   const resumo = resumoRes.data ?? [];
   const sum = (arr: Record<string, unknown>[], key: string) =>
     arr.reduce((acc, r) => acc + Number(r[key] ?? 0), 0);
@@ -459,6 +476,21 @@ export async function fetchRepasseAdmin(mesReferencia: string, clinicaId?: strin
       .is("vigencia_fim", null)
       .single(),
   ]);
+
+  const emptyRepasse: RepasseAdminData = {
+    totalRecebido: 0, taxaSobreRecebido: 0, impostosNf: 0, custoMaoObra: 0,
+    custosProcedimentos: 0, comissoesMedicas: 0, disponivelParaSplit: 0,
+    valorRepassar: 0, valorBeautySmileRetém: 0, percentualBeautySmile: 60,
+  };
+
+  if (resumoRes.error) {
+    console.error("[fetchRepasseAdmin] Erro ao buscar resumo_mensal:", resumoRes.error.message);
+    return emptyRepasse;
+  }
+  if (configRes.error) {
+    console.error("[fetchRepasseAdmin] Erro ao buscar configuracoes_financeiras:", configRes.error.message);
+    return emptyRepasse;
+  }
 
   const resumo = (resumoRes.data ?? []) as Record<string, unknown>[];
   const sum = (key: string) => resumo.reduce((a, r) => a + Number(r[key] ?? 0), 0);
@@ -522,6 +554,26 @@ export async function fetchDreAdmin(mesReferencia: string, clinicaId?: string): 
       .single(),
     comissoesDentistaQ,
   ]);
+
+  const emptyDre: DreAdminData = {
+    faturamentoBruto: 0, custosProcedimentos: 0, taxaMaquininha: 0,
+    impostosNf: 0, custoMaoObra: 0, comissoesMedicas: 0, valorLiquido: 0,
+    valorBeautySmile: 0, valorClinica: 0, percentualBeautySmile: 60,
+    comissaoDentista: 0, resultadoLiquidoBS: 0,
+  };
+
+  if (resumoRes.error) {
+    console.error("[fetchDreAdmin] Erro ao buscar resumo_mensal:", resumoRes.error.message);
+    return emptyDre;
+  }
+  if (configRes.error) {
+    console.error("[fetchDreAdmin] Erro ao buscar configuracoes_financeiras:", configRes.error.message);
+    return emptyDre;
+  }
+  if (comissoesDentistaRes.error) {
+    console.error("[fetchDreAdmin] Erro ao buscar comissoes_dentista:", comissoesDentistaRes.error.message);
+    return emptyDre;
+  }
 
   const resumo = (resumoRes.data ?? []) as Record<string, unknown>[];
   const sum = (key: string) => resumo.reduce((a, r) => a + Number(r[key] ?? 0), 0);
@@ -669,6 +721,13 @@ export async function fetchVendasEvolucao(mesReferencia: string, meses: number =
   }
 
   const [fechadosRes, abertosRes] = await Promise.all([fechadosQ, abertosQ]);
+
+  if (fechadosRes.error) {
+    console.error("[fetchVendasEvolucao] Erro ao buscar orcamentos_fechados:", fechadosRes.error.message);
+  }
+  if (abertosRes.error) {
+    console.error("[fetchVendasEvolucao] Erro ao buscar orcamentos_abertos:", abertosRes.error.message);
+  }
 
   const byMes: Record<string, { fechadosQtde: number; fechadosValor: number; abertosQtde: number; abertosValor: number }> = {};
   points.forEach((p) => {
@@ -820,7 +879,11 @@ async function fetchTratamentosVendidosFromItens(
   }
   if (clinicaId) orcQuery = orcQuery.eq("clinica_id", clinicaId);
 
-  const { data: orcs } = await orcQuery;
+  const { data: orcs, error: errOrcs } = await orcQuery;
+  if (errOrcs) {
+    console.error("[fetchTratamentosVendidosFromItens] Erro ao buscar orcamentos_fechados:", errOrcs.message);
+    return [];
+  }
   if (!orcs?.length) return [];
 
   const orcIds = new Set(orcs.map((o) => o.id));
@@ -948,18 +1011,26 @@ async function fetchEvolucaoFromItens(
 
   if (clinicaId) orcQuery = orcQuery.eq("clinica_id", clinicaId);
 
-  const { data: orcs } = await orcQuery;
+  const { data: orcs, error: errOrcs } = await orcQuery;
+  if (errOrcs) {
+    console.error("[fetchEvolucaoFromItens] Erro ao buscar orcamentos_fechados:", errOrcs.message);
+    return null;
+  }
   if (!orcs?.length) return null;
 
   const orcIds = orcs.map((o) => o.id);
   const orcMesMap = new Map(orcs.map((o) => [o.id, (o.mes_referencia as string).slice(0, 7)]));
 
-  let itensQuery = supabase
+  const itensQuery = supabase
     .from("itens_orcamento")
     .select("procedimento_nome_original, valor_proporcional, orcamento_fechado_id")
     .in("orcamento_fechado_id", orcIds);
 
-  const { data: itensData } = await itensQuery;
+  const { data: itensData, error: errItens } = await itensQuery;
+  if (errItens) {
+    console.error("[fetchEvolucaoFromItens] Erro ao buscar itens_orcamento:", errItens.message);
+    return null;
+  }
   if (!itensData?.length) return null;
 
   type ItemRow = {

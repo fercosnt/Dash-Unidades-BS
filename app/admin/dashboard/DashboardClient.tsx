@@ -29,6 +29,7 @@ import {
   fetchTratamentosVendidos,
   fetchTratamentosEvolucao,
 } from "@/lib/dashboard-queries";
+import { formatCurrency } from "@/lib/utils/formatting";
 import type {
   KpisAdminV2,
   DreAdminData,
@@ -66,14 +67,6 @@ type DashboardClientProps = {
   clinicas: { id: string; nome: string }[];
   mesesFechados?: string[];
 };
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    minimumFractionDigits: 2,
-  }).format(value);
-}
 
 function formatDate(iso: string | null): string {
   if (!iso) return "—";

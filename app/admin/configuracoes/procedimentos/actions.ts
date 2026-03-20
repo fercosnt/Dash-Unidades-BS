@@ -3,6 +3,16 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
+
+const ProcedimentoSchema = z.object({
+  nome: z.string().min(1, "Nome obrigatório"),
+  codigo_clinicorp: z.string().optional(),
+  custo_fixo: z.coerce.number().min(0),
+  valor_tabela: z.coerce.number().min(0).optional(),
+  categoria: z.string().optional(),
+  ativo: z.boolean().optional(),
+});
 
 export type ProcedimentoRow = {
   id: string;
@@ -53,6 +63,8 @@ export async function criarProcedimento(form: {
   categoria?: string;
   ativo?: boolean;
 }) {
+  const parsed = ProcedimentoSchema.safeParse(form);
+  if (!parsed.success) throw new Error(parsed.error.issues[0].message);
   const { supabase } = await requireAdmin();
   const { error } = await supabase.from("procedimentos").insert({
     nome: form.nome.trim(),
@@ -77,6 +89,9 @@ export async function atualizarProcedimento(
     ativo?: boolean;
   }
 ) {
+  const parsed = ProcedimentoSchema.safeParse(form);
+  if (!parsed.success) throw new Error(parsed.error.issues[0].message);
+  z.string().uuid("ID inválido").parse(id);
   const { supabase } = await requireAdmin();
   const { error } = await supabase
     .from("procedimentos")

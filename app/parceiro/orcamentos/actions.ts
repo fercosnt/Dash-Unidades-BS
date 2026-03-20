@@ -1,15 +1,7 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-
-function firstDay(mesRef: string) {
-  return `${mesRef}-01`;
-}
-function lastDay(mesRef: string) {
-  const [y, m] = mesRef.split("-").map(Number);
-  const last = new Date(y, m, 0).getDate();
-  return `${mesRef}-${String(last).padStart(2, "0")}`;
-}
+import { firstDayOfMonth, lastDayOfMonth } from "@/lib/utils/date-helpers";
 
 export type OrcamentoFechadoRow = {
   id: string;
@@ -44,8 +36,8 @@ export async function getOrcamentosFechados(
   statusFilter?: string
 ): Promise<OrcamentoFechadoRow[]> {
   const supabase = await createSupabaseServerClient();
-  const start = firstDay(mesRef);
-  const end = lastDay(mesRef);
+  const start = firstDayOfMonth(mesRef);
+  const end = lastDayOfMonth(mesRef);
   let q = supabase
     .from("orcamentos_fechados")
     .select("id, paciente_nome, valor_total, valor_pago, valor_em_aberto, status, data_fechamento, medico_indicador_id")
@@ -73,8 +65,8 @@ export async function getOrcamentosAbertos(
   mesRef: string
 ): Promise<OrcamentoAbertoRow[]> {
   const supabase = await createSupabaseServerClient();
-  const start = firstDay(mesRef);
-  const end = lastDay(mesRef);
+  const start = firstDayOfMonth(mesRef);
+  const end = lastDayOfMonth(mesRef);
   const { data, error } = await supabase
     .from("orcamentos_abertos")
     .select("id, paciente_nome, valor_total, status, data_criacao")

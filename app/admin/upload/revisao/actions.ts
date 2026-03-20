@@ -150,14 +150,15 @@ export async function vincularProcedimentoBulk(
   if (tratamentoIds.length === 0) return { ok: true, vinculados: 0 };
   const { supabase } = await requireAdmin();
   const { data: proc } = await supabase.from("procedimentos").select("nome").eq("id", procedimentoId).single();
-  let vinculados = 0;
-  for (const id of tratamentoIds) {
-    const { error } = await supabase
-      .from("tratamentos_executados")
-      .update({ procedimento_id: procedimentoId, procedimento_nome: proc?.nome ?? null })
-      .eq("id", id);
-    if (!error) vinculados++;
+  const { error, count } = await supabase
+    .from("tratamentos_executados")
+    .update({ procedimento_id: procedimentoId, procedimento_nome: proc?.nome ?? null })
+    .in("id", tratamentoIds);
+  if (error) {
+    console.error("[vincularProcedimentoBulk] Erro ao vincular:", error.message);
+    return { ok: false, vinculados: 0, error: error.message };
   }
+  const vinculados = count ?? tratamentoIds.length;
   revalidatePath("/admin/upload/revisao");
   revalidatePath("/admin/fechamento");
   return { ok: true, vinculados };
@@ -228,11 +229,22 @@ export async function vincularAutomaticamente(
     }
   }
 
+  // Group by procedimento_id to do one bulk update per procedimento
+  const byProcedimento = new Map<string, { nome: string; ids: string[] }>();
   for (const u of toUpdate) {
+    const existing = byProcedimento.get(u.procedimento_id);
+    if (existing) {
+      existing.ids.push(u.id);
+    } else {
+      byProcedimento.set(u.procedimento_id, { nome: u.procedimento_nome, ids: [u.id] });
+    }
+  }
+
+  for (const [procId, { nome, ids }] of byProcedimento) {
     await supabase
       .from("tratamentos_executados")
-      .update({ procedimento_id: u.procedimento_id, procedimento_nome: u.procedimento_nome })
-      .eq("id", u.id);
+      .update({ procedimento_id: procId, procedimento_nome: nome })
+      .in("id", ids);
   }
 
   revalidatePath("/admin/upload/revisao");

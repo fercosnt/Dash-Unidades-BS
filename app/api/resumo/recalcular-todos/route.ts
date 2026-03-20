@@ -71,6 +71,7 @@ export async function POST() {
       falhas,
     });
   } catch (err) {
+    console.error("[api/resumo/recalcular-todos] Erro interno ao recalcular todos os resumos:", err instanceof Error ? err.message : err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Erro interno" },
       { status: 500 }

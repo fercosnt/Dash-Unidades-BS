@@ -9,10 +9,7 @@ import {
   type FechamentoMesItem,
 } from "./actions";
 import { splitOrcamentosMes } from "./split-actions";
-
-function fmt(v: number) {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
-}
+import { formatCurrency } from "@/lib/utils/formatting";
 
 function formatDateTime(iso: string | null) {
   if (!iso) return "—";
@@ -27,9 +24,10 @@ function formatDateTime(iso: string | null) {
 
 type Props = {
   initialMeses: FechamentoMesItem[];
+  compact?: boolean;
 };
 
-export function FechamentoClient({ initialMeses }: Props) {
+export function FechamentoClient({ initialMeses, compact }: Props) {
   const [meses, setMeses] = useState(initialMeses);
   const [loading, setLoading] = useState<string | null>(null);
   const [splitLoading, setSplitLoading] = useState<string | null>(null);
@@ -118,12 +116,14 @@ export function FechamentoClient({ initialMeses }: Props) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-heading font-bold text-white">Fechamento de Mes</h1>
-        <p className="text-sm text-white/60 mt-1">
-          Desmembre tratamentos, revise vinculos e feche meses.
-        </p>
-      </div>
+      {!compact && (
+        <div>
+          <h1 className="text-xl font-heading font-bold text-white">Fechamento de Mes</h1>
+          <p className="text-sm text-white/60 mt-1">
+            Desmembre tratamentos, revise vinculos e feche meses.
+          </p>
+        </div>
+      )}
 
       {meses.length === 0 ? (
         <div className="rounded-xl bg-white p-8 text-center text-neutral-400 shadow-md">
@@ -150,7 +150,7 @@ export function FechamentoClient({ initialMeses }: Props) {
                     <td className="px-5 py-3 font-medium text-neutral-900">{m.mesLabel}</td>
                     <td className="px-5 py-3 text-center text-neutral-600">{m.clinicasTotal}</td>
                     <td className="px-5 py-3 text-right tabular-nums font-medium text-neutral-900">
-                      {fmt(m.faturamentoTotal)}
+                      {formatCurrency(m.faturamentoTotal)}
                     </td>
                     <td className="px-5 py-3 text-center">
                       {splitStatusBadge(m)}

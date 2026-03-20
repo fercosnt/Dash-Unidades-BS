@@ -68,7 +68,8 @@ export async function DELETE(request: Request, { params }: Params) {
               action: "recalcular",
             }),
           });
-        } catch {
+        } catch (err) {
+          console.error("[api/pagamentos/[id]] Erro ao enviar webhook n8n:", err instanceof Error ? err.message : err);
           // não bloqueia
         }
       }
@@ -76,6 +77,7 @@ export async function DELETE(request: Request, { params }: Params) {
 
     return NextResponse.json(rpcResult ?? { ok: true }, { status: 200 });
   } catch (err) {
+    console.error("[api/pagamentos/[id]] Erro interno ao estornar pagamento:", err instanceof Error ? err.message : err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Erro interno" },
       { status: 500 }

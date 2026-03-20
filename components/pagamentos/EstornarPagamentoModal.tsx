@@ -1,10 +1,7 @@
 "use client";
 
 import { useState } from "react";
-
-function formatCurrency(v: number): string {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
-}
+import { formatCurrency } from "@/lib/utils/formatting";
 
 function formatDate(s: string): string {
   if (!s) return "";

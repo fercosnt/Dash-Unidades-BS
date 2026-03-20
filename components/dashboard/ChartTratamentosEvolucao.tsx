@@ -11,12 +11,9 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import type { TratamentosEvolucaoData } from "@/types/dashboard.types";
+import { formatCurrency } from "@/lib/utils/formatting";
 
 const COLORS = ["#00109E", "#35BFAD", "#F59E0B", "#EF4444", "#8B5CF6"];
-
-function formatCurrency(v: number) {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
-}
 
 type Mode = "valor" | "qtde";
 
