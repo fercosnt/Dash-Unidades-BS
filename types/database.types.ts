@@ -93,6 +93,27 @@ export type Database = {
         }
         Relationships: []
       }
+      categorias_despesa: {
+        Row: {
+          id: string
+          nome: string
+          ativo: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          nome: string
+          ativo?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          nome?: string
+          ativo?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
       comissoes_dentista: {
         Row: {
           id: string
@@ -307,6 +328,57 @@ export type Database = {
             columns: ["clinica_id"]
             isOneToOne: false
             referencedRelation: "clinicas_parceiras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      despesas_operacionais: {
+        Row: {
+          id: string
+          clinica_id: string
+          mes_referencia: string
+          categoria_id: string
+          descricao: string | null
+          valor: number
+          recorrente: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          clinica_id: string
+          mes_referencia: string
+          categoria_id: string
+          descricao?: string | null
+          valor: number
+          recorrente?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          clinica_id?: string
+          mes_referencia?: string
+          categoria_id?: string
+          descricao?: string | null
+          valor?: number
+          recorrente?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "despesas_operacionais_clinica_id_fkey"
+            columns: ["clinica_id"]
+            isOneToOne: false
+            referencedRelation: "clinicas_parceiras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "despesas_operacionais_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias_despesa"
             referencedColumns: ["id"]
           },
         ]
@@ -572,6 +644,7 @@ export type Database = {
           parcelas: number
           data_pagamento: string
           registrado_por: string | null
+          bandeira: string | null
           created_at: string
         }
         Insert: {
@@ -583,6 +656,7 @@ export type Database = {
           parcelas?: number
           data_pagamento: string
           registrado_por?: string | null
+          bandeira?: string | null
           created_at?: string
         }
         Update: {
@@ -594,6 +668,7 @@ export type Database = {
           parcelas?: number
           data_pagamento?: string
           registrado_por?: string | null
+          bandeira?: string | null
           created_at?: string
         }
         Relationships: [
@@ -916,6 +991,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      taxas_cartao_reais: {
+        Row: {
+          id: string
+          modalidade: string
+          bandeira: string
+          numero_parcelas: number | null
+          taxa_percentual: number
+          vigencia_inicio: string
+          vigencia_fim: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          modalidade: string
+          bandeira?: string
+          numero_parcelas?: number | null
+          taxa_percentual: number
+          vigencia_inicio?: string
+          vigencia_fim?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          modalidade?: string
+          bandeira?: string
+          numero_parcelas?: number | null
+          taxa_percentual?: number
+          vigencia_inicio?: string
+          vigencia_fim?: string | null
+          created_at?: string
+        }
+        Relationships: []
       }
       tratamentos_executados: {
         Row: {

@@ -25,6 +25,7 @@ const ADMIN_SIDEBAR_GROUPS_BASE = [
       { href: "/admin/repasses", label: "Repasses" },
       { href: "/admin/comissoes-dentista", label: "Comissões Dentista" },
       { href: "/admin/comissoes", label: "Comissões Médicos" },
+      { href: "/admin/despesas", label: "Despesas" },
     ],
   },
   {
@@ -35,6 +36,8 @@ const ADMIN_SIDEBAR_GROUPS_BASE = [
       { href: "/admin/configuracoes/medicos", label: "Médicos" },
       { href: "/admin/configuracoes/financeiro", label: "Financeiro" },
       { href: "/admin/configuracoes/debitos", label: "Débitos parceiros" },
+      { href: "/admin/configuracoes/categorias-despesa", label: "Categorias Despesa" },
+      { href: "/admin/configuracoes/taxas-cartao", label: "Taxas Cartão" },
       { href: "/admin/configuracoes/dentistas", label: "Dentistas" },
       { href: "/admin/configuracoes/usuarios", label: "Usuários" },
     ],

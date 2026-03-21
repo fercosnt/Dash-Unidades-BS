@@ -36,9 +36,11 @@ app/
 │   ├── dashboard/        # KPIs + gráficos + ranking
 │   ├── clinicas/[id]/    # Drill-down por clínica (4 abas)
 │   ├── upload/           # Upload XLSX + histórico + revisão de match
+│   ├── despesas/         # DRE BS por unidade + gestão de despesas operacionais
 │   ├── inadimplencia/    # Devedores + ação rápida de pagamento
 │   ├── pagamentos/       # Projeção de recebimentos futuros
-│   └── configuracoes/    # Clínicas, procedimentos, médicos, financeiro
+│   └── configuracoes/    # Clínicas, procedimentos, médicos, financeiro,
+│                         # categorias-despesa, taxas-cartao
 └── parceiro/             # Painel parceiro (somente leitura, scoped por RLS)
     ├── dashboard/
     ├── orcamentos/
@@ -70,7 +72,40 @@ Dois tipos de planilha importadas mensalmente por clínica:
 - **4 formas:** `cartao_credito`, `cartao_debito`, `pix`, `dinheiro`
 - **Cartão crédito:** máximo 12 parcelas, lógica D+30 (parcela N recebe N meses após pagamento)
 - **Arredondamento:** `ROUND(valor / n, 2)` para parcelas 1..N-1; diferença de centavos vai na última
+- **Bandeira:** coluna opcional `bandeira` (`visa_master` | `outros`). NULL = `visa_master` por padrão nos cálculos
 - RPC functions atômicas: `registrar_pagamento` e `estornar_pagamento`
+
+### Despesas operacionais e DRE Beauty Smile
+- **Despesas são pós-split** — custo exclusivo da BS, não afetam o 40% do parceiro
+- **Categorias dinâmicas** — tabela `categorias_despesa` gerenciada pelo admin (não enum)
+- **Recorrência** — flag `recorrente` permite copiar despesas para o mês seguinte
+- **Input:** manual + upload XLSX (match de categoria por nome)
+
+### DRE Beauty Smile por unidade
+Modelo financeiro para resultado real da BS por clínica:
+```
+RECEITA BS (bruta):
+  + Custos Procedimentos (cobrado do parceiro)
+  + Custo Mão de Obra (cobrado do parceiro)
+  + Taxa Cartão (cobrada do parceiro — % fixo)
+  + Imposto NF (cobrado do parceiro — % fixo)
+  + Comissões Médicas (cobradas)
+  + 60% do Valor Líquido
+= Total Receita BS bruta
+
+  (-) Taxa real cartão (pagamentos × taxa real por modalidade/bandeira/parcelas)
+= Receita pós taxas (o que entrou na conta)
+
+  (-) Comissão Dentista
+  (-) Despesas operacionais (agrupadas por categoria)
+= Resultado da Unidade p/ Beauty Smile
+```
+
+### Taxas reais de cartão (tabela `taxas_cartao_reais`)
+- **Duas categorias de bandeira:** `visa_master` e `outros` (Elo, Amex, etc.)
+- Taxas por parcela exata (1x a 12x para crédito + débito)
+- Vigência: mesmo padrão de `configuracoes_financeiras` (`vigencia_fim IS NULL` = vigente)
+- Cálculo automático: para cada pagamento, busca taxa real pela chave `bandeira_modalidade_parcelas`
 
 ### Comissão médica
 - Calculada sobre **valor bruto** do orçamento (`valor_total`)
@@ -118,9 +153,11 @@ npm run test:e2e  # Playwright
 | `lib/auth/require-admin.ts` | Guard de autorização admin para Server Actions |
 | `lib/utils/date-helpers.ts` | Helpers centralizados de data (firstDayOfMonth, lastDayOfMonth) |
 | `lib/utils/formatting.ts` | Formatação centralizada (formatCurrency, parseCurrencyBR, etc.) |
-| `supabase/migrations/` | 14 migrations SQL (schema + RLS + colunas + RPCs) |
+| `lib/despesas-queries.ts` | Queries de despesas, taxas reais e cálculo do DRE BS |
+| `components/dashboard/DreBsUnidade.tsx` | Componente visual do DRE Beauty Smile por unidade |
+| `supabase/migrations/` | 17 migrations SQL (schema + RLS + colunas + RPCs + despesas) |
 | `supabase/seed.sql` | Dados de teste (admin, parceiro, clínica, etc.) |
-| `types/database.types.ts` | Types gerados do Supabase (19 tabelas, 2 views, 5 RPCs, 6 enums) |
+| `types/database.types.ts` | Types gerados do Supabase (22 tabelas, 2 views, 5 RPCs, 6 enums) |
 | `eslint.config.mjs` | ESLint 9 flat config (Next.js + TypeScript + React Hooks) |
 | `ROADMAP.md` | O que foi feito e o que falta |
 | `decisions.md` | Log de decisões arquiteturais |

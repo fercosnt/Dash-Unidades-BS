@@ -162,6 +162,27 @@ export type TratamentoVendidoItem = {
   percentualFaturamento: number;
 };
 
+/** DRE Beauty Smile por unidade — resultado real pós-despesas */
+export type DreBsUnidadeData = {
+  /* Receita BS bruta (tudo que BS recebe no split) */
+  custosProcedimentos: number;
+  custoMaoObra: number;
+  taxaCartaoCobrada: number;
+  impostoNfCobrado: number;
+  comissoesMedicas: number;
+  valorBeautySmile60: number;
+  receitaBsBruta: number;
+  /* Taxas reais de cartão */
+  taxaRealCartao: number;
+  receitaPosTaxas: number;
+  /* Despesas */
+  comissaoDentista: number;
+  despesasPorCategoria: { categoriaId: string; categoria: string; total: number }[];
+  totalDespesas: number;
+  /* Resultado */
+  resultadoUnidade: number;
+};
+
 /** Dados para gráfico de evolução por tratamento (top-5 últimos N meses) */
 export type TratamentosEvolucaoData = {
   meses: string[];

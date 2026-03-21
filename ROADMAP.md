@@ -117,6 +117,41 @@ Auditoria visual completa via Chrome em produção (16 páginas, zero erros JS n
 - Sidebar mobile: auto-colapsa em <768px, backdrop, hamburger, fecha ao navegar
 - `seed.sql` com email real do admin (placeholder removido no Supabase produção)
 - Edição de débito parceiro: botão "Editar" + modal para alterar valor total e descrição
+- Favicon: `app/icon.svg` com isotipo azul do design system Beauty Smile
+
+### Despesas Operacionais + DRE Beauty Smile (2026-03-20)
+
+Módulo completo para gestão de despesas por unidade e cálculo do resultado real da Beauty Smile.
+
+**Migration 017:**
+- 3 novas tabelas: `categorias_despesa`, `despesas_operacionais`, `taxas_cartao_reais`
+- Coluna `bandeira` adicionada em `pagamentos` (`visa_master` | `outros`)
+- Seed: 9 categorias iniciais + 26 taxas reais (Visa/Master e Outros, crédito 1x-12x + débito)
+- RLS: admin full access, parceiro read-only em suas despesas
+
+**Taxas reais de cartão (`/admin/configuracoes/taxas-cartao`):**
+- Duas categorias de bandeira: Visa/Mastercard vs Outros (Elo, Amex, etc.)
+- Edição inline com vigência automática (fecha anterior, cria nova)
+- Taxas reais: Visa/Master débito 0.69%, crédito 1x 1.75%, 2-6x 2.19%, 7-12x 2.53%; Outros débito 1.49%, crédito 1x 2.55%, 2-6x 2.99%, 7-12x 3.33%
+
+**Categorias de despesa (`/admin/configuracoes/categorias-despesa`):**
+- CRUD completo com toggle ativo/inativo
+- Categorias dinâmicas (admin gerencia, não enum)
+
+**Página de despesas (`/admin/despesas`):**
+- DRE Beauty Smile no topo (componente `DreBsUnidade.tsx`)
+- Tabela de despesas com filtros por mês e clínica
+- Cadastro manual + upload XLSX com preview
+- "Copiar do mês anterior" (somente recorrentes, sem duplicar)
+- Edição inline e exclusão
+
+**Cálculos (`lib/despesas-queries.ts`):**
+- `calcularTaxaRealCartao()` — pagamentos × taxas reais por bandeira/modalidade/parcelas
+- `calcularDreBsUnidade()` — DRE completo: receita BS bruta → taxa real → despesas → resultado
+
+**Sidebar atualizada:**
+- "Despesas" no grupo Principal
+- "Categorias Despesa" e "Taxas Cartão" no grupo Configurações
 
 ---
 

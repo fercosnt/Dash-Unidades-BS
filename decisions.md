@@ -119,6 +119,17 @@ Formato: data, decisao, contexto, alternativas consideradas.
 - Edição inline direto na tabela — UX inconsistente com o padrão de modais do projeto
 **Consequências**: Admin pode alterar descrição e valor total de qualquer débito ativo. Saldo restante recalculado automaticamente. Se novo valor ≤ valor pago, débito é marcado como quitado.
 
+### 2026-03-20 Despesas operacionais e DRE Beauty Smile
+
+**Contexto**: A Beauty Smile precisava de visibilidade sobre o resultado real por unidade clínica. O DRE existente mostrava o split 60/40 com o parceiro, mas não mostrava quanto a BS realmente lucra após pagar despesas operacionais (salários, insumos, equipamentos, MKT, etc.) e a diferença entre taxa de cartão cobrada vs real.
+**Decisão**: Criar módulo completo com: (1) DRE BS onde TUDO que é descontado no split = receita da BS, (2) taxas reais de cartão por bandeira (visa_master vs outros) e modalidade/parcelas, (3) despesas operacionais com categorias dinâmicas. Despesas ficam pós-split (custo exclusivo da BS).
+**Alternativas**:
+- Despesas pré-split (afetando o 40% do parceiro) — incorreto para o modelo de negócio
+- Taxa de cartão única — taxas variam significativamente entre Visa/Master e outras bandeiras
+- Categorias como enum — pouco flexível, admin precisa gerenciar pelo painel
+- Cálculo em tempo real — manter padrão materializado, mas DRE BS é calculado on-demand (dados base já estão em resumo_mensal)
+**Consequências**: 3 novas tabelas (categorias_despesa, despesas_operacionais, taxas_cartao_reais), coluna bandeira em pagamentos, página /admin/despesas com DRE BS + gestão. Reusa componentes existentes (PeriodoSelector, ClinicaSelector, xlsx-parser). Modelo financeiro: Receita BS bruta → (-) taxa real cartão → receita pós taxas → (-) comissão dentista → (-) despesas → resultado.
+
 ### 2026-02-11 Notificacoes via Telegram
 
 **Contexto**: Canal de comunicacao para alertas do sistema.
