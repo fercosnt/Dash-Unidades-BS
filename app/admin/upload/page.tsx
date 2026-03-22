@@ -1,30 +1,40 @@
-import { getClinicasAtivas, getMonthlyUploadStatus } from "./actions";
-import { UploadPageClient } from "./UploadPageClient";
-import { MonthlyUploadStatus } from "@/components/upload/MonthlyUploadStatus";
-import { UploadPageTabs } from "./UploadPageTabs";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { SyncStatusPanel } from "@/components/upload/SyncStatusPanel";
 
 export const dynamic = "force-dynamic";
 
-function currentMonth(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-}
+export default async function SincronizacaoPage() {
+  const supabase = await createSupabaseServerClient();
 
-export default async function UploadPage() {
-  const mes = currentMonth();
-  const [clinicas, uploadStatus] = await Promise.all([
-    getClinicasAtivas(),
-    getMonthlyUploadStatus(mes),
+  const [{ data: clinicas }, { data: logs }] = await Promise.all([
+    supabase
+      .from("clinicas_parceiras")
+      .select("id, nome, clinicorp_subscriber_id")
+      .eq("ativo", true)
+      .order("nome"),
+    supabase
+      .from("sync_logs")
+      .select("id, clinica_id, mes_referencia, started_at, finished_at, status, trigger, orcamentos_fechados_inseridos, orcamentos_abertos_inseridos, pagamentos_inseridos, tratamentos_inseridos, recalculo_ok, error_message")
+      .order("started_at", { ascending: false })
+      .limit(50),
   ]);
 
+  const clinicaNames = new Map(
+    (clinicas ?? []).map((c) => [c.id, c.nome])
+  );
+
+  const mappedClinicas = (clinicas ?? []).map((c) => ({
+    id: c.id,
+    nome: c.nome,
+    has_credentials: !!c.clinicorp_subscriber_id,
+  }));
+
+  const mappedLogs = (logs ?? []).map((l) => ({
+    ...l,
+    clinica_nome: clinicaNames.get(l.clinica_id) ?? "—",
+  }));
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div className="lg:col-span-2">
-        <UploadPageTabs clinicas={clinicas} />
-      </div>
-      <div className="lg:col-span-1">
-        <MonthlyUploadStatus initialStatus={uploadStatus} initialMes={mes} />
-      </div>
-    </div>
+    <SyncStatusPanel clinicas={mappedClinicas} recentLogs={mappedLogs} />
   );
 }

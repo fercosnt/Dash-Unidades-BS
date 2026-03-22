@@ -26,6 +26,7 @@ const ADMIN_SIDEBAR_GROUPS_BASE = [
       { href: "/admin/comissoes-dentista", label: "Comissões Dentista" },
       { href: "/admin/comissoes", label: "Comissões Médicos" },
       { href: "/admin/despesas", label: "Despesas" },
+      { href: "/admin/upload", label: "Sincronização" },
     ],
   },
   {

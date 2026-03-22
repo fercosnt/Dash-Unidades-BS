@@ -170,6 +170,54 @@ Módulo completo para gestão de despesas por unidade e cálculo do resultado re
 - **Custos de procedimentos corrigidos** — `resumo_mensal.total_custos_procedimentos` estava zerado (resumo calculado antes dos procedimentos terem custo_fixo). Recalculado: Fev=R$2.560, Jan=R$570, com cascata em valor_liquido/valor_beauty_smile/valor_clinica
 - **Tipo `DreRecebiveisData` expandido** — de 7 para 17 campos (espelha `DreBsUnidadeData`)
 
+### Fix: KPI "A Receber" com parcelas futuras em tempo real — 2026-03-21
+
+- **Problema:** KPI "A Receber" no dashboard mostrava valor estático do `resumo_mensal` (calculado no upload). No Resumo Geral, somava apenas `valor_em_aberto` dos orçamentos (inadimplência). Em meses específicos, mostrava o valor congelado no momento do cálculo — não refletia parcelas recebidas ou novas.
+- **Correção:** Agora busca `parcelas_cartao` com `status = 'projetado'` em tempo real (3 funções corrigidas em `lib/dashboard-queries.ts`: `fetchKpisAdmin`, `fetchKpisAdminResumoGeral`, `fetchKpisAdminV2`)
+- **Resultado:** Dashboard mostra o total real de dinheiro que ainda vai cair na conta via parcelas de cartão
+
+### Integração Clinicorp API — Sync Diário Automático (2026-03-21)
+
+Redesenho completo do fluxo de dados: elimina upload XLSX, tudo vem da API Clinicorp automaticamente.
+
+**Core (`lib/clinicorp-sync.ts`):**
+- Função `syncClinicaMonth()` — lógica extraída e reutilizável (cron + manual)
+- Sincroniza orçamentos (fechados + abertos), pagamentos e tratamentos executados
+- Tratamentos via StepsList da API (Executed="X", filtrado por mês)
+- Idempotência: orçamentos/pagamentos por ID Clinicorp, tratamentos por replace (delete + re-insert)
+- Recálculo automático: `calcularEPersistirResumo()` direto após sync (sem n8n roundtrip)
+- Usa `createSupabaseAdminClient()` (cron sem sessão de usuário)
+
+**Vercel Cron (`app/api/cron/clinicorp-sync/route.ts`):**
+- Roda diariamente 6:00 UTC (3:00 BRT) via `vercel.json`
+- Loop: todas as clínicas com credenciais → mês atual + mês anterior
+- Pula meses fechados automaticamente
+- `maxDuration = 300` (Vercel Pro)
+
+**Migration 020:**
+- Tabela `sync_logs` (status, counters, error_message, trigger)
+- Coluna `origem` em `tratamentos_executados` ('manual' | 'clinicorp')
+
+**UI:**
+- `/admin/upload` → página "Sincronização" com `SyncStatusPanel` (status por clínica + histórico)
+- Botão "Sincronizar agora" para trigger manual
+- Sidebar: "Upload" renomeado para "Sincronização"
+- Inadimplência: removido `RegistrarPagamentoModal` (pagamentos automáticos via Clinicorp)
+- Mantido `EstornarPagamentoModal` para correções
+
+**Arquivos criados:**
+- `lib/clinicorp-sync.ts`, `app/api/cron/clinicorp-sync/route.ts`, `vercel.json`
+- `components/upload/SyncStatusPanel.tsx`
+- `supabase/migrations/020_sync_logs_e_origem_tratamentos.sql`
+
+**Arquivos modificados:**
+- `app/api/admin/clinicorp/sync/route.ts` (wrapper fino → `syncClinicaMonth()`)
+- `lib/clinicorp-transforms.ts` (+`transformTratamentosExecutados()`)
+- `types/clinicorp.types.ts` (+tratamentos nos types)
+- `app/admin/upload/page.tsx` (redesenhado com SyncStatusPanel)
+- `app/admin/inadimplencia/` (removido pagamento manual)
+- `app/admin/layout.tsx` (sidebar label)
+
 ---
 
 ## Pendente — Outros

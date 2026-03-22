@@ -105,9 +105,11 @@ export interface ClinicorpSyncPreview {
   orcamentos_fechados: number;
   orcamentos_abertos: number;
   pagamentos: number;
+  tratamentos_executados: number;
   detalhes: {
     fechados: Array<{ paciente: string; valor: number; profissional: string }>;
     pagamentos: Array<{ paciente: string; valor: number; forma: string }>;
+    tratamentos: Array<{ paciente: string; procedimento: string; data: string }>;
   };
 }
 
@@ -118,4 +120,5 @@ export interface ClinicorpSyncResult {
   orcamentos_abertos_ignorados: number;
   pagamentos_inseridos: number;
   pagamentos_ignorados: number;
+  tratamentos_inseridos: number;
 }

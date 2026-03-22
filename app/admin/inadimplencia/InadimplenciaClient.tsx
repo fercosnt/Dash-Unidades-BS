@@ -9,7 +9,6 @@ import {
   type InadimplenciaFilters,
 } from "./actions";
 import { getClinicasAtivas } from "../upload/actions";
-import { RegistrarPagamentoModal } from "@/components/pagamentos/RegistrarPagamentoModal";
 
 const PAGE_SIZE = 50;
 
@@ -33,7 +32,6 @@ export function InadimplenciaClient({
   const [kpis, setKpis] = useState(initialKpis);
   const [filters, setFilters] = useState<InadimplenciaFilters>({});
   const [loading, setLoading] = useState(false);
-  const [modalRow, setModalRow] = useState<InadimplenteRow | null>(null);
   const [message, setMessage] = useState<{ tipo: "ok" | "erro"; texto: string } | null>(null);
   const firstMount = useRef(true);
 
@@ -68,13 +66,6 @@ export function InadimplenciaClient({
     }
     load();
   }, [filters.clinica_id, filters.valor_min, filters.dias_min, filters.status]);
-
-  async function handleSuccess() {
-    setModalRow(null);
-    setMessage({ tipo: "ok", texto: "Pagamento registrado. Lista atualizada." });
-    setTimeout(() => setMessage(null), 4000);
-    await load();
-  }
 
   return (
     <div className="space-y-6">
@@ -262,13 +253,6 @@ export function InadimplenciaClient({
                           >
                             Ver detalhes
                           </Link>
-                          <button
-                            type="button"
-                            onClick={() => setModalRow(row)}
-                            className="rounded-md bg-primary-600 px-3 py-1.5 text-xs font-medium text-white hover:opacity-90"
-                          >
-                            Registrar pagamento
-                          </button>
                         </div>
                       </td>
                     </tr>
@@ -317,17 +301,6 @@ export function InadimplenciaClient({
         </div>
       )}
 
-      {modalRow && (
-        <RegistrarPagamentoModal
-          orcamentoId={modalRow.orcamento_fechado_id}
-          pacienteNome={modalRow.paciente_nome}
-          valorTotal={Number(modalRow.valor_total)}
-          valorEmAberto={Number(modalRow.valor_em_aberto)}
-          clinicaId={modalRow.clinica_id}
-          onSuccess={handleSuccess}
-          onClose={() => setModalRow(null)}
-        />
-      )}
     </div>
   );
 }

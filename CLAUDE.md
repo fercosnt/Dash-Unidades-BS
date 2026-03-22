@@ -6,7 +6,7 @@ Contexto de negócio e regras do domínio para uso do Claude Code neste projeto.
 
 ## O que é o sistema
 
-Dashboard multi-tenant para gestão financeira das clínicas parceiras da Beauty Smile. Centraliza upload de planilhas mensais do Clinicorp, cálculo automático do split financeiro 60/40, controle de pagamentos e módulo de inadimplência. Cada clínica parceira acessa somente seus próprios dados (RLS).
+Dashboard multi-tenant para gestão financeira das clínicas parceiras da Beauty Smile. Dados sincronizados automaticamente da API Clinicorp (orçamentos, pagamentos, tratamentos executados) com cálculo automático do split financeiro 60/40, controle de pagamentos e módulo de inadimplência. Cada clínica parceira acessa somente seus próprios dados (RLS).
 
 **Usuários:** Admin (equipe Beauty Smile, vê tudo) + Parceiro (1 login por clínica, somente leitura dos próprios dados).
 
@@ -35,9 +35,9 @@ app/
 ├── admin/                # Painel admin (Beauty Smile)
 │   ├── dashboard/        # KPIs + gráficos + ranking
 │   ├── clinicas/[id]/    # Drill-down por clínica (4 abas)
-│   ├── upload/           # Upload XLSX + histórico + revisão de match
+│   ├── upload/           # Sincronização Clinicorp (status + histórico de sync)
 │   ├── despesas/         # 3 abas: Recebíveis (caixa) + Faturamento (DRE BS) + Despesas
-│   ├── inadimplencia/    # Devedores + ação rápida de pagamento
+│   ├── inadimplencia/    # Devedores (pagamentos automáticos via Clinicorp)
 │   ├── pagamentos/       # Projeção de recebimentos futuros
 │   └── configuracoes/    # Clínicas, procedimentos, médicos, financeiro,
 │                         # categorias-despesa, taxas-cartao
@@ -52,15 +52,26 @@ app/
 
 ## Regras de negócio
 
-### Planilhas do Clinicorp
-Dois tipos de planilha importadas mensalmente por clínica:
-1. **Orçamentos** — separada automaticamente em `orcamentos_fechados` (status APPROVED) e `orcamentos_abertos` (demais)
-2. **Tratamentos executados** — médico pode aparecer com `+` quando há co-tratamento (split por `+`)
+### Sincronização Clinicorp (automática)
+Dados sincronizados automaticamente da API Clinicorp via Vercel Cron (diário, 3:00 BRT):
+1. **Orçamentos** — `GET /estimates/list`, separados em `orcamentos_fechados` (APPROVED) e `orcamentos_abertos` (demais)
+2. **Pagamentos** — `GET /payment/list`, registrados via RPC `registrar_pagamento`
+3. **Tratamentos executados** — extraídos dos `StepsList` dos estimates (Executed="X", filtrado por mês)
+4. **Recálculo automático** — `calcularEPersistirResumo()` chamado direto após cada sync
+
+**Idempotência:** orçamentos/pagamentos por `clinicorp_treatment_id`/`clinicorp_payment_id` (insert if not exists). Tratamentos: replace por mês (delete `origem='clinicorp'` + re-insert).
+
+**Credenciais:** por clínica (`clinicorp_subscriber_id` + `clinicorp_api_key` em `clinicas_parceiras`).
+
+**Indicações:** marcadas manualmente no fechamento do mês (API não fornece "Como conheceu?").
+
+**Logs:** tabela `sync_logs` registra cada execução (status, contadores, erros).
 
 ### Split financeiro
 - **60% Beauty Smile / 40% Clínica Parceira** (percentuais configuráveis por clínica)
-- Cálculo materializado em `resumo_mensal` via n8n (não em tempo real)
+- Cálculo materializado em `resumo_mensal` (recalculado automaticamente após cada sync)
 - Dashboard lê dados pré-calculados, não calcula na hora
+- **Exceção — KPI "A Receber":** calculado em tempo real a partir de `parcelas_cartao` com `status = 'projetado'` (soma de todas as parcelas futuras de cartão que ainda vão cair na conta). Não depende de `resumo_mensal`.
 
 ### Parâmetros financeiros (tabela `configuracoes_financeiras`)
 - `taxa_cartao_percentual` — taxa cobrada nas transações de cartão
@@ -147,12 +158,20 @@ RESULTADO BS (base caixa):
 
 ---
 
+## Sincronização Clinicorp
+
+**Vercel Cron** — diário 6:00 UTC (3:00 BRT), rota `GET /api/cron/clinicorp-sync`.
+**Manual** — botão "Sincronizar agora" em `/admin/upload` chama `POST /api/admin/clinicorp/sync`.
+**Core** — `lib/clinicorp-sync.ts` → `syncClinicaMonth()` (reutilizado por cron e manual).
+**Recálculo** — `calcularEPersistirResumo()` chamado direto após sync (sem n8n roundtrip).
+
 ## n8n
 
-Três workflows ativos, um pendente:
-- **WF1/WF2** (`XqHyQR1vemAIwHrz`) — Upload Processing: Webhook → match → cálculo resumo mensal
+Workflows ativos:
 - **WF3** (`nkzFTRigOvX8fANH`) — Auto-recebimento parcelas cartão: Schedule 5h
 - **WF4** — Notificações Telegram (pendente)
+
+> **Nota:** WF1/WF2 (Upload Processing) foram substituídos pelo sync Clinicorp automático. O recálculo agora é feito diretamente no sync.
 
 Variáveis de ambiente: `N8N_WEBHOOK_URL` e `N8N_WEBHOOK_SECRET` (server-side only).
 Endpoint interno n8n→app: `POST /api/resumo/calcular-interno` com header `x-service-secret`.
@@ -175,6 +194,9 @@ npm run test:e2e  # Playwright
 
 | Arquivo | O que é |
 |---|---|
+| `lib/clinicorp-sync.ts` | Core do sync Clinicorp (syncClinicaMonth) |
+| `lib/clinicorp-client.ts` | HTTP client Clinicorp API (listEstimates, listPayments) |
+| `lib/clinicorp-transforms.ts` | Transformações API → DB (orçamentos, pagamentos, tratamentos) |
 | `lib/resumo-calculo.ts` | Lógica do cálculo financeiro mensal |
 | `lib/dashboard-queries.ts` | Queries Supabase para dashboards |
 | `lib/utils/xlsx-parser.ts` | Parse de XLSX com ExcelJS |
@@ -185,7 +207,9 @@ npm run test:e2e  # Playwright
 | `lib/despesas-queries.ts` | Queries de despesas, taxas reais, DRE BS e DRE Recebíveis |
 | `components/dashboard/DreBsUnidade.tsx` | Componente visual do DRE Beauty Smile (faturamento) |
 | `components/dashboard/DreRecebiveis.tsx` | Componente visual do DRE Recebíveis (visão caixa) |
-| `supabase/migrations/` | 18+ migrations SQL (schema + RLS + colunas + RPCs + despesas + bandeira) |
+| `components/upload/SyncStatusPanel.tsx` | Painel de status de sincronização Clinicorp |
+| `app/api/cron/clinicorp-sync/route.ts` | Endpoint Vercel Cron (sync diário) |
+| `supabase/migrations/` | 20+ migrations SQL (schema + RLS + sync_logs + etc.) |
 | `supabase/seed.sql` | Dados de teste (admin, parceiro, clínica, etc.) |
 | `types/database.types.ts` | Types gerados do Supabase (25 tabelas, 2 views, 5 RPCs, 6 enums) |
 | `eslint.config.mjs` | ESLint 9 flat config (Next.js + TypeScript + React Hooks) |

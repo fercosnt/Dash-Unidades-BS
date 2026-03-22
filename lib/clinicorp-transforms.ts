@@ -6,6 +6,7 @@ import type {
   ClinicorpEstimate,
   ClinicorpPayment,
 } from "@/types/clinicorp.types";
+import type { TransformedTratamento } from "@/types/upload.types";
 import { cleanPatientName } from "@/lib/utils/formatting";
 
 // --- Mapeamento de forma de pagamento ---
@@ -139,6 +140,41 @@ export function transformEstimates(estimates: ClinicorpEstimate[]): {
   }
 
   return { fechados, abertos };
+}
+
+/**
+ * Extrai tratamentos executados dos StepsList dos estimates.
+ * Filtra steps com Executed="X" e ExecutedDate no mês de referência.
+ * Cortesias (Amount=0) são incluídas — aparecem com "CORTESIA" no StepDescription.
+ */
+export function transformTratamentosExecutados(
+  estimates: ClinicorpEstimate[],
+  mesReferencia: string
+): TransformedTratamento[] {
+  const mesPrefix = mesReferencia.slice(0, 7); // "YYYY-MM"
+  const result: TransformedTratamento[] = [];
+
+  for (const est of estimates) {
+    if (!est.StepsList?.length) continue;
+    const nome = cleanPatientName(est.PatientName);
+
+    for (const step of est.StepsList) {
+      if (step.Executed !== "X" || !step.ExecutedDate) continue;
+
+      const execDate = extractDate(step.ExecutedDate);
+      if (!execDate || !execDate.startsWith(mesPrefix)) continue;
+
+      result.push({
+        paciente_nome: nome,
+        procedimento_nome: step.StepDescription,
+        data_execucao: execDate,
+        quantidade: 1,
+        profissional: step.ProfessionalName || undefined,
+      });
+    }
+  }
+
+  return result;
 }
 
 /**

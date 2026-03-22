@@ -139,6 +139,26 @@ Formato: data, decisao, contexto, alternativas consideradas.
 - Tudo em uma página sem abas — layout poluído, muito scroll
 **Consequências**: `DespesasClient.tsx` refatorado com estado `activeTab`. Novo componente `DreRecebiveis.tsx` e função `calcularDreRecebiveis()`. Recebíveis contabiliza: PIX/dinheiro + débito/crédito à vista (imediato) + parcelas cartão recebidas (status='recebido'). Crédito parcelado (>1x) entra via parcelas_cartao, não como pagamento direto.
 
+### 2026-03-21 Redesenho Clinicorp — Sync diário automático (elimina XLSX)
+
+**Contexto**: A integração Clinicorp API (passos 0-7) foi implementada com sync manual e upload XLSX como alternativa. O admin queria dados sempre atualizados sem intervenção, e a API fornece tudo (orçamentos + pagamentos + tratamentos executados via StepsList), tornando o upload XLSX desnecessário.
+**Decisão**: (1) Sync diário via Vercel Cron (3:00 BRT), mês atual + anterior, com recálculo automático do `resumo_mensal`. (2) Tratamentos executados extraídos dos Steps da API (Executed="X"). (3) Eliminar upload XLSX e pagamento manual na inadimplência. (4) Indicações marcadas manualmente no fechamento (API não fornece "Como conheceu?"). (5) Manter estorno para correções.
+**Alternativas**:
+- Sync mensal manual — desatualizado, depende do admin lembrar
+- Manter upload XLSX como fallback — complexidade desnecessária, API é source of truth
+- Webhook n8n para recálculo — roundtrip desnecessário, chamar `calcularEPersistirResumo()` direto
+- Tratamentos por ID único — API não fornece, strategy de replace por mês funciona
+**Consequências**: Dashboard sempre atualizado (sync 3h BRT). Página de upload vira "Sincronização" (status + histórico). `sync_logs` para auditoria. Coluna `origem` em tratamentos para distinguir manual vs API. Vercel Pro necessário (maxDuration 300s). n8n WF1/WF2 (upload processing) podem ser desativados gradualmente.
+
+### 2026-03-21 KPI "A Receber" calculado em tempo real
+
+**Contexto**: O KPI "A Receber" no dashboard lia `total_a_receber_mes` do `resumo_mensal`, que é calculado uma vez no momento do upload/n8n. Esse valor ficava desatualizado: no Resumo Geral somava apenas `valor_em_aberto` dos orçamentos (inadimplência), e por mês mostrava o valor estático do momento do cálculo — não refletia parcelas de cartão que foram recebidas ou novas que surgiram.
+**Decisão**: KPI "A Receber" agora é calculado em tempo real buscando `parcelas_cartao` com `status = 'projetado'` (parcelas futuras que ainda vão cair na conta). Corrigido em 3 funções: `fetchKpisAdmin`, `fetchKpisAdminResumoGeral`, `fetchKpisAdminV2`.
+**Alternativas**:
+- Recalcular `resumo_mensal` com frequência via n8n — mais complexo, delay entre pagamento e dashboard
+- Manter valor estático + recalcular ao registrar pagamento — inconsistente se n8n falhar
+**Consequências**: O valor "A Receber" sempre reflete o estado real das parcelas projetadas. Custo: uma query adicional a `parcelas_cartao` por carregamento do dashboard (tabela pequena, impacto negligível).
+
 ### 2026-02-11 Notificacoes via Telegram
 
 **Contexto**: Canal de comunicacao para alertas do sistema.

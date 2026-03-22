@@ -52,10 +52,19 @@ export async function fetchKpisAdmin(mesReferencia: string): Promise<KpisAdmin> 
   const sum = (key: string) =>
     data.reduce((acc, row) => acc + Number((row as Record<string, unknown>)[key] ?? 0), 0);
 
+  // A Receber = parcelas de cartão projetadas (dinheiro futuro que vai cair na conta)
+  const { data: parcelasProjetadas } = await supabase
+    .from("parcelas_cartao")
+    .select("valor_parcela")
+    .eq("status", "projetado");
+  const totalAReceber = (parcelasProjetadas ?? []).reduce(
+    (s, r) => s + Number((r as Record<string, unknown>).valor_parcela ?? 0), 0
+  );
+
   return {
     faturamentoBruto: sum("faturamento_bruto"),
     totalRecebidoMes: sum("total_recebido_mes"),
-    totalAReceberMes: sum("total_a_receber_mes"),
+    totalAReceberMes: Math.round(totalAReceber * 100) / 100,
     totalInadimplente: sum("total_inadimplente"),
     valorLiquido: sum("valor_liquido"),
     valorBeautySmile: sum("valor_beauty_smile"),
@@ -70,13 +79,11 @@ async function fetchKpisAdminResumoGeral(supabase: Awaited<ReturnType<typeof cre
     .select("valor_total, valor_em_aberto, valor_pago, status");
 
   let faturamentoBruto = 0;
-  let totalAReceberMes = 0;
   let totalInadimplente = 0;
   (orcamentos ?? []).forEach((r: Record<string, unknown>) => {
     const total = Number(r.valor_total ?? 0);
     const emAberto = Number(r.valor_em_aberto ?? 0);
     faturamentoBruto += total;
-    totalAReceberMes += emAberto;
     const st = String(r.status ?? "");
     if (st === "em_aberto" || st === "parcial") {
       totalInadimplente += emAberto;
@@ -97,6 +104,15 @@ async function fetchKpisAdminResumoGeral(supabase: Awaited<ReturnType<typeof cre
     .eq("status", "recebido");
   const totalRecebidoParcelas = (parcelas ?? []).reduce((s, r: Record<string, unknown>) => s + Number(r.valor_parcela ?? 0), 0);
   const totalRecebidoMes = Math.round((totalRecebidoDireto + totalRecebidoParcelas) * 100) / 100;
+
+  // A Receber = parcelas de cartão projetadas (dinheiro futuro)
+  const { data: parcelasProjetadas } = await supabase
+    .from("parcelas_cartao")
+    .select("valor_parcela")
+    .eq("status", "projetado");
+  const totalAReceberMes = (parcelasProjetadas ?? []).reduce(
+    (s, r: Record<string, unknown>) => s + Number(r.valor_parcela ?? 0), 0
+  );
 
   const { data: resumoRows } = await supabase
     .from("resumo_mensal")
@@ -535,13 +551,26 @@ export async function fetchKpisAdminV2(mesReferencia: string, clinicaId?: string
   const sum = (arr: Record<string, unknown>[], key: string) =>
     arr.reduce((acc, r) => acc + Number(r[key] ?? 0), 0);
 
+  // A Receber = parcelas de cartão projetadas (dinheiro futuro)
+  let parcelasQ = supabase
+    .from("parcelas_cartao")
+    .select("valor_parcela")
+    .eq("status", "projetado");
+  if (clinicaId) {
+    parcelasQ = parcelasQ.eq("clinica_id", clinicaId);
+  }
+  const { data: parcelasProjetadas } = await parcelasQ;
+  const totalAReceber = (parcelasProjetadas ?? []).reduce(
+    (s, r) => s + Number((r as Record<string, unknown>).valor_parcela ?? 0), 0
+  );
+
   const fechados = (fechadosRes.data ?? []) as { id: string; valor_total: number }[];
   const abertos = (abertosRes.data ?? []) as { id: string; valor_total: number }[];
 
   return {
     faturamentoBruto: sum(resumo as Record<string, unknown>[], "faturamento_bruto"),
     totalRecebidoMes: sum(resumo as Record<string, unknown>[], "total_recebido_mes"),
-    totalAReceberMes: sum(resumo as Record<string, unknown>[], "total_a_receber_mes"),
+    totalAReceberMes: Math.round(totalAReceber * 100) / 100,
     totalInadimplente: sum(resumo as Record<string, unknown>[], "total_inadimplente"),
     valorLiquido: sum(resumo as Record<string, unknown>[], "valor_liquido"),
     valorBeautySmile: sum(resumo as Record<string, unknown>[], "valor_beauty_smile"),

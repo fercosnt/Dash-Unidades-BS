@@ -4,8 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { OrcamentoDetalhe } from "./actions";
 import { HistoricoPagamentos } from "./HistoricoPagamentos";
-import { RegistrarPagamentoModal } from "@/components/pagamentos/RegistrarPagamentoModal";
-import { useState } from "react";
 
 function formatCurrency(v: number): string {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
@@ -24,12 +22,7 @@ type Props = {
 
 export function DetalheOrcamentoClient({ orcamento, readOnly = false, backHref = "/admin/inadimplencia" }: Props) {
   const router = useRouter();
-  const [showRegistrarModal, setShowRegistrarModal] = useState(false);
-
-  function handlePagamentoSuccess() {
-    setShowRegistrarModal(false);
-    router.refresh();
-  }
+  // Pagamentos são sincronizados automaticamente do Clinicorp
 
   return (
     <div className="space-y-6">
@@ -87,14 +80,10 @@ export function DetalheOrcamentoClient({ orcamento, readOnly = false, backHref =
             <p className="text-lg font-bold text-amber-700">{formatCurrency(orcamento.valor_em_aberto)}</p>
           </div>
           <div className="ml-auto">
-            {!readOnly && orcamento.valor_em_aberto > 0 && (
-              <button
-                type="button"
-                onClick={() => setShowRegistrarModal(true)}
-                className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-              >
-                Registrar pagamento
-              </button>
+            {orcamento.valor_em_aberto > 0 && (
+              <span className="text-xs text-neutral-500">
+                Pagamentos sincronizados automaticamente
+              </span>
             )}
           </div>
         </div>
@@ -106,17 +95,6 @@ export function DetalheOrcamentoClient({ orcamento, readOnly = false, backHref =
         readOnly={readOnly}
       />
 
-      {!readOnly && showRegistrarModal && (
-        <RegistrarPagamentoModal
-          orcamentoId={orcamento.id}
-          pacienteNome={orcamento.paciente_nome}
-          valorTotal={orcamento.valor_total}
-          valorEmAberto={orcamento.valor_em_aberto}
-          clinicaId={orcamento.clinica_id}
-          onSuccess={handlePagamentoSuccess}
-          onClose={() => setShowRegistrarModal(false)}
-        />
-      )}
     </div>
   );
 }
