@@ -130,6 +130,15 @@ Formato: data, decisao, contexto, alternativas consideradas.
 - Cálculo em tempo real — manter padrão materializado, mas DRE BS é calculado on-demand (dados base já estão em resumo_mensal)
 **Consequências**: 3 novas tabelas (categorias_despesa, despesas_operacionais, taxas_cartao_reais), coluna bandeira em pagamentos, página /admin/despesas com DRE BS + gestão. Reusa componentes existentes (PeriodoSelector, ClinicaSelector, xlsx-parser). Modelo financeiro: Receita BS bruta → (-) taxa real cartão → receita pós taxas → (-) comissão dentista → (-) despesas → resultado.
 
+### 2026-03-21 Página de despesas com 3 abas (Recebíveis, Faturamento, Despesas)
+
+**Contexto**: A página `/admin/despesas` tinha o DRE BS (faturamento) e a tabela de despesas em layout único. O admin queria ver tanto a visão de faturamento quanto a visão de caixa (o que realmente entrou na conta), além de separar a gestão de despesas em uma aba própria.
+**Decisão**: Reestruturar a página em 3 abas: (1) Recebíveis — visão caixa com breakdown por tipo de pagamento + taxa real + líquido, (2) Faturamento — DRE BS existente (receita bruta → resultado), (3) Despesas — gestão completa (form, upload XLSX, copiar mês anterior, tabela).
+**Alternativas**:
+- Duas páginas separadas (/admin/despesas e /admin/recebiveis) — mais código, UX fragmentada
+- Tudo em uma página sem abas — layout poluído, muito scroll
+**Consequências**: `DespesasClient.tsx` refatorado com estado `activeTab`. Novo componente `DreRecebiveis.tsx` e função `calcularDreRecebiveis()`. Recebíveis contabiliza: PIX/dinheiro + débito/crédito à vista (imediato) + parcelas cartão recebidas (status='recebido'). Crédito parcelado (>1x) entra via parcelas_cartao, não como pagamento direto.
+
 ### 2026-02-11 Notificacoes via Telegram
 
 **Contexto**: Canal de comunicacao para alertas do sistema.

@@ -36,7 +36,7 @@ app/
 │   ├── dashboard/        # KPIs + gráficos + ranking
 │   ├── clinicas/[id]/    # Drill-down por clínica (4 abas)
 │   ├── upload/           # Upload XLSX + histórico + revisão de match
-│   ├── despesas/         # DRE BS por unidade + gestão de despesas operacionais
+│   ├── despesas/         # 3 abas: Recebíveis (caixa) + Faturamento (DRE BS) + Despesas
 │   ├── inadimplencia/    # Devedores + ação rápida de pagamento
 │   ├── pagamentos/       # Projeção de recebimentos futuros
 │   └── configuracoes/    # Clínicas, procedimentos, médicos, financeiro,
@@ -81,7 +81,7 @@ Dois tipos de planilha importadas mensalmente por clínica:
 - **Recorrência** — flag `recorrente` permite copiar despesas para o mês seguinte
 - **Input:** manual + upload XLSX (match de categoria por nome)
 
-### DRE Beauty Smile por unidade
+### DRE Beauty Smile por unidade (aba Faturamento)
 Modelo financeiro para resultado real da BS por clínica:
 ```
 RECEITA BS (bruta):
@@ -101,6 +101,22 @@ RECEITA BS (bruta):
 = Resultado da Unidade p/ Beauty Smile
 ```
 
+### DRE Recebíveis (aba Recebíveis)
+Visão caixa — quanto dinheiro efetivamente entrou na conta no mês:
+```
+ENTRADAS DO MÊS:
+  + PIX
+  + Dinheiro
+  + Cartão Débito / Crédito à Vista (1x)
+  + Parcelas Cartão Recebidas (status = 'recebido')
+= Total Recebido
+
+  (-) Taxa Real Cartão
+= Líquido Recebido (o que entrou na conta)
+```
+- Crédito parcelado (>1x) não entra como direto — entra via `parcelas_cartao`
+- Débito e crédito 1x contam como recebimento imediato
+
 ### Taxas reais de cartão (tabela `taxas_cartao_reais`)
 - **Duas categorias de bandeira:** `visa_master` e `outros` (Elo, Amex, etc.)
 - Taxas por parcela exata (1x a 12x para crédito + débito)
@@ -118,15 +134,15 @@ RECEITA BS (bruta):
 
 ---
 
-## n8n (não configurado ainda)
+## n8n
 
-Quatro workflows pendentes de implementação:
-- **WF1** — Validação e match de procedimentos (pós-upload)
-- **WF2** — Cálculo do resumo mensal (split 60/40)
-- **WF3** — Auto-recebimento de parcelas de cartão (cron 00:01)
-- **WF4** — Notificações Telegram
+Três workflows ativos, um pendente:
+- **WF1/WF2** (`XqHyQR1vemAIwHrz`) — Upload Processing: Webhook → match → cálculo resumo mensal
+- **WF3** (`nkzFTRigOvX8fANH`) — Auto-recebimento parcelas cartão: Schedule 5h
+- **WF4** — Notificações Telegram (pendente)
 
 Variáveis de ambiente: `N8N_WEBHOOK_URL` e `N8N_WEBHOOK_SECRET` (server-side only).
+Endpoint interno n8n→app: `POST /api/resumo/calcular-interno` com header `x-service-secret`.
 
 ---
 
@@ -153,11 +169,12 @@ npm run test:e2e  # Playwright
 | `lib/auth/require-admin.ts` | Guard de autorização admin para Server Actions |
 | `lib/utils/date-helpers.ts` | Helpers centralizados de data (firstDayOfMonth, lastDayOfMonth) |
 | `lib/utils/formatting.ts` | Formatação centralizada (formatCurrency, parseCurrencyBR, etc.) |
-| `lib/despesas-queries.ts` | Queries de despesas, taxas reais e cálculo do DRE BS |
-| `components/dashboard/DreBsUnidade.tsx` | Componente visual do DRE Beauty Smile por unidade |
-| `supabase/migrations/` | 17 migrations SQL (schema + RLS + colunas + RPCs + despesas) |
+| `lib/despesas-queries.ts` | Queries de despesas, taxas reais, DRE BS e DRE Recebíveis |
+| `components/dashboard/DreBsUnidade.tsx` | Componente visual do DRE Beauty Smile (faturamento) |
+| `components/dashboard/DreRecebiveis.tsx` | Componente visual do DRE Recebíveis (visão caixa) |
+| `supabase/migrations/` | 18+ migrations SQL (schema + RLS + colunas + RPCs + despesas + bandeira) |
 | `supabase/seed.sql` | Dados de teste (admin, parceiro, clínica, etc.) |
-| `types/database.types.ts` | Types gerados do Supabase (22 tabelas, 2 views, 5 RPCs, 6 enums) |
+| `types/database.types.ts` | Types gerados do Supabase (25 tabelas, 2 views, 5 RPCs, 6 enums) |
 | `eslint.config.mjs` | ESLint 9 flat config (Next.js + TypeScript + React Hooks) |
 | `ROADMAP.md` | O que foi feito e o que falta |
 | `decisions.md` | Log de decisões arquiteturais |

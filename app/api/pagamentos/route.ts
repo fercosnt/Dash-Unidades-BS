@@ -7,6 +7,7 @@ type Body = {
   forma?: string;
   parcelas?: number;
   data_pagamento?: string;
+  bandeira?: string | null;
 };
 
 const FORMAS_VALIDAS = ["cartao_credito", "cartao_debito", "pix", "dinheiro"];
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
     }
 
     const body = (await request.json()) as Body;
-    const { orcamento_fechado_id, valor, forma, parcelas, data_pagamento } = body;
+    const { orcamento_fechado_id, valor, forma, parcelas, data_pagamento, bandeira } = body;
 
     if (!orcamento_fechado_id) {
       return NextResponse.json({ error: "orcamento_fechado_id é obrigatório" }, { status: 400 });
@@ -74,6 +75,26 @@ export async function POST(request: Request) {
       if (code === "P0001") return NextResponse.json({ error: msg }, { status: 404 });
       if (code === "P0002") return NextResponse.json({ error: msg }, { status: 400 });
       return NextResponse.json({ error: msg }, { status: 400 });
+    }
+
+    // Atualizar bandeira do pagamento (coluna adicionada em migration 018)
+    const isCartao = forma === "cartao_credito" || forma === "cartao_debito";
+    if (isCartao && bandeira && rpcResult) {
+      // rpcResult pode ser { pagamento: {...}, parcelas: [...] } direto ou nested
+      const result = rpcResult as Record<string, unknown>;
+      const pag = result.pagamento as Record<string, unknown> | undefined;
+      const pagId = pag?.id as string | undefined;
+      if (pagId) {
+        const { error: updErr } = await supabase
+          .from("pagamentos")
+          .update({ bandeira })
+          .eq("id", pagId);
+        if (updErr) {
+          console.error("[api/pagamentos] Erro ao atualizar bandeira:", updErr.message);
+        }
+      } else {
+        console.error("[api/pagamentos] Não foi possível extrair pagamento.id do rpcResult:", JSON.stringify(rpcResult));
+      }
     }
 
     // Buscar orçamento para clinica_id e mes_referencia (webhook recálculo)

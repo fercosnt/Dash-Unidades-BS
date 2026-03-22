@@ -183,6 +183,19 @@ export type DreBsUnidadeData = {
   resultadoUnidade: number;
 };
 
+/** DRE Recebíveis — visão caixa (o que entrou na conta) */
+export type DreRecebiveisData = {
+  /* Entradas */
+  recebidoPix: number;
+  recebidoDinheiro: number;
+  recebidoDebitoAvista: number;
+  recebidoParcelasCartao: number;
+  totalRecebido: number;
+  /* Taxa real */
+  taxaRealCartao: number;
+  liquidoRecebido: number;
+};
+
 /** Dados para gráfico de evolução por tratamento (top-5 últimos N meses) */
 export type TratamentosEvolucaoData = {
   meses: string[];

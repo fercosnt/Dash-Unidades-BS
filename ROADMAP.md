@@ -138,20 +138,31 @@ Módulo completo para gestão de despesas por unidade e cálculo do resultado re
 - CRUD completo com toggle ativo/inativo
 - Categorias dinâmicas (admin gerencia, não enum)
 
-**Página de despesas (`/admin/despesas`):**
-- DRE Beauty Smile no topo (componente `DreBsUnidade.tsx`)
-- Tabela de despesas com filtros por mês e clínica
-- Cadastro manual + upload XLSX com preview
-- "Copiar do mês anterior" (somente recorrentes, sem duplicar)
-- Edição inline e exclusão
+**Página de despesas (`/admin/despesas`) — 3 abas:**
+- **Aba Recebíveis** — DRE visão caixa: PIX + Dinheiro + Débito/Crédito à vista + Parcelas recebidas → Taxa real → Líquido
+- **Aba Faturamento** — DRE Beauty Smile: receita BS bruta → taxa real → despesas → resultado
+- **Aba Despesas** — Gestão: cadastro manual, upload XLSX com preview, copiar mês anterior, edição inline
 
 **Cálculos (`lib/despesas-queries.ts`):**
 - `calcularTaxaRealCartao()` — pagamentos × taxas reais por bandeira/modalidade/parcelas
 - `calcularDreBsUnidade()` — DRE completo: receita BS bruta → taxa real → despesas → resultado
+- `calcularDreRecebiveis()` — DRE caixa: entradas por tipo → taxa real → líquido recebido
+
+**Componentes:**
+- `DreBsUnidade.tsx` — DRE faturamento (aba Faturamento)
+- `DreRecebiveis.tsx` — DRE caixa (aba Recebíveis)
 
 **Sidebar atualizada:**
 - "Despesas" no grupo Principal
 - "Categorias Despesa" e "Taxas Cartão" no grupo Configurações
+
+### Correções de banco (Migration 018+) — 2026-03-21
+
+- Coluna `bandeira` adicionada em `pagamentos` (faltava da migration 017)
+- Coluna `bandeira` adicionada em `taxas_cartao_reais` (faltava da migration 017)
+- Todos os pagamentos de cartão existentes setados como `visa_master`
+- 26 taxas reais inseridas com valores corretos (antes estavam zeradas)
+- Seletor de bandeira no modal de pagamento (já existia no código, agora funciona com coluna no banco)
 
 ---
 

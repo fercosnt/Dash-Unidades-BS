@@ -20,6 +20,11 @@ const FORMAS = [
   { value: "cartao_credito", label: "Cartão crédito" },
 ] as const;
 
+const BANDEIRAS = [
+  { value: "visa_master", label: "Visa / Mastercard" },
+  { value: "outros", label: "Outras (Elo, Amex, etc.)" },
+] as const;
+
 export function RegistrarPagamentoModal({
   orcamentoId,
   pacienteNome,
@@ -30,6 +35,7 @@ export function RegistrarPagamentoModal({
 }: Props) {
   const [valor, setValor] = useState("");
   const [forma, setForma] = useState<string>("pix");
+  const [bandeira, setBandeira] = useState<string>("visa_master");
   const [parcelas, setParcelas] = useState(1);
   const [dataPagamento, setDataPagamento] = useState(() =>
     new Date().toISOString().slice(0, 10)
@@ -39,6 +45,7 @@ export function RegistrarPagamentoModal({
 
   const valorNum = parseFloat(valor.replace(/\D/g, "")) / 100 || 0;
   const isCartaoCredito = forma === "cartao_credito";
+  const isCartao = forma === "cartao_credito" || forma === "cartao_debito";
 
   function handleValorChange(e: React.ChangeEvent<HTMLInputElement>) {
     const v = e.target.value.replace(/\D/g, "");
@@ -78,6 +85,7 @@ export function RegistrarPagamentoModal({
           forma,
           parcelas: numParcelas,
           data_pagamento: dataPagamento,
+          bandeira: isCartao ? bandeira : null,
         }),
       });
       const data = await res.json();
@@ -140,6 +148,21 @@ export function RegistrarPagamentoModal({
               ))}
             </select>
           </label>
+
+          {isCartao && (
+            <label className="block">
+              <span className="text-sm font-medium text-neutral-700">Bandeira do cartão</span>
+              <select
+                value={bandeira}
+                onChange={(e) => setBandeira(e.target.value)}
+                className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+              >
+                {BANDEIRAS.map((b) => (
+                  <option key={b.value} value={b.value}>{b.label}</option>
+                ))}
+              </select>
+            </label>
+          )}
 
           {isCartaoCredito && (
             <label className="block">

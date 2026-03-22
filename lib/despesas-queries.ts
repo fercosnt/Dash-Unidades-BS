@@ -2,7 +2,7 @@
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { firstDayOfMonth, lastDayOfMonth } from "@/lib/utils/date-helpers";
-import type { DreBsUnidadeData } from "@/types/dashboard.types";
+import type { DreBsUnidadeData, DreRecebiveisData } from "@/types/dashboard.types";
 
 /* ------------------------------------------------------------------ */
 /*  Categorias                                                         */
@@ -215,6 +215,109 @@ export async function calcularTaxaRealCartao(
   }
 
   return Math.round(totalTaxa * 100) / 100;
+}
+
+/* ------------------------------------------------------------------ */
+/*  DRE Recebíveis — visão caixa (o que entrou na conta)               */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Calcula o DRE de recebíveis: quanto dinheiro efetivamente entrou na conta no mês.
+ * - Pix e dinheiro: contados diretamente pelo pagamento no mês
+ * - Cartão débito e crédito à vista (1x): contados diretamente
+ * - Cartão crédito parcelado (>1x): contado via parcelas_cartao com status='recebido'
+ * - Taxa real: calculada sobre transações de cartão do mês
+ */
+export async function calcularDreRecebiveis(
+  mesReferencia: string,
+  clinicaId?: string,
+): Promise<DreRecebiveisData> {
+  const empty: DreRecebiveisData = {
+    recebidoPix: 0, recebidoDinheiro: 0, recebidoDebitoAvista: 0,
+    recebidoParcelasCartao: 0, totalRecebido: 0,
+    taxaRealCartao: 0, liquidoRecebido: 0,
+  };
+
+  if (mesReferencia === "all") return empty;
+
+  const supabase = await createSupabaseServerClient();
+  const start = firstDayOfMonth(mesReferencia);
+  const end = lastDayOfMonth(mesReferencia);
+
+  // 1. Pagamentos diretos do mês (pix, dinheiro, débito, crédito à vista)
+  let pagQ = supabase
+    .from("pagamentos")
+    .select("valor, forma, parcelas")
+    .gte("data_pagamento", start)
+    .lte("data_pagamento", end);
+  if (clinicaId) pagQ = pagQ.eq("clinica_id", clinicaId);
+
+  // 2. Parcelas de cartão recebidas no mês
+  let parcQ = supabase
+    .from("parcelas_cartao")
+    .select("valor_parcela")
+    .eq("status", "recebido")
+    .gte("mes_recebimento", start)
+    .lte("mes_recebimento", end);
+  if (clinicaId) parcQ = parcQ.eq("clinica_id", clinicaId);
+
+  // 3. Taxa real cartão
+  const [pagRes, parcRes, taxaReal] = await Promise.all([
+    pagQ,
+    parcQ,
+    calcularTaxaRealCartao(mesReferencia, clinicaId),
+  ]);
+
+  if (pagRes.error) {
+    console.error("[calcularDreRecebiveis] Erro pagamentos:", pagRes.error.message);
+    return empty;
+  }
+  if (parcRes.error) {
+    console.error("[calcularDreRecebiveis] Erro parcelas:", parcRes.error.message);
+    return empty;
+  }
+
+  let recebidoPix = 0;
+  let recebidoDinheiro = 0;
+  let recebidoDebitoAvista = 0;
+
+  for (const pag of pagRes.data ?? []) {
+    const p = pag as Record<string, unknown>;
+    const valor = Number(p.valor);
+    const forma = String(p.forma);
+    const parcelas = Number(p.parcelas ?? 1);
+
+    if (forma === "pix") {
+      recebidoPix += valor;
+    } else if (forma === "dinheiro") {
+      recebidoDinheiro += valor;
+    } else if (forma === "cartao_debito") {
+      recebidoDebitoAvista += valor;
+    } else if (forma === "cartao_credito" && parcelas <= 1) {
+      recebidoDebitoAvista += valor; // crédito à vista = recebimento imediato
+    }
+    // crédito parcelado (>1x): não conta aqui, entra via parcelas_cartao
+  }
+
+  const recebidoParcelasCartao = (parcRes.data ?? []).reduce(
+    (s, r) => s + Number((r as Record<string, unknown>).valor_parcela ?? 0), 0
+  );
+
+  const totalRecebido = Math.round(
+    (recebidoPix + recebidoDinheiro + recebidoDebitoAvista + recebidoParcelasCartao) * 100
+  ) / 100;
+
+  const liquidoRecebido = Math.round((totalRecebido - taxaReal) * 100) / 100;
+
+  return {
+    recebidoPix: Math.round(recebidoPix * 100) / 100,
+    recebidoDinheiro: Math.round(recebidoDinheiro * 100) / 100,
+    recebidoDebitoAvista: Math.round(recebidoDebitoAvista * 100) / 100,
+    recebidoParcelasCartao: Math.round(recebidoParcelasCartao * 100) / 100,
+    totalRecebido,
+    taxaRealCartao: taxaReal,
+    liquidoRecebido,
+  };
 }
 
 /* ------------------------------------------------------------------ */
