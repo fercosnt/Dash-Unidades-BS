@@ -1,6 +1,7 @@
 import { getClinicasAtivas, getMonthlyUploadStatus } from "./actions";
 import { UploadPageClient } from "./UploadPageClient";
 import { MonthlyUploadStatus } from "@/components/upload/MonthlyUploadStatus";
+import { UploadPageTabs } from "./UploadPageTabs";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,7 @@ export default async function UploadPage() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="lg:col-span-2">
-        <UploadPageClient clinicas={clinicas} />
+        <UploadPageTabs clinicas={clinicas} />
       </div>
       <div className="lg:col-span-1">
         <MonthlyUploadStatus initialStatus={uploadStatus} initialMes={mes} />

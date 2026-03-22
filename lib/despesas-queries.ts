@@ -3,6 +3,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { firstDayOfMonth, lastDayOfMonth } from "@/lib/utils/date-helpers";
 import type { DreBsUnidadeData, DreRecebiveisData } from "@/types/dashboard.types";
+import { getConfigVigente } from "@/app/admin/configuracoes/financeiro/actions";
 
 /* ------------------------------------------------------------------ */
 /*  Categorias                                                         */
@@ -235,7 +236,11 @@ export async function calcularDreRecebiveis(
   const empty: DreRecebiveisData = {
     recebidoPix: 0, recebidoDinheiro: 0, recebidoDebitoAvista: 0,
     recebidoParcelasCartao: 0, totalRecebido: 0,
-    taxaRealCartao: 0, liquidoRecebido: 0,
+    custosProcedimentos: 0, custoMaoObra: 0, taxaCartaoCobrada: 0,
+    impostoNfCobrado: 0, comissoesMedicas: 0, valorBeautySmile60: 0,
+    receitaBsBruta: 0, taxaRealCartao: 0, receitaPosTaxas: 0,
+    comissaoDentista: 0, despesasPorCategoria: [], totalDespesas: 0,
+    resultadoUnidade: 0,
   };
 
   if (mesReferencia === "all") return empty;
@@ -261,11 +266,29 @@ export async function calcularDreRecebiveis(
     .lte("mes_recebimento", end);
   if (clinicaId) parcQ = parcQ.eq("clinica_id", clinicaId);
 
-  // 3. Taxa real cartão
-  const [pagRes, parcRes, taxaReal] = await Promise.all([
+  // 3. Resumo mensal (custos do split)
+  let resumoQ = supabase
+    .from("resumo_mensal")
+    .select("total_custos_procedimentos, total_custo_mao_obra, total_taxa_cartao, total_imposto_nf, total_comissoes_medicas");
+  resumoQ = resumoQ.gte("mes_referencia", start).lte("mes_referencia", end);
+  if (clinicaId) resumoQ = resumoQ.eq("clinica_id", clinicaId);
+
+  // 4. Comissões dentista
+  let comDentistaQ = supabase
+    .from("comissoes_dentista")
+    .select("valor_comissao")
+    .gte("mes_referencia", start)
+    .lte("mes_referencia", end);
+  if (clinicaId) comDentistaQ = comDentistaQ.eq("clinica_id", clinicaId);
+
+  const [pagRes, parcRes, taxaReal, resumoRes, configRes, comDentistaRes, despesasPorCategoria] = await Promise.all([
     pagQ,
     parcQ,
     calcularTaxaRealCartao(mesReferencia, clinicaId),
+    resumoQ,
+    getConfigVigente(),
+    comDentistaQ,
+    fetchDespesasPorCategoria(mesReferencia, clinicaId),
   ]);
 
   if (pagRes.error) {
@@ -276,7 +299,16 @@ export async function calcularDreRecebiveis(
     console.error("[calcularDreRecebiveis] Erro parcelas:", parcRes.error.message);
     return empty;
   }
+  if (resumoRes.error) {
+    console.error("[calcularDreRecebiveis] Erro resumo:", resumoRes.error.message);
+    return empty;
+  }
+  if (comDentistaRes.error) {
+    console.error("[calcularDreRecebiveis] Erro comissoes_dentista:", comDentistaRes.error.message);
+    return empty;
+  }
 
+  // --- Entradas (caixa) ---
   let recebidoPix = 0;
   let recebidoDinheiro = 0;
   let recebidoDebitoAvista = 0;
@@ -294,9 +326,8 @@ export async function calcularDreRecebiveis(
     } else if (forma === "cartao_debito") {
       recebidoDebitoAvista += valor;
     } else if (forma === "cartao_credito" && parcelas <= 1) {
-      recebidoDebitoAvista += valor; // crédito à vista = recebimento imediato
+      recebidoDebitoAvista += valor;
     }
-    // crédito parcelado (>1x): não conta aqui, entra via parcelas_cartao
   }
 
   const recebidoParcelasCartao = (parcRes.data ?? []).reduce(
@@ -307,7 +338,33 @@ export async function calcularDreRecebiveis(
     (recebidoPix + recebidoDinheiro + recebidoDebitoAvista + recebidoParcelasCartao) * 100
   ) / 100;
 
-  const liquidoRecebido = Math.round((totalRecebido - taxaReal) * 100) / 100;
+  // --- Custos do split (de resumo_mensal) ---
+  const resumos = (resumoRes.data ?? []) as Record<string, unknown>[];
+  const sum = (key: string) => resumos.reduce((a, r) => a + Number(r[key] ?? 0), 0);
+
+  const custosProcedimentos = sum("total_custos_procedimentos");
+  const custoMaoObra = sum("total_custo_mao_obra");
+  const taxaCartaoCobrada = sum("total_taxa_cartao");
+  const impostoNfCobrado = sum("total_imposto_nf");
+  const comissoesMedicasResumo = sum("total_comissoes_medicas");
+
+  // --- DRE BS (mesma lógica do Faturamento, usando totalRecebido como base) ---
+  const percentualBs = configRes?.percentual_beauty_smile ?? 60;
+  const valorLiquidoRecebido = totalRecebido - custosProcedimentos - custoMaoObra
+    - taxaCartaoCobrada - impostoNfCobrado - comissoesMedicasResumo;
+  const valorBeautySmile60 = Math.round(valorLiquidoRecebido * percentualBs / 100 * 100) / 100;
+
+  const receitaBsBruta = custosProcedimentos + custoMaoObra + taxaCartaoCobrada
+    + impostoNfCobrado + comissoesMedicasResumo + valorBeautySmile60;
+
+  const receitaPosTaxas = receitaBsBruta - taxaReal;
+
+  const comissaoDentista = ((comDentistaRes.data ?? []) as Record<string, unknown>[])
+    .reduce((a, r) => a + Number(r.valor_comissao ?? 0), 0);
+
+  const totalDespesas = despesasPorCategoria.reduce((s, c) => s + c.total, 0);
+
+  const resultadoUnidade = receitaPosTaxas - comissaoDentista - totalDespesas;
 
   return {
     recebidoPix: Math.round(recebidoPix * 100) / 100,
@@ -315,8 +372,19 @@ export async function calcularDreRecebiveis(
     recebidoDebitoAvista: Math.round(recebidoDebitoAvista * 100) / 100,
     recebidoParcelasCartao: Math.round(recebidoParcelasCartao * 100) / 100,
     totalRecebido,
+    custosProcedimentos,
+    custoMaoObra,
+    taxaCartaoCobrada,
+    impostoNfCobrado,
+    comissoesMedicas: comissoesMedicasResumo,
+    valorBeautySmile60,
+    receitaBsBruta,
     taxaRealCartao: taxaReal,
-    liquidoRecebido,
+    receitaPosTaxas,
+    comissaoDentista,
+    despesasPorCategoria,
+    totalDespesas,
+    resultadoUnidade,
   };
 }
 

@@ -139,18 +139,18 @@ Módulo completo para gestão de despesas por unidade e cálculo do resultado re
 - Categorias dinâmicas (admin gerencia, não enum)
 
 **Página de despesas (`/admin/despesas`) — 3 abas:**
-- **Aba Recebíveis** — DRE visão caixa: PIX + Dinheiro + Débito/Crédito à vista + Parcelas recebidas → Taxa real → Líquido
-- **Aba Faturamento** — DRE Beauty Smile: receita BS bruta → taxa real → despesas → resultado
+- **Aba Recebíveis** — DRE completo base caixa: entradas (PIX/Dinheiro/Cartão/Parcelas) → mesma estrutura do Faturamento usando totalRecebido como base → resultado BS
+- **Aba Faturamento** — DRE Beauty Smile: receita BS bruta → taxa real → comissão dentista → despesas → resultado
 - **Aba Despesas** — Gestão: cadastro manual, upload XLSX com preview, copiar mês anterior, edição inline
 
 **Cálculos (`lib/despesas-queries.ts`):**
 - `calcularTaxaRealCartao()` — pagamentos × taxas reais por bandeira/modalidade/parcelas
-- `calcularDreBsUnidade()` — DRE completo: receita BS bruta → taxa real → despesas → resultado
-- `calcularDreRecebiveis()` — DRE caixa: entradas por tipo → taxa real → líquido recebido
+- `calcularDreBsUnidade()` — DRE completo: receita BS bruta → taxa real → comissão dentista → despesas → resultado
+- `calcularDreRecebiveis()` — DRE caixa completo: entradas → mesma estrutura do Faturamento (custos, mão obra, taxa, imposto, comissões, 60% valor líquido) usando totalRecebido como base → resultado BS
 
 **Componentes:**
 - `DreBsUnidade.tsx` — DRE faturamento (aba Faturamento)
-- `DreRecebiveis.tsx` — DRE caixa (aba Recebíveis)
+- `DreRecebiveis.tsx` — DRE caixa completo (aba Recebíveis) — mesma estrutura visual do Faturamento
 
 **Sidebar atualizada:**
 - "Despesas" no grupo Principal
@@ -163,6 +163,12 @@ Módulo completo para gestão de despesas por unidade e cálculo do resultado re
 - Todos os pagamentos de cartão existentes setados como `visa_master`
 - 26 taxas reais inseridas com valores corretos (antes estavam zeradas)
 - Seletor de bandeira no modal de pagamento (já existia no código, agora funciona com coluna no banco)
+
+### Correções DRE Recebíveis + Faturamento — 2026-03-21
+
+- **DRE Recebíveis reescrito** — agora tem DRE completo (mesma estrutura do Faturamento) usando `totalRecebido` como base em vez de `faturamento_bruto`. Seção de entradas (PIX, Dinheiro, Cartão, Parcelas) + DRE BS (custos, mão de obra, taxa, imposto, comissões, 60% valor líquido, deduções)
+- **Custos de procedimentos corrigidos** — `resumo_mensal.total_custos_procedimentos` estava zerado (resumo calculado antes dos procedimentos terem custo_fixo). Recalculado: Fev=R$2.560, Jan=R$570, com cascata em valor_liquido/valor_beauty_smile/valor_clinica
+- **Tipo `DreRecebiveisData` expandido** — de 7 para 17 campos (espelha `DreBsUnidadeData`)
 
 ---
 

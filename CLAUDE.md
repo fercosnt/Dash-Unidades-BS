@@ -102,7 +102,7 @@ RECEITA BS (bruta):
 ```
 
 ### DRE Recebíveis (aba Recebíveis)
-Visão caixa — quanto dinheiro efetivamente entrou na conta no mês:
+Visão caixa — mesma estrutura do Faturamento, usando `totalRecebido` no lugar de `faturamento_bruto`:
 ```
 ENTRADAS DO MÊS:
   + PIX
@@ -111,8 +111,21 @@ ENTRADAS DO MÊS:
   + Parcelas Cartão Recebidas (status = 'recebido')
 = Total Recebido
 
-  (-) Taxa Real Cartão
-= Líquido Recebido (o que entrou na conta)
+RESULTADO BS (base caixa):
+  + Custos Procedimentos (de resumo_mensal)
+  + Custo Mão de Obra (de resumo_mensal)
+  + Taxa Cartão cobrada (de resumo_mensal)
+  + Imposto NF cobrado (de resumo_mensal)
+  + Comissões Médicas (de resumo_mensal)
+  + 60% do Valor Líquido = 60% × (Total Recebido - custos acima)
+= Receita BS Bruta (pode ser negativa se pouco foi recebido)
+
+  (-) Taxa real cartão
+= Receita pós taxas
+
+  (-) Comissão Dentista
+  (-) Despesas operacionais (agrupadas por categoria)
+= Resultado da Unidade p/ Beauty Smile (base caixa)
 ```
 - Crédito parcelado (>1x) não entra como direto — entra via `parcelas_cartao`
 - Débito e crédito 1x contam como recebimento imediato

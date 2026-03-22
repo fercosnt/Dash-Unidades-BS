@@ -13,6 +13,10 @@ const ClinicaSchema = z.object({
   telefone: z.string().optional(),
   custo_mao_de_obra: z.coerce.number().min(0),
   percentual_split: z.coerce.number().min(0).max(100),
+  clinicorp_subscriber_id: z.string().optional(),
+  clinicorp_username: z.string().optional(),
+  clinicorp_token: z.string().optional(),
+  clinicorp_business_id: z.string().optional(),
 });
 
 export type ClinicaRow = {
@@ -26,13 +30,17 @@ export type ClinicaRow = {
   percentual_split: number;
   ativo: boolean;
   created_at: string;
+  clinicorp_subscriber_id: string | null;
+  clinicorp_username: string | null;
+  clinicorp_token: string | null;
+  clinicorp_business_id: string | null;
 };
 
 export async function listarClinicas(filtroStatus: "todas" | "ativa" | "inativa" = "todas") {
   const { supabase } = await requireAdmin();
   let query = supabase
     .from("clinicas_parceiras")
-    .select("id, nome, cnpj, responsavel, email, telefone, custo_mao_de_obra, percentual_split, ativo, created_at")
+    .select("id, nome, cnpj, responsavel, email, telefone, custo_mao_de_obra, percentual_split, ativo, created_at, clinicorp_subscriber_id, clinicorp_username, clinicorp_token, clinicorp_business_id")
     .order("nome");
 
   if (filtroStatus === "ativa") query = query.eq("ativo", true);
@@ -51,6 +59,10 @@ export async function criarClinica(form: {
   telefone?: string;
   custo_mao_de_obra: number;
   percentual_split: number;
+  clinicorp_subscriber_id?: string;
+  clinicorp_username?: string;
+  clinicorp_token?: string;
+  clinicorp_business_id?: string;
 }) {
   const parsed = ClinicaSchema.safeParse(form);
   if (!parsed.success) throw new Error(parsed.error.issues[0].message);
@@ -65,6 +77,10 @@ export async function criarClinica(form: {
     custo_mao_de_obra: Number(form.custo_mao_de_obra) || 0,
     percentual_split: Number(form.percentual_split) || 40,
     ativo: true,
+    clinicorp_subscriber_id: form.clinicorp_subscriber_id?.trim() || null,
+    clinicorp_username: form.clinicorp_username?.trim() || null,
+    clinicorp_token: form.clinicorp_token?.trim() || null,
+    clinicorp_business_id: form.clinicorp_business_id?.trim() || null,
   });
   if (error) throw new Error(error.message);
   revalidatePath("/admin/configuracoes/clinicas");
@@ -80,6 +96,10 @@ export async function atualizarClinica(
     telefone?: string;
     custo_mao_de_obra: number;
     percentual_split: number;
+    clinicorp_subscriber_id?: string;
+    clinicorp_username?: string;
+    clinicorp_token?: string;
+    clinicorp_business_id?: string;
   }
 ) {
   const parsed = ClinicaSchema.safeParse(form);
@@ -97,6 +117,10 @@ export async function atualizarClinica(
       telefone: form.telefone?.trim() || null,
       custo_mao_de_obra: Number(form.custo_mao_de_obra) || 0,
       percentual_split: Number(form.percentual_split) || 40,
+      clinicorp_subscriber_id: form.clinicorp_subscriber_id?.trim() || null,
+      clinicorp_username: form.clinicorp_username?.trim() || null,
+      clinicorp_token: form.clinicorp_token?.trim() || null,
+      clinicorp_business_id: form.clinicorp_business_id?.trim() || null,
     })
     .eq("id", id);
   if (error) throw new Error(error.message);

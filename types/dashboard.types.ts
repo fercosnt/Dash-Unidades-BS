@@ -183,17 +183,28 @@ export type DreBsUnidadeData = {
   resultadoUnidade: number;
 };
 
-/** DRE Recebíveis — visão caixa (o que entrou na conta) */
+/** DRE Recebíveis — visão caixa com DRE completo (mesma estrutura do Faturamento) */
 export type DreRecebiveisData = {
-  /* Entradas */
+  /* Entradas (visão caixa) */
   recebidoPix: number;
   recebidoDinheiro: number;
   recebidoDebitoAvista: number;
   recebidoParcelasCartao: number;
   totalRecebido: number;
-  /* Taxa real */
+  /* Mesma estrutura do Faturamento, usando totalRecebido como base */
+  custosProcedimentos: number;
+  custoMaoObra: number;
+  taxaCartaoCobrada: number;
+  impostoNfCobrado: number;
+  comissoesMedicas: number;
+  valorBeautySmile60: number;
+  receitaBsBruta: number;
   taxaRealCartao: number;
-  liquidoRecebido: number;
+  receitaPosTaxas: number;
+  comissaoDentista: number;
+  despesasPorCategoria: { categoriaId: string; categoria: string; total: number }[];
+  totalDespesas: number;
+  resultadoUnidade: number;
 };
 
 /** Dados para gráfico de evolução por tratamento (top-5 últimos N meses) */

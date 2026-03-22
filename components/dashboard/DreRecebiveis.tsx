@@ -74,13 +74,11 @@ type Props = {
 };
 
 export function DreRecebiveis({ data, className = "" }: Props) {
-  const base = data.totalRecebido;
-
-  if (base === 0) {
+  if (data.totalRecebido === 0 && data.receitaBsBruta === 0) {
     return (
       <div className={`rounded-xl bg-white p-6 shadow-md ${className}`}>
         <h3 className="text-sm font-heading font-bold text-neutral-900 mb-4">
-          Recebíveis — Visão Caixa
+          DRE Recebíveis — Visão Caixa
         </h3>
         <p className="mt-4 text-center text-xs text-neutral-400">
           Nenhum recebimento registrado neste período
@@ -89,50 +87,144 @@ export function DreRecebiveis({ data, className = "" }: Props) {
     );
   }
 
-  const liquidoPositivo = data.liquidoRecebido >= 0;
+  const baseEntradas = data.totalRecebido;
+  const baseDre = data.receitaBsBruta;
+  const hasDespesas = data.despesasPorCategoria.length > 0;
+  const resultadoPositivo = data.resultadoUnidade >= 0;
 
   return (
     <div className={`rounded-xl bg-white p-6 shadow-md ${className}`}>
       <h3 className="text-sm font-heading font-bold text-neutral-900 mb-4">
-        Recebíveis — Visão Caixa
+        DRE Recebíveis — Visão Caixa
       </h3>
 
       <div className="space-y-0.5">
+        {/* --- ENTRADAS DO MÊS --- */}
+        <p className="text-xs font-medium uppercase text-neutral-500 mb-1">Entradas do Mês</p>
         {data.recebidoPix > 0 && (
-          <DreRow label="+ PIX" value={data.recebidoPix} base={base} indent />
+          <DreRow label="+ PIX" value={data.recebidoPix} base={baseEntradas} indent />
         )}
         {data.recebidoDinheiro > 0 && (
-          <DreRow label="+ Dinheiro" value={data.recebidoDinheiro} base={base} indent />
+          <DreRow label="+ Dinheiro" value={data.recebidoDinheiro} base={baseEntradas} indent />
         )}
         {data.recebidoDebitoAvista > 0 && (
-          <DreRow label="+ Cartão Débito / Crédito à Vista" value={data.recebidoDebitoAvista} base={base} indent />
+          <DreRow label="+ Cartão Débito / Crédito à Vista" value={data.recebidoDebitoAvista} base={baseEntradas} indent />
         )}
         {data.recebidoParcelasCartao > 0 && (
-          <DreRow label="+ Parcelas Cartão Recebidas" value={data.recebidoParcelasCartao} base={base} indent />
+          <DreRow label="+ Parcelas Cartão Recebidas" value={data.recebidoParcelasCartao} base={baseEntradas} indent />
         )}
 
         <DreRow
           label="= Total Recebido"
           value={data.totalRecebido}
-          base={base}
+          base={baseEntradas}
           highlight
         />
 
+        {/* --- SEPARADOR --- */}
+        <div className="my-3 border-t-2 border-neutral-300" />
+
+        {/* --- DRE BS (mesma estrutura do Faturamento) --- */}
+        <p className="text-xs font-medium uppercase text-neutral-500 mb-1">Resultado Beauty Smile</p>
+
+        <DreRow
+          label="+ Custos de Procedimentos"
+          value={data.custosProcedimentos}
+          base={baseDre}
+          indent
+        />
+        <DreRow
+          label="+ Custo de Mão de Obra"
+          value={data.custoMaoObra}
+          base={baseDre}
+          indent
+        />
+        <DreRow
+          label="+ Taxa Cartão (cobrada)"
+          value={data.taxaCartaoCobrada}
+          base={baseDre}
+          indent
+        />
+        <DreRow
+          label="+ Imposto NF (cobrado)"
+          value={data.impostoNfCobrado}
+          base={baseDre}
+          indent
+        />
+        <DreRow
+          label="+ Comissões Médicas"
+          value={data.comissoesMedicas}
+          base={baseDre}
+          indent
+        />
+        <DreRow
+          label="+ 60% Valor Líquido"
+          value={data.valorBeautySmile60}
+          base={baseDre}
+          indent
+        />
+        <DreRow
+          label="= Receita BS Bruta"
+          value={data.receitaBsBruta}
+          base={baseDre}
+          highlight
+        />
+
+        {/* --- TAXA REAL --- */}
         <DreRow
           label="(-) Taxa Real Cartão"
           value={data.taxaRealCartao}
-          base={base}
+          base={baseDre}
           negative
         />
+        <DreRow
+          label="= Receita Pós Taxas"
+          value={data.receitaPosTaxas}
+          base={baseDre}
+          highlight
+        />
 
+        {/* --- DEDUÇÕES --- */}
+        {data.comissaoDentista > 0 && (
+          <DreRow
+            label="(-) Comissão Dentista"
+            value={data.comissaoDentista}
+            base={baseDre}
+            negative
+          />
+        )}
+
+        {hasDespesas && (
+          <>
+            {data.despesasPorCategoria.map((d) => (
+              <DreRow
+                key={d.categoriaId}
+                label={`(-) ${d.categoria}`}
+                value={d.total}
+                base={baseDre}
+                negative
+                indent
+              />
+            ))}
+            <DreRow
+              label="(-) Total Despesas"
+              value={data.totalDespesas}
+              base={baseDre}
+              negative
+            />
+          </>
+        )}
+
+        {/* --- SEPARADOR --- */}
         <div className="my-2 border-t-2 border-neutral-300" />
 
+        {/* --- RESULTADO --- */}
         <DreRow
-          label="= Líquido Recebido (entrou na conta)"
-          value={data.liquidoRecebido}
-          base={base}
+          label="= Resultado da Unidade"
+          value={data.resultadoUnidade}
+          base={baseDre}
           highlight
-          highlightColor={liquidoPositivo ? "success" : "danger"}
+          highlightColor={resultadoPositivo ? "success" : "danger"}
         />
       </div>
     </div>

@@ -31,6 +31,10 @@ type FormState = {
   telefone: string;
   custo_mao_de_obra: string;
   percentual_split: string;
+  clinicorp_subscriber_id: string;
+  clinicorp_username: string;
+  clinicorp_token: string;
+  clinicorp_business_id: string;
 };
 
 const emptyForm: FormState = {
@@ -41,6 +45,10 @@ const emptyForm: FormState = {
   telefone: "",
   custo_mao_de_obra: "0",
   percentual_split: "40",
+  clinicorp_subscriber_id: "",
+  clinicorp_username: "",
+  clinicorp_token: "",
+  clinicorp_business_id: "",
 };
 
 function clinicaToForm(c: ClinicaRow): FormState {
@@ -52,6 +60,10 @@ function clinicaToForm(c: ClinicaRow): FormState {
     telefone: c.telefone ?? "",
     custo_mao_de_obra: String(c.custo_mao_de_obra),
     percentual_split: String(c.percentual_split),
+    clinicorp_subscriber_id: c.clinicorp_subscriber_id ?? "",
+    clinicorp_username: c.clinicorp_username ?? "",
+    clinicorp_token: c.clinicorp_token ?? "",
+    clinicorp_business_id: c.clinicorp_business_id ?? "",
   };
 }
 
@@ -107,6 +119,13 @@ export function ClinicasClient({
       if (isNaN(custo) || custo < 0) throw new Error("Custo mão de obra deve ser ≥ 0.");
       if (isNaN(split) || split < 0 || split > 100) throw new Error("Split deve ser entre 0 e 100.");
 
+      const clinicorpFields = {
+        clinicorp_subscriber_id: form.clinicorp_subscriber_id || undefined,
+        clinicorp_username: form.clinicorp_username || undefined,
+        clinicorp_token: form.clinicorp_token || undefined,
+        clinicorp_business_id: form.clinicorp_business_id || undefined,
+      };
+
       if (editing) {
         await atualizarClinica(editing.id, {
           nome: form.nome,
@@ -116,6 +135,7 @@ export function ClinicasClient({
           telefone: form.telefone || undefined,
           custo_mao_de_obra: custo,
           percentual_split: split,
+          ...clinicorpFields,
         });
       } else {
         await criarClinica({
@@ -126,6 +146,7 @@ export function ClinicasClient({
           telefone: form.telefone || undefined,
           custo_mao_de_obra: custo,
           percentual_split: split,
+          ...clinicorpFields,
         });
       }
       setModalOpen(false);
@@ -228,6 +249,7 @@ export function ClinicasClient({
               <th className="px-4 py-3 text-left text-xs font-medium uppercase text-neutral-600">Responsável</th>
               <th className="px-4 py-3 text-right text-xs font-medium uppercase text-neutral-600">Custo mão de obra</th>
               <th className="px-4 py-3 text-right text-xs font-medium uppercase text-neutral-600">Split</th>
+              <th className="px-4 py-3 text-center text-xs font-medium uppercase text-neutral-600">Clinicorp</th>
               <th className="px-4 py-3 text-center text-xs font-medium uppercase text-neutral-600">Status</th>
               <th className="px-4 py-3 text-right text-xs font-medium uppercase text-neutral-600">Ações</th>
             </tr>
@@ -235,7 +257,7 @@ export function ClinicasClient({
           <tbody className="divide-y divide-neutral-200">
             {clinicas.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-neutral-500">
+                <td colSpan={8} className="px-4 py-8 text-center text-neutral-500">
                   Nenhuma clínica encontrada.
                 </td>
               </tr>
@@ -247,6 +269,15 @@ export function ClinicasClient({
                   <td className="px-4 py-3 text-sm text-neutral-600">{c.responsavel ?? "—"}</td>
                   <td className="px-4 py-3 text-right text-sm text-neutral-600">{formatMoney(c.custo_mao_de_obra)}</td>
                   <td className="px-4 py-3 text-right text-sm text-neutral-600">{formatPercent(c.percentual_split)}</td>
+                  <td className="px-4 py-3 text-center">
+                    <span
+                      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                        c.clinicorp_token ? "bg-blue-100 text-blue-800" : "bg-neutral-100 text-neutral-500"
+                      }`}
+                    >
+                      {c.clinicorp_token ? "Conectada" : "—"}
+                    </span>
+                  </td>
                   <td className="px-4 py-3 text-center">
                     <span
                       className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -343,6 +374,52 @@ export function ClinicasClient({
                   className="w-full rounded-md border border-neutral-300 px-3 py-2 text-neutral-900 focus:border-primary-600 focus:ring-1 focus:ring-primary-600"
                 />
               </div>
+              {/* Clinicorp API */}
+              <div className="border-t border-neutral-200 pt-4 mt-2">
+                <p className="text-xs font-semibold uppercase text-neutral-500 mb-3">Integração Clinicorp</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">Subscriber ID</label>
+                    <input
+                      type="text"
+                      value={form.clinicorp_subscriber_id}
+                      onChange={(e) => setForm((f) => ({ ...f, clinicorp_subscriber_id: e.target.value }))}
+                      className="w-full rounded-md border border-neutral-300 px-3 py-2 text-neutral-900 focus:border-primary-600 focus:ring-1 focus:ring-primary-600"
+                      placeholder="Ex: bshirata"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">Business ID</label>
+                    <input
+                      type="text"
+                      value={form.clinicorp_business_id}
+                      onChange={(e) => setForm((f) => ({ ...f, clinicorp_business_id: e.target.value }))}
+                      className="w-full rounded-md border border-neutral-300 px-3 py-2 text-neutral-900 focus:border-primary-600 focus:ring-1 focus:ring-primary-600"
+                      placeholder="Ex: 5110943367364608"
+                    />
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Username</label>
+                  <input
+                    type="text"
+                    value={form.clinicorp_username}
+                    onChange={(e) => setForm((f) => ({ ...f, clinicorp_username: e.target.value }))}
+                    className="w-full rounded-md border border-neutral-300 px-3 py-2 text-neutral-900 focus:border-primary-600 focus:ring-1 focus:ring-primary-600"
+                  />
+                </div>
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Token</label>
+                  <input
+                    type="password"
+                    value={form.clinicorp_token}
+                    onChange={(e) => setForm((f) => ({ ...f, clinicorp_token: e.target.value }))}
+                    className="w-full rounded-md border border-neutral-300 px-3 py-2 text-neutral-900 focus:border-primary-600 focus:ring-1 focus:ring-primary-600"
+                    placeholder={editing?.clinicorp_token ? "••••••••" : ""}
+                  />
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">Custo mão de obra (R$) *</label>
