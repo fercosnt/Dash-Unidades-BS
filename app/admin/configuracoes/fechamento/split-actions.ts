@@ -73,8 +73,9 @@ export async function splitOrcamentosMes(
 
   let query = supabase
     .from("orcamentos_fechados")
-    .select("id, clinica_id, procedimentos_texto, valor_total, valor_bruto, desconto_reais")
+    .select("id, clinica_id, procedimentos_texto, valor_total, valor_bruto, desconto_reais, clinicas_parceiras!inner(ativo)")
     .is("split_status", null)
+    .eq("clinicas_parceiras.ativo", true)
     .gte("mes_referencia", start)
     .lte("mes_referencia", end);
 
@@ -152,7 +153,8 @@ export async function fetchSplitStats(mesReferencia: string): Promise<SplitStats
 
   const { data, error } = await supabase
     .from("orcamentos_fechados")
-    .select("id, split_status")
+    .select("id, split_status, clinicas_parceiras!inner(ativo)")
+    .eq("clinicas_parceiras.ativo", true)
     .gte("mes_referencia", start)
     .lte("mes_referencia", end);
 
@@ -192,8 +194,9 @@ export async function fetchSplitReview(
 
   let query = supabase
     .from("orcamentos_fechados")
-    .select("id, paciente_nome, procedimentos_texto, valor_total, valor_bruto, desconto_reais, desconto_percentual, split_status")
+    .select("id, paciente_nome, procedimentos_texto, valor_total, valor_bruto, desconto_reais, desconto_percentual, split_status, clinicas_parceiras!inner(ativo)")
     .not("split_status", "is", null)
+    .eq("clinicas_parceiras.ativo", true)
     .gte("mes_referencia", start)
     .lte("mes_referencia", end)
     .order("paciente_nome");

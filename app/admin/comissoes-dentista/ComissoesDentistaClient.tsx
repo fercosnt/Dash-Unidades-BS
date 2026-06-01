@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { darBaixaComissaoDentista, calcularComissaoDentista } from "./actions";
 import type { ComissaoDentistaItem, ConfigComissaoDentista } from "@/lib/comissao-dentista-queries";
 import type { DentistaItem } from "@/lib/dentista-queries";
@@ -41,6 +42,12 @@ export function ComissoesDentistaClient({
   dentistas: DentistaItem[];
 }) {
   const [comissoes, setComissoes] = useState(initialComissoes);
+  const router = useRouter();
+
+  // Mantém a lista sincronizada quando o servidor recarrega (router.refresh)
+  useEffect(() => {
+    setComissoes(initialComissoes);
+  }, [initialComissoes]);
 
   // Calcular comissão
   const defaultMes = OPTIONS_2026.find((o) => o.value === new Date().toISOString().slice(0, 7))?.value ?? OPTIONS_2026[0].value;
@@ -68,9 +75,8 @@ export function ComissoesDentistaClient({
         tipo: "ok",
         texto: `Tier ${result.tier} — ${formatCurrency(result.valorComissao ?? 0)} calculado para ${dentista?.nome ?? ""} em ${formatMes(calcMes)}.`,
       });
-      // Refresh comissoes to show new/updated entry
-      // Simple approach: reload page data via re-fetch isn't easily possible here,
-      // so just show success and prompt user to refresh if needed
+      // Recarrega os dados do servidor para a comissão recém-calculada aparecer na tabela
+      router.refresh();
     } else {
       setCalcMsg({ tipo: "erro", texto: result.error ?? "Erro ao calcular." });
     }
@@ -93,6 +99,7 @@ export function ComissoesDentistaClient({
       setModalId(null);
       setMsg({ tipo: "ok", texto: "Comissão marcada como paga." });
       setTimeout(() => setMsg(null), 4000);
+      router.refresh();
     } else {
       setMsg({ tipo: "erro", texto: result.error ?? "Erro ao registrar." });
     }
