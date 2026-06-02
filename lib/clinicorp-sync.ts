@@ -8,10 +8,8 @@ import { listEstimates, listPayments, getClinicorpCredentials } from "@/lib/clin
 import {
   transformEstimates,
   transformPayments,
-  transformTratamentosExecutados,
 } from "@/lib/clinicorp-transforms";
 import { isMesFechado } from "@/app/admin/configuracoes/fechamento/actions";
-import { matchProcedimentoPorNome } from "@/lib/utils/match-procedimento";
 import {
   splitOrcamento,
   type ProcedimentoRef,
@@ -80,7 +78,9 @@ export async function syncClinicaMonth(
   // Transformar dados
   const { fechados, abertos } = transformEstimates(apiEstimates);
   const pagamentos = transformPayments(apiPayments);
-  const tratamentos = transformTratamentosExecutados(apiEstimates, mesReferencia);
+  // Tratamentos executados NÃO são sincronizados: o custo de procedimentos é
+  // controlado manualmente via planilha "Procedimentos Executados" (origem='manual'),
+  // pois o relatório cobre procedimentos feitos fora de orçamento (que o StepsList não traz).
 
   // --- DRY RUN ---
   if (options.dryRun) {
@@ -88,7 +88,7 @@ export async function syncClinicaMonth(
       orcamentos_fechados: fechados.length,
       orcamentos_abertos: abertos.length,
       pagamentos: pagamentos.length,
-      tratamentos_executados: tratamentos.length,
+      tratamentos_executados: 0,
       detalhes: {
         fechados: fechados.map((f) => ({
           paciente: f.paciente_nome,
@@ -100,11 +100,7 @@ export async function syncClinicaMonth(
           valor: p.valor,
           forma: p.forma,
         })),
-        tratamentos: tratamentos.map((t) => ({
-          paciente: t.paciente_nome,
-          procedimento: t.procedimento_nome,
-          data: t.data_execucao ?? "",
-        })),
+        tratamentos: [],
       },
     };
     return { dryRun: true, preview };
@@ -369,49 +365,11 @@ export async function syncClinicaMonth(
     }
   }
 
-  // Tratamentos executados: replace por mês (delete + re-insert)
-  if (tratamentos.length > 0) {
-    // Deletar tratamentos anteriores do Clinicorp para este mês
-    await admin
-      .from("tratamentos_executados")
-      .delete()
-      .eq("clinica_id", clinicaId)
-      .eq("mes_referencia", mesReferencia)
-      .eq("origem", "clinicorp");
-
-    // Buscar procedimentos para match
-    const { data: procList } = await admin
-      .from("procedimentos")
-      .select("id, nome, codigo_clinicorp")
-      .eq("ativo", true);
-
-    const procs = (procList ?? []) as Array<{ id: string; nome: string; codigo_clinicorp: string | null }>;
-
-    const rows = tratamentos.map((t) => {
-      const match = matchProcedimentoPorNome(t.procedimento_nome, procs as never[]);
-      return {
-        clinica_id: clinicaId,
-        mes_referencia: mesReferencia,
-        paciente_nome: t.paciente_nome,
-        procedimento_nome: t.procedimento_nome,
-        procedimento_id: match ? (match as Record<string, unknown>).id as string : null,
-        data_execucao: t.data_execucao,
-        quantidade: t.quantidade,
-        profissional: t.profissional ?? null,
-        origem: "clinicorp" as const,
-      };
-    });
-
-    const { error: insertError } = await admin
-      .from("tratamentos_executados")
-      .insert(rows);
-
-    if (insertError) {
-      console.error("[clinicorp-sync] Erro ao inserir tratamentos:", insertError.message);
-    } else {
-      result.tratamentos_inseridos = tratamentos.length;
-    }
-  }
+  // Tratamentos executados: intencionalmente NÃO sincronizados.
+  // O custo de procedimentos realizados é gerido manualmente via planilha
+  // "Procedimentos Executados" (tratamentos_executados.origem='manual'),
+  // que cobre também procedimentos feitos fora de orçamento.
+  // result.tratamentos_inseridos permanece 0.
 
   // Atualizar batch como concluído
   if (batchId) {

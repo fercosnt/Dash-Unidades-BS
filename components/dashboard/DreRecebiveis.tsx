@@ -184,16 +184,7 @@ export function DreRecebiveis({ data, className = "" }: Props) {
           highlight
         />
 
-        {/* --- DEDUÇÕES --- */}
-        {data.comissaoDentista > 0 && (
-          <DreRow
-            label="(-) Comissão Dentista"
-            value={data.comissaoDentista}
-            base={baseDre}
-            negative
-          />
-        )}
-
+        {/* --- DESPESAS (inclui Comissão Dentista) --- */}
         {hasDespesas && (
           <>
             {data.despesasPorCategoria.map((d) => (

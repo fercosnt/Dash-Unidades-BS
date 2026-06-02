@@ -157,16 +157,7 @@ export function DreBsUnidade({ data, className = "" }: Props) {
           highlight
         />
 
-        {/* --- DEDUÇÕES --- */}
-        {data.comissaoDentista > 0 && (
-          <DreRow
-            label="(-) Comissão Dentista"
-            value={data.comissaoDentista}
-            base={base}
-            negative
-          />
-        )}
-
+        {/* --- DESPESAS (inclui Comissão Dentista) --- */}
         {hasDespesas && (
           <>
             {data.despesasPorCategoria.map((d) => (

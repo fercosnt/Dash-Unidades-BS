@@ -196,7 +196,7 @@ export async function calcularComissaoDentista(dentistaId: string, mes: string) 
       valor_comissao: valorComissao,
       config_id: config.id as string,
     },
-    { onConflict: "clinica_id,mes_referencia" }
+    { onConflict: "clinica_id,dentista_id,mes_referencia" }
   );
 
   if (error) return { ok: false, error: error.message };

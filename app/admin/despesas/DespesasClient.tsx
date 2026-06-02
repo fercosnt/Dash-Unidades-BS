@@ -476,7 +476,7 @@ export function DespesasClient({ clinicas, categorias: initialCategorias, initia
             <div className="flex items-center justify-between p-4 border-b border-neutral-200">
               <h3 className="text-lg font-semibold text-neutral-900">Despesas do Período</h3>
               <span className="text-sm font-medium text-neutral-600">
-                Total: <span className="text-neutral-900">{formatCurrency(totalDespesas)}</span>
+                Total: <span className="text-neutral-900">{formatCurrency(totalDespesas + dreBs.comissaoDentista)}</span>
               </span>
             </div>
             <table className="min-w-full divide-y divide-neutral-200">
@@ -491,14 +491,15 @@ export function DespesasClient({ clinicas, categorias: initialCategorias, initia
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-200">
-                {despesas.length === 0 ? (
+                {despesas.length === 0 && dreBs.comissaoDentista <= 0 ? (
                   <tr>
                     <td colSpan={6} className="px-4 py-8 text-center text-neutral-500">
                       Nenhuma despesa registrada neste período.
                     </td>
                   </tr>
                 ) : (
-                  despesas.map((d) => (
+                  <>
+                  {despesas.map((d) => (
                     <tr key={d.id} className="hover:bg-neutral-50">
                       {editId === d.id ? (
                         <>
@@ -569,7 +570,18 @@ export function DespesasClient({ clinicas, categorias: initialCategorias, initia
                         </>
                       )}
                     </tr>
-                  ))
+                  ))}
+                  {dreBs.comissaoDentista > 0 && (
+                    <tr className="bg-neutral-50">
+                      <td className="px-4 py-3 text-sm text-neutral-400">—</td>
+                      <td className="px-4 py-3 text-sm font-medium text-neutral-700">Comissão Dentista</td>
+                      <td className="px-4 py-3 text-sm italic text-neutral-500">Calculada no módulo de comissões (despesa Beauty Smile)</td>
+                      <td className="px-4 py-3 text-right text-sm font-medium text-neutral-900">{formatCurrency(dreBs.comissaoDentista)}</td>
+                      <td className="px-4 py-3 text-center"><span className="text-xs text-neutral-400">—</span></td>
+                      <td className="px-4 py-3 text-right"><a href="/admin/comissoes-dentista" className="text-sm text-primary-600 hover:underline">Ver</a></td>
+                    </tr>
+                  )}
+                  </>
                 )}
               </tbody>
             </table>
