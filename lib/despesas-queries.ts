@@ -362,9 +362,17 @@ export async function calcularDreRecebiveis(
   const comissaoDentista = ((comDentistaRes.data ?? []) as Record<string, unknown>[])
     .reduce((a, r) => a + Number(r.valor_comissao ?? 0), 0);
 
+  // Comissão da dentista entra como despesa da Beauty Smile (linha dentro do grupo de despesas)
+  if (comissaoDentista > 0) {
+    despesasPorCategoria.push({
+      categoriaId: "comissao-dentista",
+      categoria: "Comissão Dentista",
+      total: comissaoDentista,
+    });
+  }
   const totalDespesas = despesasPorCategoria.reduce((s, c) => s + c.total, 0);
 
-  const resultadoUnidade = receitaPosTaxas - comissaoDentista - totalDespesas;
+  const resultadoUnidade = receitaPosTaxas - totalDespesas;
 
   return {
     recebidoPix: Math.round(recebidoPix * 100) / 100,
@@ -461,9 +469,17 @@ export async function calcularDreBsUnidade(
   const comissaoDentista = ((comDentistaRes.data ?? []) as Record<string, unknown>[])
     .reduce((a, r) => a + Number(r.valor_comissao ?? 0), 0);
 
+  // Comissão da dentista entra como despesa da Beauty Smile (linha dentro do grupo de despesas)
+  if (comissaoDentista > 0) {
+    despesasPorCategoria.push({
+      categoriaId: "comissao-dentista",
+      categoria: "Comissão Dentista",
+      total: comissaoDentista,
+    });
+  }
   const totalDespesas = despesasPorCategoria.reduce((s, c) => s + c.total, 0);
 
-  const resultadoUnidade = receitaPosTaxas - comissaoDentista - totalDespesas;
+  const resultadoUnidade = receitaPosTaxas - totalDespesas;
 
   return {
     custosProcedimentos,
