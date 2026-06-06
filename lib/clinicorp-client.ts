@@ -1,6 +1,8 @@
 /**
  * Client HTTP para a API Clinicorp.
- * Base URL real: https://sistema.clinicorp.com/rest/v1 (não /api/)
+ * Base URL real: https://api.clinicorp.com/rest/v1
+ * (migrou de sistema.clinicorp.com → api.clinicorp.com em ~05/06/2026;
+ *  o host antigo passou a servir o site estático/login)
  * Auth: HTTP Basic Auth (username:token)
  * Limite: máximo 31 dias por request
  */
@@ -11,7 +13,7 @@ import type {
   ClinicorpPayment,
 } from "@/types/clinicorp.types";
 
-const BASE_URL = "https://sistema.clinicorp.com/rest/v1";
+const BASE_URL = "https://api.clinicorp.com/rest/v1";
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
 
