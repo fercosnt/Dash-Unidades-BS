@@ -53,15 +53,17 @@ app/
 ## Regras de negócio
 
 ### Sincronização Clinicorp (automática)
-Dados sincronizados automaticamente da API Clinicorp via Vercel Cron (diário, 3:00 BRT):
+Dados sincronizados automaticamente da API Clinicorp via Vercel Cron (diário, 3:00 BRT).
+**Base URL da API:** `https://api.clinicorp.com/rest/v1` (migrou de `sistema.clinicorp.com` em ~05/06/2026 — o host antigo virou site estático).
 1. **Orçamentos** — `GET /estimates/list`, separados em `orcamentos_fechados` (APPROVED) e `orcamentos_abertos` (demais)
 2. **Pagamentos** — `GET /payment/list`, registrados via RPC `registrar_pagamento`
-3. **Tratamentos executados** — extraídos dos `StepsList` dos estimates (Executed="X", filtrado por mês)
-4. **Recálculo automático** — `calcularEPersistirResumo()` chamado direto após cada sync
+3. **Recálculo automático** — `calcularEPersistirResumo()` chamado direto após cada sync
 
-**Idempotência:** orçamentos/pagamentos por `clinicorp_treatment_id`/`clinicorp_payment_id` (insert if not exists). Tratamentos: replace por mês (delete `origem='clinicorp'` + re-insert).
+> **Tratamentos executados NÃO são mais sincronizados pela API.** O custo de procedimentos realizados é controlado **manualmente via planilha "Procedimentos Executados"** do Clinicorp (importada como `tratamentos_executados.origem='manual'`). Motivo: o `StepsList` dos estimates só traz procedimentos dentro de orçamento; o relatório de procedimentos executados cobre também os feitos fora de orçamento (consultas, entregas, cortesias). **Regras de import:** cortesia conta custo; descrição com "+" vira múltiplos procedimentos. O sync (`lib/clinicorp-sync.ts`) não toca em `tratamentos_executados`.
 
-**Credenciais:** por clínica (`clinicorp_subscriber_id` + `clinicorp_api_key` em `clinicas_parceiras`).
+**Idempotência:** orçamentos/pagamentos por `clinicorp_treatment_id`/`clinicorp_payment_id` (insert if not exists).
+
+**Credenciais:** por clínica em `clinicas_parceiras` (`clinicorp_subscriber_id`, `clinicorp_username`, `clinicorp_token`, `clinicorp_business_id`). Auth = HTTP Basic (`username:token`).
 
 **Indicações:** marcadas manualmente no fechamento do mês (API não fornece "Como conheceu?").
 
@@ -107,10 +109,10 @@ RECEITA BS (bruta):
   (-) Taxa real cartão (pagamentos × taxa real por modalidade/bandeira/parcelas)
 = Receita pós taxas (o que entrou na conta)
 
-  (-) Comissão Dentista
-  (-) Despesas operacionais (agrupadas por categoria)
+  (-) Despesas operacionais (agrupadas por categoria, INCLUINDO "Comissão Dentista")
 = Resultado da Unidade p/ Beauty Smile
 ```
+> **Comissão Dentista entra como despesa da BS:** desde 2026-06 a comissão da dentista é uma linha **dentro** do grupo de Despesas (soma no Total Despesas), não mais uma dedução separada. Aparece assim nos dois DREs (Recebíveis e Faturamento) e também na aba **Despesas** (linha read-only). Resultado final inalterado.
 
 ### DRE Recebíveis (aba Recebíveis)
 Visão caixa — mesma estrutura do Faturamento, usando `totalRecebido` no lugar de `faturamento_bruto`:
@@ -134,8 +136,7 @@ RESULTADO BS (base caixa):
   (-) Taxa real cartão
 = Receita pós taxas
 
-  (-) Comissão Dentista
-  (-) Despesas operacionais (agrupadas por categoria)
+  (-) Despesas operacionais (agrupadas por categoria, INCLUINDO "Comissão Dentista")
 = Resultado da Unidade p/ Beauty Smile (base caixa)
 ```
 - Crédito parcelado (>1x) não entra como direto — entra via `parcelas_cartao`
@@ -160,10 +161,11 @@ RESULTADO BS (base caixa):
 
 ## Sincronização Clinicorp
 
-**Vercel Cron** — diário 6:00 UTC (3:00 BRT), rota `GET /api/cron/clinicorp-sync`.
-**Manual** — botão "Sincronizar agora" em `/admin/upload` chama `POST /api/admin/clinicorp/sync`.
-**Core** — `lib/clinicorp-sync.ts` → `syncClinicaMonth()` (reutilizado por cron e manual).
-**Recálculo** — `calcularEPersistirResumo()` chamado direto após sync (sem n8n roundtrip).
+**Vercel Cron** — diário 6:00 UTC (3:00 BRT), rota `GET /api/cron/clinicorp-sync`. ⚠️ **Cron não está disparando em produção** (ver Próximos Passos no ROADMAP — falta confirmar `CRON_SECRET`/Cron Jobs no painel Vercel).
+**Manual** — botão "Sincronizar agora" em `/admin/upload` chama `POST /api/admin/clinicorp/sync` (sincroniza **mês atual + anterior**, não meses antigos).
+**Core** — `lib/clinicorp-sync.ts` → `syncClinicaMonth()` (reutilizado por cron e manual). Traz orçamentos + pagamentos (NÃO tratamentos).
+**Recálculo** — `calcularEPersistirResumo()` chamado direto após sync (sem n8n roundtrip). Lê custos de `tratamentos_executados` (preenchido manualmente via planilha).
+**⚠️ Não sincronizar jan/fev:** esses meses têm orçamentos digitados à mão sem `clinicorp_treatment_id` → o sync criaria duplicatas. Meses com orçamentos vindos do Clinicorp (com treatment_id) são seguros.
 
 ## n8n
 
@@ -195,7 +197,7 @@ npm run test:e2e  # Playwright
 | Arquivo | O que é |
 |---|---|
 | `lib/clinicorp-sync.ts` | Core do sync Clinicorp (syncClinicaMonth) |
-| `lib/clinicorp-client.ts` | HTTP client Clinicorp API (listEstimates, listPayments) |
+| `lib/clinicorp-client.ts` | HTTP client Clinicorp API (listEstimates, listPayments). Base URL: `api.clinicorp.com/rest/v1` |
 | `lib/clinicorp-transforms.ts` | Transformações API → DB (orçamentos, pagamentos, tratamentos) |
 | `lib/resumo-calculo.ts` | Lógica do cálculo financeiro mensal |
 | `lib/dashboard-queries.ts` | Queries Supabase para dashboards |

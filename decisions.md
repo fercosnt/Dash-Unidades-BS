@@ -168,3 +168,28 @@ Formato: data, decisao, contexto, alternativas consideradas.
 - WhatsApp — custo e complexidade da API
 - Slack — equipe nao usa
 **Consequencias**: Integracao simples no n8n. Equipe ja usa Telegram no dia-a-dia.
+
+### 2026-06 Custo de procedimentos 100% manual via planilha (sync não gerencia tratamentos)
+
+**Contexto**: O sync extraía tratamentos executados do `StepsList` dos estimates, mas isso só cobre procedimentos dentro de orçamento. Procedimentos feitos fora de orçamento (consultas, entregas Biologix, cortesias) não apareciam — subcontando o custo real.
+**Decisão**: O sync **não gerencia mais** `tratamentos_executados`. O custo é controlado manualmente pela planilha "Procedimentos Executados" do Clinicorp, importada como `origem='manual'`. Regras: cortesia conta custo; descrição com "+" vira múltiplos procedimentos (1 linha por procedimento).
+**Alternativas**: Manter sync via StepsList (incompleto); endpoint dedicado de procedimentos executados na API (não confirmado).
+**Consequências**: Custo mais fiel (inclui fora de orçamento). Processo mensal manual de import por enquanto. Sync continua trazendo orçamentos + pagamentos automaticamente.
+
+### 2026-06 Comissão dentista como despesa da Beauty Smile
+
+**Contexto**: A comissão da dentista era deduzida no DRE como linha separada, fora do grupo de despesas, e não aparecia na aba Despesas.
+**Decisão**: A comissão entra como linha **dentro** do grupo de Despesas (soma no Total Despesas) nos dois DREs, e também aparece (read-only) na aba Despesas. Resultado da unidade inalterado numericamente.
+**Consequências**: Visão de despesas da BS mais completa; comissão tratada como custo operacional da BS.
+
+### 2026-06 API Clinicorp migrou de host (sistema → api.clinicorp.com)
+
+**Contexto**: Em ~05/06/2026 o Clinicorp moveu a API. `sistema.clinicorp.com/rest/v1` passou a servir o site estático (GCS), fazendo toda chamada do sync retornar HTML de login — parecia "token inválido", mas o token estava correto.
+**Decisão**: Atualizar `BASE_URL` em `lib/clinicorp-client.ts` para `https://api.clinicorp.com/rest/v1`.
+**Consequências**: Sync volta a funcionar. Lição: erro de "login/HTML" na API ≠ token inválido — checar o host/URL primeiro (headers `server: UploadServer`/`x-goog-*` indicam estático).
+
+### 2026-06 Orçamentos manuais sem treatment_id bloqueiam matching de pagamento
+
+**Contexto**: Pagamentos do Clinicorp casam ao orçamento por `clinicorp_treatment_id`. Orçamentos digitados à mão (sem esse id) faziam o sync descartar os pagamentos ("Pagamento sem orçamento"), e re-sincronizar esses meses duplicaria os orçamentos.
+**Decisão**: Vincular manualmente o `clinicorp_treatment_id` real nos orçamentos manuais que precisam casar pagamento (feito p/ Carlos e Adriana). **Não sincronizar jan/fev** (têm orçamentos manuais sem id → duplicariam).
+**Consequências**: Regra operacional: meses com orçamentos vindos do Clinicorp (com treatment_id) são seguros pra sync; meses digitados à mão, não.
