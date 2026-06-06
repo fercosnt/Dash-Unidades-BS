@@ -220,6 +220,45 @@ Redesenho completo do fluxo de dados: elimina upload XLSX, tudo vem da API Clini
 
 ---
 
+### ✅ Correções operacionais + custo manual de procedimentos (2026-06)
+
+Sessão de debugging a partir de falhas reportadas em produção (clínica Hirata):
+
+**Código (PRs #3–#5 mergeados):**
+- Comissão dentista: tela recarrega ao calcular (`router.refresh`) + constraint passa a permitir múltiplas dentistas por clínica (migration **021** `UNIQUE(clinica_id, dentista_id, mes_referencia)`)
+- Revisão de desmembramento filtra apenas clínicas ativas (não mostra mais clínica de projeção/inativa)
+- **Sync não gerencia mais `tratamentos_executados`** — custo de procedimentos é 100% manual via planilha "Procedimentos Executados" (cobre procedimentos fora de orçamento)
+- **Comissão dentista entra como despesa da BS** no DRE (Recebíveis + Faturamento) e na aba Despesas
+- **Fix BASE_URL da API Clinicorp** (`sistema.clinicorp.com` → `api.clinicorp.com`; host antigo virou site estático em ~05/06 e quebrava o sync)
+- **Fix `transformPayments`** — usa soma dos `Amount` (não `TotalPostAmount`) para não trazer valor errado quando há vários pagamentos no mesmo header
+
+**Dados (produção):**
+- Pagamentos de Carlos e Adriana lançados (estavam no Clinicorp mas não casavam por orçamento manual sem treatment_id)
+- Procedimentos executados importados jan–mai (via planilha; cortesia conta custo; "+" divide em vários)
+- Clínica "Exemplo (Projeção)" apagada por completo
+- Orçamento do Walmir (março) adicionado
+- Todos os meses fechados/recalculados (jan–mai)
+
+---
+
+## Próximos Passos
+
+### 1. Cron Vercel (sync diário automático)
+- O cron `GET /api/cron/clinicorp-sync` está no `vercel.json` e deployado, mas **não dispara** (`sync_logs` vazio, sem runtime logs).
+- Investigar no painel Vercel: **Cron Jobs** (habilitado? última execução?) + env var **`CRON_SECRET`** (a rota retorna 401 antes de logar se não bater) + plano.
+- Com a BASE_URL já corrigida, ao destravar o cron o sync diário (orçamentos + pagamentos) volta a funcionar sozinho.
+
+### 2. Auditoria detalhada de números e cálculos
+- Conferir todos os cálculos do DRE/resumo contra os dados reais (faturamento, custos, taxas, comissões, splits 60/40, recebido, a receber).
+- Validar mês a mês com a clínica Hirata (jan–mai já fechados) — bater valores com Clinicorp/extratos.
+- Revisar `lib/resumo-calculo.ts` e `lib/despesas-queries.ts` (DRE BS + Recebíveis) com casos reais.
+
+### 3. Arrumar dashboard e view do parceiro
+- Revisar dashboard admin (KPIs, gráficos, rankings) com os dados reais já carregados.
+- Revisar/validar a view do parceiro (somente leitura, scoped por RLS) — garantir que mostra os números corretos e nada de outras clínicas.
+
+---
+
 ## Pendente — Outros
 
 ### Testes
