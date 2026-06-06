@@ -202,10 +202,12 @@ export function transformPayments(
     // Pegar a primeira parcela como referência (parcela 0 tem TotalPostAmount)
     const first = parcelas.find((p) => p.InstallmentNumber === 0) ?? parcelas[0];
 
-    // Valor total: TotalPostAmount (da parcela 0) ou soma dos Amount
-    const valorTotal =
-      first.TotalPostAmount ??
-      parcelas.reduce((sum, p) => sum + p.Amount, 0);
+    // Valor total: soma dos Amount das parcelas deste header.
+    // NÃO usar TotalPostAmount: quando o header agrupa pagamentos distintos
+    // (ex.: 2 Pix no mesmo PaymentHeaderId), TotalPostAmount traz o valor do
+    // ORÇAMENTO, não o que foi pago. A soma dos Amount é correta tanto para
+    // parcelas de cartão (soma = total) quanto para pagamentos avulsos.
+    const valorTotal = parcelas.reduce((sum, p) => sum + p.Amount, 0);
 
     const forma = FORMA_MAP[first.PaymentForm];
     if (!forma) {
