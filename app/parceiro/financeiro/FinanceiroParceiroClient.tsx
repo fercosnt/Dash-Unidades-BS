@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { getResumoMes, type ResumoMensal } from "./actions";
+import { ContaCorrenteView } from "@/components/conta-corrente/ContaCorrenteView";
+import type { ContaCorrente } from "@/lib/saldo-parceiro-queries";
 
 const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
@@ -19,6 +21,7 @@ type Props = {
   initialMes: string;
   initialResumo: ResumoMensal | null;
   historico: ResumoMensal[];
+  conta: ContaCorrente | null;
 };
 
 export function FinanceiroParceiroClient({
@@ -26,10 +29,12 @@ export function FinanceiroParceiroClient({
   initialMes,
   initialResumo,
   historico,
+  conta,
 }: Props) {
   const [mesRef, setMesRef] = useState(initialMes);
   const [resumo, setResumo] = useState<ResumoMensal | null>(initialResumo);
   const [loading, setLoading] = useState(false);
+  const [aba, setAba] = useState<"resumo" | "conta">("resumo");
   const firstMount = useRef(true);
 
   useEffect(() => {
@@ -49,10 +54,75 @@ export function FinanceiroParceiroClient({
       <div>
         <h2 className="text-xl font-semibold text-white">Financeiro</h2>
         <p className="mt-1 text-sm text-white/80">
-          Resumo financeiro mensal e histórico da sua clínica.
+          Resumo financeiro mensal e conta corrente da sua clínica.
         </p>
       </div>
 
+      {/* Tabs */}
+      <div className="flex gap-2 border-b border-white/20">
+        <button
+          type="button"
+          onClick={() => setAba("resumo")}
+          className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
+            aba === "resumo"
+              ? "border-white text-white"
+              : "border-transparent text-white/60 hover:text-white/80"
+          }`}
+        >
+          Resumo mensal
+        </button>
+        <button
+          type="button"
+          onClick={() => setAba("conta")}
+          className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
+            aba === "conta"
+              ? "border-white text-white"
+              : "border-transparent text-white/60 hover:text-white/80"
+          }`}
+        >
+          Conta Corrente
+        </button>
+      </div>
+
+      {aba === "conta" ? (
+        conta ? (
+          <ContaCorrenteView conta={conta} />
+        ) : (
+          <div className="rounded-xl bg-white p-8 text-center text-sm text-neutral-400 shadow-md">
+            Conta corrente indisponível.
+          </div>
+        )
+      ) : (
+        <ResumoMensalTab
+          meses={meses}
+          mesRef={mesRef}
+          setMesRef={setMesRef}
+          loading={loading}
+          resumo={resumo}
+          historico={historico}
+        />
+      )}
+    </div>
+  );
+}
+
+function ResumoMensalTab({
+  meses,
+  mesRef,
+  setMesRef,
+  loading,
+  resumo,
+  historico,
+}: {
+  meses: string[];
+  mesRef: string;
+  setMesRef: (m: string) => void;
+  loading: boolean;
+  resumo: ResumoMensal | null;
+  historico: ResumoMensal[];
+}) {
+  return (
+    <div className="space-y-6">
       {/* Month selector */}
       <div className="flex flex-wrap items-end gap-4">
         <label className="flex flex-col gap-1">

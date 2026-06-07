@@ -3,8 +3,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { registrarRepasse, desfazerRepasse } from "./actions";
 import { registrarPagamentoDebito } from "../configuracoes/debitos/actions";
+import { ContaCorrenteView } from "@/components/conta-corrente/ContaCorrenteView";
 import type { ContaCorrente } from "@/lib/saldo-parceiro-queries";
-import type { LinhaExtrato } from "@/lib/utils/extrato-parceiro";
 
 type ClinicaOption = { id: string; nome: string };
 
@@ -21,13 +21,6 @@ function formatMes(m: string) {
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
-
-const TIPO_LABEL: Record<LinhaExtrato["tipo"], string> = {
-  abertura: "Abertura — Taxa de implementação",
-  resultado: "Resultado do mês",
-  pagamento_implementacao: "Pagamento da implementação",
-  repasse: "Repasse em dinheiro",
-};
 
 export function ContaCorrenteClient({
   clinicas,
@@ -145,58 +138,6 @@ export function ContaCorrenteClient({
         </div>
       ) : (
         <>
-          {/* Saldo decomposto (RF-10) */}
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div className="rounded-xl bg-white p-5 shadow-md">
-              <p className="text-xs font-medium text-neutral-500">Taxa de implementação a amortizar</p>
-              <p className="mt-2 text-2xl font-bold tabular-nums text-neutral-900">
-                {conta.dividaImplementacao
-                  ? formatCurrency(conta.dividaImplementacao.aAmortizar)
-                  : "—"}
-              </p>
-              {conta.dividaImplementacao && (
-                <p className="mt-1 text-xs text-neutral-400">
-                  de {formatCurrency(conta.dividaImplementacao.valorTotal)} ·{" "}
-                  {conta.dividaImplementacao.descricao}
-                </p>
-              )}
-            </div>
-            <div className="rounded-xl bg-white p-5 shadow-md">
-              <p className="text-xs font-medium text-neutral-500">Resultado operacional acumulado</p>
-              <p
-                className={`mt-2 text-2xl font-bold tabular-nums ${
-                  conta.operacionalAcumulado >= 0 ? "text-green-700" : "text-red-600"
-                }`}
-              >
-                {formatCurrency(conta.operacionalAcumulado)}
-              </p>
-              <p className="mt-1 text-xs text-neutral-400">Σ resultados − Σ repasses</p>
-            </div>
-            <div className="rounded-xl bg-white p-5 shadow-md ring-2 ring-primary-100">
-              <p className="text-xs font-medium text-neutral-500">Saldo da conta</p>
-              <p
-                className={`mt-2 text-2xl font-bold tabular-nums ${
-                  conta.saldo > 0 ? "text-green-700" : "text-red-600"
-                }`}
-              >
-                {formatCurrency(conta.saldo)}
-              </p>
-              <p className="mt-1 text-xs text-neutral-400">
-                {conta.saldo > 0
-                  ? "BS deve ao parceiro"
-                  : "Parceiro deve à BS (implementação + float)"}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-xs text-white/80">
-            <span>
-              Competência acumulada (referência):{" "}
-              <strong className="text-white">{formatCurrency(conta.competenciaAcumulada)}</strong>
-            </span>
-            <span>· O parceiro recebe em dinheiro quando o saldo ficar positivo.</span>
-          </div>
-
           {/* Ações: registrar repasse + registrar pagamento da implementação */}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {/* Registrar repasse */}
@@ -297,81 +238,39 @@ export function ContaCorrenteClient({
             </div>
           </div>
 
-          {/* Extrato */}
-          <div className="overflow-hidden rounded-xl bg-white shadow-md">
-            <div className="border-b border-neutral-100 px-6 py-4">
-              <h3 className="text-sm font-bold text-neutral-900">Extrato</h3>
-            </div>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-neutral-100 text-xs text-neutral-500">
-                  <th className="px-4 py-3 text-left font-medium">Mês</th>
-                  <th className="px-4 py-3 text-left font-medium">Lançamento</th>
-                  <th className="px-4 py-3 text-right font-medium">Valor</th>
-                  <th className="px-4 py-3 text-right font-medium">Saldo</th>
-                  <th className="px-4 py-3" />
-                </tr>
-              </thead>
-              <tbody>
-                {conta.extrato.map((l, i) => (
-                  <tr
-                    key={`${l.mes}-${l.tipo}-${i}`}
-                    className={`border-b border-neutral-50 ${
-                      l.tipo === "abertura" ? "bg-neutral-50 font-medium" : "hover:bg-neutral-50"
-                    }`}
+          {/* Saldo decomposto + extrato (compartilhado com o parceiro) */}
+          <ContaCorrenteView
+            conta={conta}
+            repasseAction={(refId) =>
+              confirmId === refId ? (
+                <span className="flex items-center justify-end gap-1">
+                  <button
+                    type="button"
+                    onClick={() => handleDesfazer(refId)}
+                    disabled={desfazendo}
+                    className="text-xs font-medium text-red-600 hover:underline disabled:opacity-50"
                   >
-                    <td className="px-4 py-3 text-neutral-600">{formatMes(l.mes)}</td>
-                    <td className="px-4 py-3 text-neutral-800">{TIPO_LABEL[l.tipo]}</td>
-                    <td
-                      className={`px-4 py-3 text-right tabular-nums ${
-                        l.valor >= 0 ? "text-green-700" : "text-red-600"
-                      }`}
-                    >
-                      {formatCurrency(l.valor)}
-                    </td>
-                    <td
-                      className={`px-4 py-3 text-right font-medium tabular-nums ${
-                        l.saldo >= 0 ? "text-green-700" : "text-red-600"
-                      }`}
-                    >
-                      {formatCurrency(l.saldo)}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      {l.tipo === "repasse" && l.refId && (
-                        confirmId === l.refId ? (
-                          <span className="flex items-center justify-end gap-1">
-                            <button
-                              type="button"
-                              onClick={() => handleDesfazer(l.refId!)}
-                              disabled={desfazendo}
-                              className="text-xs font-medium text-red-600 hover:underline disabled:opacity-50"
-                            >
-                              {desfazendo ? "..." : "Confirmar"}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setConfirmId(null)}
-                              className="text-xs text-neutral-500 hover:underline"
-                            >
-                              Cancelar
-                            </button>
-                          </span>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => setConfirmId(l.refId!)}
-                            className="text-xs text-neutral-400 hover:text-red-600"
-                          >
-                            Desfazer
-                          </button>
-                        )
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    {desfazendo ? "..." : "Confirmar"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmId(null)}
+                    className="text-xs text-neutral-500 hover:underline"
+                  >
+                    Cancelar
+                  </button>
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setConfirmId(refId)}
+                  className="text-xs text-neutral-400 hover:text-red-600"
+                >
+                  Desfazer
+                </button>
+              )
+            }
+          />
         </>
       )}
     </div>
