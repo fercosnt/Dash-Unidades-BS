@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { criarDebito, editarDebito, registrarPagamentoDebito } from "./actions";
+import { criarDebito, editarDebito } from "./actions";
 import { fetchAbatimentosPorDebito } from "@/lib/debito-queries";
 import type { DebitoItem, AbatimentoHistoricoItem } from "@/lib/debito-queries";
 
@@ -40,12 +40,6 @@ export function DebitosClient({
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ tipo: "ok" | "erro"; texto: string } | null>(null);
 
-  // Pagamento modal
-  const [pagamentoDebitoId, setPagamentoDebitoId] = useState<string | null>(null);
-  const [pagamentoValor, setPagamentoValor] = useState("");
-  const [pagandoSaving, setPagandoSaving] = useState(false);
-  const [pagamentoMsg, setPagamentoMsg] = useState<string | null>(null);
-
   // Edição modal
   const [editDebitoId, setEditDebitoId] = useState<string | null>(null);
   const [editDescricao, setEditDescricao] = useState("");
@@ -54,7 +48,6 @@ export function DebitosClient({
   const [editMsg, setEditMsg] = useState<string | null>(null);
 
   const debitoEdit = editDebitoId ? debitos.find((d) => d.id === editDebitoId) : null;
-  const debitoModal = pagamentoDebitoId ? debitos.find((d) => d.id === pagamentoDebitoId) : null;
 
   function abrirEdicao(d: DebitoLocal) {
     setEditDebitoId(d.id);
@@ -96,12 +89,6 @@ export function DebitosClient({
     }
   }
 
-  function abrirPagamento(d: DebitoLocal) {
-    setPagamentoDebitoId(d.id);
-    setPagamentoValor(d.saldoRestante.toFixed(2));
-    setPagamentoMsg(null);
-  }
-
   async function handleCriar() {
     setSaving(true);
     const result = await criarDebito({
@@ -139,38 +126,6 @@ export function DebitosClient({
     }
   }
 
-  async function handleRegistrarPagamento() {
-    if (!pagamentoDebitoId || !pagamentoValor) return;
-    const valor = Number(pagamentoValor.replace(",", "."));
-    if (valor <= 0) return;
-
-    setPagandoSaving(true);
-    const result = await registrarPagamentoDebito(pagamentoDebitoId, valor);
-    setPagandoSaving(false);
-
-    if (result.ok) {
-      setDebitos((prev) =>
-        prev
-          .map((d) => {
-            if (d.id !== pagamentoDebitoId) return d;
-            const novoValorPago = result.novoValorPago ?? d.valorPago + valor;
-            return {
-              ...d,
-              valorPago: novoValorPago,
-              saldoRestante: d.valorTotal - novoValorPago,
-              status: result.quitado ? "quitado" : "ativo",
-            };
-          })
-          .filter((d) => d.status === "ativo")
-      );
-      setPagamentoDebitoId(null);
-      setMsg({ tipo: "ok", texto: result.quitado ? "Débito quitado!" : "Pagamento registrado." });
-      setTimeout(() => setMsg(null), 4000);
-    } else {
-      setPagamentoMsg(result.error ?? "Erro ao registrar.");
-    }
-  }
-
   async function toggleHistorico(debitoId: string) {
     setDebitos((prev) =>
       prev.map((d) => {
@@ -187,8 +142,6 @@ export function DebitosClient({
       );
     }
   }
-
-  const maxPagamento = debitoModal?.saldoRestante ?? 0;
 
   return (
     <div className="space-y-6">
@@ -208,6 +161,12 @@ export function DebitosClient({
           + Novo débito
         </button>
       </div>
+
+      <p className="rounded-md bg-neutral-50 px-3 py-2 text-xs text-neutral-500">
+        Aqui você só cadastra e edita a taxa. O registro de pagamento da implementação passou
+        para a tela <span className="font-medium text-neutral-700">Conta Corrente</span> (entra
+        como evento no extrato do parceiro).
+      </p>
 
       {showForm && (
         <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 space-y-3">
@@ -296,13 +255,6 @@ export function DebitosClient({
                       className="rounded-md border border-neutral-300 px-3 py-1 text-xs font-medium text-neutral-700 hover:bg-neutral-50"
                     >
                       Editar
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => abrirPagamento(d)}
-                      className="rounded-md bg-primary-600 px-3 py-1 text-xs font-medium text-white hover:opacity-90"
-                    >
-                      Registrar pagamento
                     </button>
                   </div>
                 </div>
@@ -447,63 +399,6 @@ export function DebitosClient({
         </div>
       )}
 
-      {/* Modal Registrar Pagamento */}
-      {debitoModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={() => !pagandoSaving && setPagamentoDebitoId(null)}
-        >
-          <div
-            className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl space-y-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-lg font-semibold text-neutral-900">Registrar pagamento</h3>
-            <p className="text-sm text-neutral-600">
-              {debitoModal.clinicaNome} · {debitoModal.descricao}
-            </p>
-            {pagamentoMsg && (
-              <p className="rounded bg-red-50 px-3 py-2 text-sm text-red-800">{pagamentoMsg}</p>
-            )}
-            <label className="block">
-              <span className="text-xs font-medium text-neutral-700">
-                Valor (R$) — Saldo: {formatCurrency(maxPagamento)}
-              </span>
-              <input
-                type="number"
-                step="0.01"
-                min="0.01"
-                max={maxPagamento}
-                value={pagamentoValor}
-                onChange={(e) => setPagamentoValor(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-              />
-            </label>
-            {Number(pagamentoValor.replace(",", ".")) >= maxPagamento && maxPagamento > 0 && (
-              <p className="rounded bg-green-50 px-3 py-2 text-xs text-green-700">
-                Este pagamento quitará o débito.
-              </p>
-            )}
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setPagamentoDebitoId(null)}
-                disabled={pagandoSaving}
-                className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleRegistrarPagamento}
-                disabled={pagandoSaving || !pagamentoValor || Number(pagamentoValor) <= 0}
-                className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
-              >
-                {pagandoSaving ? "Salvando..." : "Confirmar"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
