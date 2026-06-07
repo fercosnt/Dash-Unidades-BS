@@ -163,19 +163,21 @@ export async function calcularTaxaRealCartao(
   mesReferencia: string,
   clinicaId?: string,
 ): Promise<number> {
-  if (mesReferencia === "all") return 0;
-
   const supabase = await createSupabaseServerClient();
-  const start = firstDayOfMonth(mesReferencia);
-  const end = lastDayOfMonth(mesReferencia);
 
-  // Buscar pagamentos do mês (só cartão crédito e débito)
+  // Buscar pagamentos de cartão (crédito e débito).
+  // "all" = todos os meses (sem filtro de data), espelhando o DRE BS — antes
+  // retornava 0, zerando a taxa real no "Resumo Geral" e inflando o resultado.
   let pagQ = supabase
     .from("pagamentos")
     .select("valor, forma, parcelas, bandeira")
-    .gte("data_pagamento", start)
-    .lte("data_pagamento", end)
     .in("forma", ["cartao_credito", "cartao_debito"]);
+
+  if (mesReferencia !== "all") {
+    const start = firstDayOfMonth(mesReferencia);
+    const end = lastDayOfMonth(mesReferencia);
+    pagQ = pagQ.gte("data_pagamento", start).lte("data_pagamento", end);
+  }
 
   if (clinicaId) pagQ = pagQ.eq("clinica_id", clinicaId);
 
@@ -243,42 +245,41 @@ export async function calcularDreRecebiveis(
     resultadoUnidade: 0,
   };
 
-  if (mesReferencia === "all") return empty;
-
   const supabase = await createSupabaseServerClient();
-  const start = firstDayOfMonth(mesReferencia);
-  const end = lastDayOfMonth(mesReferencia);
 
-  // 1. Pagamentos diretos do mês (pix, dinheiro, débito, crédito à vista)
+  // "all" = todos os meses (sem filtro de data), espelhando o DRE BS — antes
+  // retornava `empty`, deixando o DRE Recebíveis todo zerado no "Resumo Geral".
+  const isAll = mesReferencia === "all";
+  const start = isAll ? null : firstDayOfMonth(mesReferencia);
+  const end = isAll ? null : lastDayOfMonth(mesReferencia);
+
+  // 1. Pagamentos diretos (pix, dinheiro, débito, crédito à vista)
   let pagQ = supabase
     .from("pagamentos")
-    .select("valor, forma, parcelas")
-    .gte("data_pagamento", start)
-    .lte("data_pagamento", end);
+    .select("valor, forma, parcelas");
+  if (start && end) pagQ = pagQ.gte("data_pagamento", start).lte("data_pagamento", end);
   if (clinicaId) pagQ = pagQ.eq("clinica_id", clinicaId);
 
-  // 2. Parcelas de cartão recebidas no mês
+  // 2. Parcelas de cartão recebidas
   let parcQ = supabase
     .from("parcelas_cartao")
     .select("valor_parcela")
-    .eq("status", "recebido")
-    .gte("mes_recebimento", start)
-    .lte("mes_recebimento", end);
+    .eq("status", "recebido");
+  if (start && end) parcQ = parcQ.gte("mes_recebimento", start).lte("mes_recebimento", end);
   if (clinicaId) parcQ = parcQ.eq("clinica_id", clinicaId);
 
   // 3. Resumo mensal (custos do split)
   let resumoQ = supabase
     .from("resumo_mensal")
     .select("total_custos_procedimentos, total_custo_mao_obra, total_taxa_cartao, total_imposto_nf, total_comissoes_medicas");
-  resumoQ = resumoQ.gte("mes_referencia", start).lte("mes_referencia", end);
+  if (start && end) resumoQ = resumoQ.gte("mes_referencia", start).lte("mes_referencia", end);
   if (clinicaId) resumoQ = resumoQ.eq("clinica_id", clinicaId);
 
   // 4. Comissões dentista
   let comDentistaQ = supabase
     .from("comissoes_dentista")
-    .select("valor_comissao")
-    .gte("mes_referencia", start)
-    .lte("mes_referencia", end);
+    .select("valor_comissao");
+  if (start && end) comDentistaQ = comDentistaQ.gte("mes_referencia", start).lte("mes_referencia", end);
   if (clinicaId) comDentistaQ = comDentistaQ.eq("clinica_id", clinicaId);
 
   const [pagRes, parcRes, taxaReal, resumoRes, configRes, comDentistaRes, despesasPorCategoria] = await Promise.all([
