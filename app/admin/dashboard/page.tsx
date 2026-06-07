@@ -41,7 +41,7 @@ export default async function AdminDashboardPage({
     kpis,
     dre,
     repasse,
-    ranking,
+    rankingGeral,
     syncStatus,
     categoriasProcedimentos,
     saldos,
@@ -59,7 +59,7 @@ export default async function AdminDashboardPage({
     fetchKpisAdminV2(mes, clinicaId || undefined),
     fetchDreAdmin(mes, clinicaId || undefined),
     fetchRepasseAdmin(mes, clinicaId || undefined),
-    fetchRankingClinicas(mes, clinicaId || undefined),
+    fetchRankingClinicas("all"),
     fetchSyncStatus(),
     fetchCategoriasProcedimentos(),
     fetchSaldosParceiros(),
@@ -82,7 +82,7 @@ export default async function AdminDashboardPage({
       initialKpis={kpis}
       initialDre={dre}
       initialRepasse={repasse}
-      initialRanking={ranking}
+      rankingGeral={rankingGeral}
       syncStatus={syncStatus}
       saldos={saldos}
       categoriasProcedimentos={categoriasProcedimentos}

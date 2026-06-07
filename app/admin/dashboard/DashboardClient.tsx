@@ -19,7 +19,6 @@ import {
   fetchKpisAdminV2,
   fetchDreAdmin,
   fetchRepasseAdmin,
-  fetchRankingClinicas,
   fetchChartDataAdmin,
   fetchChartLiquidoAdmin,
   fetchOrcamentosFechados,
@@ -55,7 +54,7 @@ type DashboardClientProps = {
   initialKpis: KpisAdminV2;
   initialDre: DreAdminData;
   initialRepasse: RepasseAdminData;
-  initialRanking: RankingClinica[];
+  rankingGeral: RankingClinica[];
   syncStatus: SyncStatusItem[];
   saldos: SaldoParceiro[];
   categoriasProcedimentos: string[];
@@ -83,7 +82,7 @@ export function DashboardClient({
   initialKpis,
   initialDre,
   initialRepasse,
-  initialRanking,
+  rankingGeral,
   syncStatus,
   saldos,
   categoriasProcedimentos,
@@ -104,7 +103,6 @@ export function DashboardClient({
   const [kpis, setKpis] = useState(initialKpis);
   const [dre, setDre] = useState(initialDre);
   const [repasse, setRepasse] = useState(initialRepasse);
-  const [ranking, setRanking] = useState(initialRanking);
   const [chartData, setChartData] = useState(initialChartData);
   const [chartLiquido, setChartLiquido] = useState(initialChartLiquido);
   const [orcamentosFechados, setOrcamentosFechados] = useState(initialOrcamentosFechados);
@@ -124,7 +122,6 @@ export function DashboardClient({
       fetchKpisAdminV2(mes, clinicaId || undefined),
       fetchDreAdmin(mes, clinicaId || undefined),
       fetchRepasseAdmin(mes, clinicaId || undefined),
-      fetchRankingClinicas(mes, clinicaId || undefined),
       fetchChartDataAdmin(mesParaGraficos, 12, clinicaId || undefined),
       fetchChartLiquidoAdmin(mesParaGraficos, 12, clinicaId || undefined),
       fetchOrcamentosFechados(mes, clinicaId || undefined),
@@ -133,11 +130,10 @@ export function DashboardClient({
       fetchProcedimentosRanking(mes, clinicaId || undefined),
       fetchTratamentosVendidos(mes, clinicaId || undefined),
       fetchTratamentosEvolucao(mes === "all" ? initialMes : mes, 6, clinicaId || undefined),
-    ]).then(([k, d, rp, r, cd, cl, of, oa, ev, proc, tv, te]) => {
+    ]).then(([k, d, rp, cd, cl, of, oa, ev, proc, tv, te]) => {
       setKpis(k);
       setDre(d);
       setRepasse(rp);
-      setRanking(r);
       setChartData(cd);
       setChartLiquido(cl);
       setOrcamentosFechados(of);
@@ -448,7 +444,7 @@ export function DashboardClient({
           {/* ── ABA CLÍNICAS ── (ranking faturamento / status sync / saldo por parceiro) */}
           {activeTab === "clinicas" && (
             <div className="space-y-6">
-              <RankingClinicas items={ranking} />
+              <RankingClinicas items={rankingGeral} subtitle="Acumulado — todas as competências" />
               <SyncStatusClinicas items={syncStatus} />
               <SaldoParceiros saldos={saldos} />
             </div>
