@@ -49,6 +49,17 @@ describe("montarExtrato", () => {
     expect(ext.at(-1)!.saldo).toBeCloseTo(-245000, 2);
   });
 
+  it("repassa o id do movimento (refId) na linha de repasse, p/ desfazer na UI", () => {
+    const ext = montarExtrato(
+      0,
+      "2026-01",
+      [{ mes: "2026-01", resultado: 5000 }],
+      [],
+      [{ mes: "2026-02", valor: 2000, id: "rep-123" }]
+    );
+    expect(ext.at(-1)!).toMatchObject({ tipo: "repasse", refId: "rep-123" });
+  });
+
   it("ordena cronologicamente; resultado antes do repasse no mesmo mês", () => {
     const ext = montarExtrato(
       0,

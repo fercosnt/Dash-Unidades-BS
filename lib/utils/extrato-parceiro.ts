@@ -1,10 +1,11 @@
 export type ResultadoMensal = { mes: string; resultado: number };
-export type Movimento = { mes: string; valor: number };
+export type Movimento = { mes: string; valor: number; id?: string };
 export type LinhaExtrato = {
   mes: string;
   tipo: "abertura" | "resultado" | "pagamento_implementacao" | "repasse";
   valor: number; // abertura/resultado/pagamento somam (±); repasse subtrai
   saldo: number;
+  refId?: string; // id do movimento de origem (repasse/pagamento), p/ ações na UI
 };
 
 /**
@@ -27,8 +28,14 @@ export function montarExtrato(
       mes: p.mes,
       tipo: "pagamento_implementacao" as const,
       valor: Math.abs(p.valor),
+      refId: p.id,
     })),
-    ...repasses.map((p) => ({ mes: p.mes, tipo: "repasse" as const, valor: -Math.abs(p.valor) })),
+    ...repasses.map((p) => ({
+      mes: p.mes,
+      tipo: "repasse" as const,
+      valor: -Math.abs(p.valor),
+      refId: p.id,
+    })),
   ];
   const ordem = { abertura: 0, pagamento_implementacao: 1, resultado: 2, repasse: 3 } as const;
   eventos.sort((a, b) =>

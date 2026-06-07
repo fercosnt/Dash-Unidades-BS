@@ -7,7 +7,12 @@ export type ContaCorrente = {
   podeRepassar: boolean; // saldo > 0
   operacionalAcumulado: number; // saldo − abertura (Σ resultados + Σ pagto impl − Σ repasses)
   extrato: LinhaExtrato[];
-  dividaImplementacao: { descricao: string; valorTotal: number; aAmortizar: number } | null;
+  dividaImplementacao: {
+    id: string;
+    descricao: string;
+    valorTotal: number;
+    aAmortizar: number;
+  } | null;
   competenciaAcumulada: number; // Σ valor_clinica — total que o parceiro vai ganhar
 };
 
@@ -19,7 +24,7 @@ export async function fetchContaCorrente(clinicaId: string): Promise<ContaCorren
       supabase.rpc("calcular_resultado_mensal_parceiro", { p_clinica_id: clinicaId }),
       supabase
         .from("repasses_mensais")
-        .select("mes_referencia, valor_repasse")
+        .select("id, mes_referencia, valor_repasse")
         .eq("clinica_id", clinicaId),
       supabase.from("resumo_mensal").select("valor_clinica").eq("clinica_id", clinicaId),
       supabase
@@ -59,6 +64,7 @@ export async function fetchContaCorrente(clinicaId: string): Promise<ContaCorren
     (repasses ?? []).map((p: Record<string, unknown>) => ({
       mes: String(p.mes_referencia).slice(0, 7),
       valor: Number(p.valor_repasse ?? 0),
+      id: String(p.id),
     }))
   );
 
@@ -78,6 +84,7 @@ export async function fetchContaCorrente(clinicaId: string): Promise<ContaCorren
     extrato,
     dividaImplementacao: d
       ? {
+          id: String(d.id),
           descricao: String(d.descricao),
           valorTotal: Number(d.valor_total),
           aAmortizar: Number(d.valor_total) - Number(d.valor_pago),
