@@ -33,7 +33,8 @@ Dashboard multi-tenant para gestão financeira das clínicas parceiras da Beauty
 app/
 ├── (auth)/login          # Login (sem auth)
 ├── admin/                # Painel admin (Beauty Smile)
-│   ├── dashboard/        # KPIs + gráficos + ranking
+│   ├── dashboard/        # KPIs + gráficos; abas Resumo/Vendas/Procedimentos/Clínicas
+│                         # (aba Clínicas = ranking acumulado + status sync + saldo por parceiro)
 │   ├── clinicas/[id]/    # Drill-down por clínica (4 abas)
 │   ├── upload/           # Sincronização Clinicorp (status + histórico de sync)
 │   ├── despesas/         # 3 abas: Recebíveis (caixa) + Faturamento (DRE BS) + Despesas
@@ -227,6 +228,8 @@ npm run test:e2e  # Playwright
 | `lib/auth/parceiro-clinica.ts` | `getClinicaIdDoParceiro` (resolve clínica do parceiro logado) |
 | `components/conta-corrente/ContaCorrenteView.tsx` | Saldo decomposto + extrato (compartilhado admin/parceiro) |
 | `app/admin/repasses/` | Tela admin "Conta Corrente" (saldo, extrato, repasse, pagamento impl.) |
+| `app/admin/dashboard/SaldoParceiros.tsx` / `SyncStatusClinicas.tsx` | Aba Clínicas: saldo por parceiro + status do sync (`sync_logs`) |
+| `components/dashboard/ChartProcedimentosPizza.tsx` | Procedimentos realizados (sem legenda; aba Categorias mostra todo o catálogo) |
 | `components/upload/SyncStatusPanel.tsx` | Painel de status de sincronização Clinicorp |
 | `app/api/cron/clinicorp-sync/route.ts` | Endpoint Vercel Cron (sync diário) |
 | `supabase/migrations/` | 20+ migrations SQL (schema + RLS + sync_logs + etc.) |

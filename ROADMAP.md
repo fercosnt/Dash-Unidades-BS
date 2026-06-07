@@ -239,6 +239,15 @@ Sessão de debugging a partir de falhas reportadas em produção (clínica Hirat
 - Orçamento do Walmir (março) adicionado
 - Todos os meses fechados/recalculados (jan–mai)
 
+### ✅ Conta Corrente do Parceiro + refinamentos de dashboard (2026-06-07) — PR #7
+
+Substitui o repasse mensal isolado (misturava caixa com competência → negativos absurdos) por uma **conta corrente única por parceiro**.
+
+- **Modelo**: abre com a taxa de implementação (−250k Hirata) + resultado mensal `40% × (recebido − custos)` (RPC `calcular_resultado_mensal_parceiro`) − repasses em dinheiro (só com saldo > 0, modelo franquia). Migrations **022–024**; correção retroativa da Hirata (remove 3 repasses/abatimentos falsos). Anchor validado: **−249.711,84 (mai) / −243.701,84 (jun)**.
+- **UI**: tela admin "Conta Corrente" (ex-Repasses) + aba do parceiro (read-only) + saldo nos dashboards. Função pura `montarExtrato` (TDD) + `fetchContaCorrente`.
+- **Auditoria (Próximo Passo 2 — feito)**: fix do débito/crédito-1x no caixa e "A Receber" atribuível ao mês (`lib/resumo-calculo.ts`); registro do pagamento do Walmir (cartão 7x). Números conferidos contra a RPC.
+- **Dashboard (Próximo Passo 3 — feito)**: aba Clínicas vira visão geral (ranking acumulado + status do sync `sync_logs` no lugar do painel de upload morto + saldo por parceiro); Procedimentos sem legenda + categorias completas; Biologix recategorizado (migration 025). View do parceiro revisada (RLS isola).
+
 ---
 
 ## Próximos Passos
@@ -248,14 +257,13 @@ Sessão de debugging a partir de falhas reportadas em produção (clínica Hirat
 - Investigar no painel Vercel: **Cron Jobs** (habilitado? última execução?) + env var **`CRON_SECRET`** (a rota retorna 401 antes de logar se não bater) + plano.
 - Com a BASE_URL já corrigida, ao destravar o cron o sync diário (orçamentos + pagamentos) volta a funcionar sozinho.
 
-### 2. Auditoria detalhada de números e cálculos
-- Conferir todos os cálculos do DRE/resumo contra os dados reais (faturamento, custos, taxas, comissões, splits 60/40, recebido, a receber).
-- Validar mês a mês com a clínica Hirata (jan–mai já fechados) — bater valores com Clinicorp/extratos.
-- Revisar `lib/resumo-calculo.ts` e `lib/despesas-queries.ts` (DRE BS + Recebíveis) com casos reais.
+### 2. Auditoria detalhada de números e cálculos — ✅ feito (2026-06-07, PR #7)
+- Auditoria do caixa/repasse concluída (ver `docs/auditoria-numeros-2026-06.md`): split 60/40 confere; bugs do débito no caixa e "A Receber" stale corrigidos em `lib/resumo-calculo.ts`; conta corrente bate o anchor da Hirata.
+- Pendente menor: DRE BS/Recebíveis (`lib/despesas-queries.ts`) ainda não reauditado com casos reais.
 
-### 3. Arrumar dashboard e view do parceiro
-- Revisar dashboard admin (KPIs, gráficos, rankings) com os dados reais já carregados.
-- Revisar/validar a view do parceiro (somente leitura, scoped por RLS) — garantir que mostra os números corretos e nada de outras clínicas.
+### 3. Arrumar dashboard e view do parceiro — ✅ feito (2026-06-07, PR #7)
+- Dashboard admin revisado: aba Clínicas (ranking acumulado + status do sync + saldo por parceiro), Procedimentos sem legenda + categorias completas.
+- View do parceiro validada (aba Conta Corrente read-only, RLS isola a clínica) via smoke com login real.
 
 ---
 
