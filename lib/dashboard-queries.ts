@@ -284,6 +284,85 @@ export async function fetchStatusUploads(mesReferencia: string, clinicaId?: stri
   }));
 }
 
+export type SyncStatusItem = {
+  clinicaId: string;
+  clinicaNome: string;
+  ultimaSync: string | null;
+  status: string | null;
+  orcamentosFechados: number | null;
+  pagamentos: number | null;
+  erro: string | null;
+};
+
+/** Status do sync Clinicorp: última execução por clínica ativa (substitui o painel de uploads XLSX). */
+export async function fetchSyncStatus(): Promise<SyncStatusItem[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data: clinicas, error: errClinicas } = await supabase
+    .from("clinicas_parceiras")
+    .select("id, nome")
+    .eq("ativo", true)
+    .order("nome");
+  if (errClinicas) {
+    console.error("[fetchSyncStatus] Erro ao buscar clinicas_parceiras:", errClinicas.message);
+    return [];
+  }
+  const { data: logs, error: errLogs } = await supabase
+    .from("sync_logs")
+    .select(
+      "clinica_id, status, started_at, finished_at, orcamentos_fechados_inseridos, pagamentos_inseridos, error_message"
+    )
+    .order("started_at", { ascending: false });
+  if (errLogs) {
+    console.error("[fetchSyncStatus] Erro ao buscar sync_logs:", errLogs.message);
+  }
+
+  type Log = {
+    clinica_id: string;
+    status: string | null;
+    started_at: string | null;
+    finished_at: string | null;
+    orcamentos_fechados_inseridos: number | null;
+    pagamentos_inseridos: number | null;
+    error_message: string | null;
+  };
+  const lastByClinica = new Map<string, Log>();
+  for (const l of (logs ?? []) as Log[]) {
+    if (!lastByClinica.has(l.clinica_id)) lastByClinica.set(l.clinica_id, l);
+  }
+
+  return (clinicas ?? []).map((c) => {
+    const l = lastByClinica.get(c.id);
+    return {
+      clinicaId: c.id,
+      clinicaNome: c.nome,
+      ultimaSync: l ? l.finished_at ?? l.started_at : null,
+      status: l?.status ?? null,
+      orcamentosFechados: l?.orcamentos_fechados_inseridos ?? null,
+      pagamentos: l?.pagamentos_inseridos ?? null,
+      erro: l?.error_message ?? null,
+    };
+  });
+}
+
+/** Lista de todas as categorias do catálogo de procedimentos (p/ a aba Categorias mostrar 0). */
+export async function fetchCategoriasProcedimentos(): Promise<string[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("procedimentos")
+    .select("categoria")
+    .not("categoria", "is", null);
+  if (error) {
+    console.error("[fetchCategoriasProcedimentos] Erro:", error.message);
+    return [];
+  }
+  const set = new Set<string>();
+  (data ?? []).forEach((r) => {
+    const c = (r as { categoria: string | null }).categoria;
+    if (c) set.add(c);
+  });
+  return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
+}
+
 /** KPIs do parceiro para o mês (RLS filtra pela clínica do usuário) */
 export async function fetchKpisParceiro(mesReferencia: string): Promise<KpisParceiro> {
   const supabase = await createSupabaseServerClient();

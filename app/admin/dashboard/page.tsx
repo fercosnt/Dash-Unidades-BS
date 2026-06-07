@@ -3,7 +3,8 @@ import {
   fetchDreAdmin,
   fetchRepasseAdmin,
   fetchRankingClinicas,
-  fetchStatusUploads,
+  fetchSyncStatus,
+  fetchCategoriasProcedimentos,
   fetchChartDataAdmin,
   fetchChartLiquidoAdmin,
   fetchOrcamentosFechados,
@@ -13,11 +14,11 @@ import {
   fetchTratamentosVendidos,
   fetchTratamentosEvolucao,
 } from "@/lib/dashboard-queries";
+import { fetchSaldosParceiros } from "@/lib/saldo-parceiro-queries";
 import { autoCalcResumoSeNecessario } from "@/lib/resumo-staleness";
 import { getClinicasAtivas } from "../upload/actions";
 import { fetchMesesFechados } from "../configuracoes/fechamento/actions";
 import { DashboardClient } from "./DashboardClient";
-import { SaldoParceiros } from "./SaldoParceiros";
 
 function getDefaultMes(): string {
   const d = new Date();
@@ -41,7 +42,9 @@ export default async function AdminDashboardPage({
     dre,
     repasse,
     ranking,
-    status,
+    syncStatus,
+    categoriasProcedimentos,
+    saldos,
     chartData,
     chartLiquido,
     orcamentosFechados,
@@ -57,7 +60,9 @@ export default async function AdminDashboardPage({
     fetchDreAdmin(mes, clinicaId || undefined),
     fetchRepasseAdmin(mes, clinicaId || undefined),
     fetchRankingClinicas(mes, clinicaId || undefined),
-    fetchStatusUploads(mes, clinicaId || undefined),
+    fetchSyncStatus(),
+    fetchCategoriasProcedimentos(),
+    fetchSaldosParceiros(),
     fetchChartDataAdmin(mes, 12, clinicaId || undefined),
     fetchChartLiquidoAdmin(mes, 12, clinicaId || undefined),
     fetchOrcamentosFechados(mes, clinicaId || undefined),
@@ -71,16 +76,16 @@ export default async function AdminDashboardPage({
   ]);
 
   return (
-    <div className="space-y-6">
-      <SaldoParceiros />
-      <DashboardClient
-        initialMes={mes}
+    <DashboardClient
+      initialMes={mes}
       initialClinicaId={clinicaId}
       initialKpis={kpis}
       initialDre={dre}
       initialRepasse={repasse}
       initialRanking={ranking}
-      initialStatus={status}
+      syncStatus={syncStatus}
+      saldos={saldos}
+      categoriasProcedimentos={categoriasProcedimentos}
       initialChartData={chartData}
       initialChartLiquido={chartLiquido}
       initialOrcamentosFechados={orcamentosFechados}
@@ -89,9 +94,8 @@ export default async function AdminDashboardPage({
       initialProcedimentos={procedimentos}
       initialTratamentosVendidos={tratamentosVendidos}
       initialTratamentosEvolucao={tratamentosEvolucao}
-        clinicas={clinicas}
-        mesesFechados={mesesFechados}
-      />
-    </div>
+      clinicas={clinicas}
+      mesesFechados={mesesFechados}
+    />
   );
 }
