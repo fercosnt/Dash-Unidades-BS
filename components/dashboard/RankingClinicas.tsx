@@ -7,14 +7,19 @@ import { formatCurrency } from "@/lib/utils/formatting";
 type RankingClinicasProps = {
   items: RankingClinica[];
   className?: string;
+  subtitle?: string;
 };
 
-export function RankingClinicas({ items, className = "" }: RankingClinicasProps) {
+export function RankingClinicas({
+  items,
+  className = "",
+  subtitle = "Resumo calculado para o mês selecionado",
+}: RankingClinicasProps) {
   return (
     <div className={`rounded-lg bg-white shadow-md overflow-hidden ${className}`}>
       <div className="px-6 py-4 border-b border-neutral-100">
         <h3 className="text-sm font-heading font-bold text-neutral-900">Ranking por faturamento</h3>
-        <p className="text-xs text-neutral-400 mt-0.5">Resumo calculado para o mês selecionado</p>
+        <p className="text-xs text-neutral-400 mt-0.5">{subtitle}</p>
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-neutral-100 text-sm">
@@ -32,7 +37,7 @@ export function RankingClinicas({ items, className = "" }: RankingClinicasProps)
             {items.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-6 py-8 text-center text-neutral-400">
-                  Nenhum resumo calculado para este mês.
+                  Nenhum faturamento registrado.
                 </td>
               </tr>
             ) : (

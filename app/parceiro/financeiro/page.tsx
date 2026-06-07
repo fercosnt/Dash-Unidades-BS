@@ -3,6 +3,8 @@ import {
   getHistoricoResumos,
   getMesesComResumo,
 } from "./actions";
+import { fetchContaCorrente, type ContaCorrente } from "@/lib/saldo-parceiro-queries";
+import { getClinicaIdDoParceiro } from "@/lib/auth/parceiro-clinica";
 import { FinanceiroParceiroClient } from "./FinanceiroParceiroClient";
 
 export const dynamic = "force-dynamic";
@@ -16,9 +18,11 @@ export default async function ParceiroFinanceiroPage() {
   const meses = await getMesesComResumo();
   const mesRef = meses[0] ?? currentMonth();
 
-  const [resumo, historico] = await Promise.all([
+  const clinicaId = await getClinicaIdDoParceiro();
+  const [resumo, historico, conta] = await Promise.all([
     getResumoMes(mesRef),
     getHistoricoResumos(12),
+    clinicaId ? fetchContaCorrente(clinicaId) : Promise.resolve<ContaCorrente | null>(null),
   ]);
 
   const mesesList = meses.length > 0 ? meses : [currentMonth()];
@@ -29,6 +33,7 @@ export default async function ParceiroFinanceiroPage() {
       initialMes={mesRef}
       initialResumo={resumo}
       historico={historico}
+      conta={conta}
     />
   );
 }

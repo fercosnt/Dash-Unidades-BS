@@ -136,7 +136,7 @@ export async function calcularEPersistirResumo(
 
   const { data: pagamentosDiretos, error: errPagamentos } = await admin
     .from("pagamentos")
-    .select("valor, forma")
+    .select("valor, forma, parcelas")
     .eq("clinica_id", clinicaId)
     .gte("data_pagamento", start)
     .lte("data_pagamento", end);
@@ -144,18 +144,29 @@ export async function calcularEPersistirResumo(
     console.error("[calcularEPersistirResumo] Erro ao buscar pagamentos:", errPagamentos.message);
     return { ok: false, error: "Erro ao buscar pagamentos: " + errPagamentos.message };
   }
-  const formasCartao = ["cartao_credito", "cartao_debito"];
+  // Recebimento direto (caixa imediato): pix, dinheiro, débito e crédito à vista (1x).
+  // Crédito parcelado (>1x) NÃO entra aqui — é contado via parcelas_cartao recebidas
+  // (a RPC registrar_pagamento só gera parcelas para cartao_credito com parcelas > 1).
   const totalRecebidoDireto = (pagamentosDiretos ?? []).reduce((s, r) => {
-    if (formasCartao.includes(String(r.forma))) return s;
+    const ehCreditoParcelado =
+      String(r.forma) === "cartao_credito" && Number(r.parcelas ?? 1) > 1;
+    if (ehCreditoParcelado) return s;
     return s + Number(r.valor ?? 0);
   }, 0);
   const totalRecebidoMes = round2(totalRecebidoParcelas + totalRecebidoDireto);
 
+  // Recebimentos futuros ATRIBUÍVEIS AO MÊS: parcelas projetadas geradas pelos
+  // pagamentos (vendas) deste mês. Antes somava TODAS as projetadas da clínica
+  // (snapshot global, idêntico em todo mês e somando errado entre meses) — agora
+  // cada mês reflete só o que ainda vai cair das suas próprias vendas, e a soma
+  // dos meses = total em aberto.
   const { data: parcelasFuturas, error: errFuturas } = await admin
     .from("parcelas_cartao")
-    .select("valor_parcela")
+    .select("valor_parcela, pagamentos!inner(data_pagamento)")
     .eq("clinica_id", clinicaId)
-    .eq("status", "projetado");
+    .eq("status", "projetado")
+    .gte("pagamentos.data_pagamento", start)
+    .lte("pagamentos.data_pagamento", end);
   if (errFuturas) {
     console.error("[calcularEPersistirResumo] Erro ao buscar parcelas_cartao (projetadas):", errFuturas.message);
     return { ok: false, error: "Erro ao buscar parcelas futuras: " + errFuturas.message };

@@ -5,7 +5,6 @@ import { firstDayOfMonth, lastDayOfMonth } from "@/lib/utils/date-helpers";
 import type {
   KpisAdmin,
   RankingClinica,
-  UploadStatusItem,
   KpisParceiro,
   ChartParceiroPoint,
   ChartDataAdminPoint,
@@ -233,55 +232,83 @@ async function fetchRankingClinicasResumoGeral(supabase: Awaited<ReturnType<type
     .sort((a, b) => b.faturamentoBruto - a.faturamentoBruto);
 }
 
-export async function fetchStatusUploads(mesReferencia: string, clinicaId?: string): Promise<UploadStatusItem[]> {
+export type SyncStatusItem = {
+  clinicaId: string;
+  clinicaNome: string;
+  ultimaSync: string | null;
+  status: string | null;
+  orcamentosFechados: number | null;
+  pagamentos: number | null;
+  erro: string | null;
+};
+
+/** Status do sync Clinicorp: última execução por clínica ativa (substitui o painel de uploads XLSX). */
+export async function fetchSyncStatus(): Promise<SyncStatusItem[]> {
   const supabase = await createSupabaseServerClient();
-  let clinicasQuery = supabase
+  const { data: clinicas, error: errClinicas } = await supabase
     .from("clinicas_parceiras")
     .select("id, nome")
+    .eq("ativo", true)
     .order("nome");
-  if (clinicaId) clinicasQuery = clinicasQuery.eq("id", clinicaId);
-  const { data: clinicas, error: errClinicas } = await clinicasQuery;
   if (errClinicas) {
-    console.error("[fetchStatusUploads] Erro ao buscar clinicas_parceiras:", errClinicas.message);
+    console.error("[fetchSyncStatus] Erro ao buscar clinicas_parceiras:", errClinicas.message);
     return [];
   }
-
-  let query = supabase
-    .from("upload_batches")
-    .select("clinica_id, tipo")
-    .eq("status", "concluido");
-
-  if (mesReferencia !== "all") {
-    const start = firstDayOfMonth(mesReferencia);
-    const end = lastDayOfMonth(mesReferencia);
-    query = query.gte("mes_referencia", start).lte("mes_referencia", end);
+  const { data: logs, error: errLogs } = await supabase
+    .from("sync_logs")
+    .select(
+      "clinica_id, status, started_at, finished_at, orcamentos_fechados_inseridos, pagamentos_inseridos, error_message"
+    )
+    .order("started_at", { ascending: false });
+  if (errLogs) {
+    console.error("[fetchSyncStatus] Erro ao buscar sync_logs:", errLogs.message);
   }
 
-  const { data: batches, error: errBatches } = await query;
-  if (errBatches) {
-    console.error("[fetchStatusUploads] Erro ao buscar upload_batches:", errBatches.message);
+  type Log = {
+    clinica_id: string;
+    status: string | null;
+    started_at: string | null;
+    finished_at: string | null;
+    orcamentos_fechados_inseridos: number | null;
+    pagamentos_inseridos: number | null;
+    error_message: string | null;
+  };
+  const lastByClinica = new Map<string, Log>();
+  for (const l of (logs ?? []) as Log[]) {
+    if (!lastByClinica.has(l.clinica_id)) lastByClinica.set(l.clinica_id, l);
+  }
+
+  return (clinicas ?? []).map((c) => {
+    const l = lastByClinica.get(c.id);
+    return {
+      clinicaId: c.id,
+      clinicaNome: c.nome,
+      ultimaSync: l ? l.finished_at ?? l.started_at : null,
+      status: l?.status ?? null,
+      orcamentosFechados: l?.orcamentos_fechados_inseridos ?? null,
+      pagamentos: l?.pagamentos_inseridos ?? null,
+      erro: l?.error_message ?? null,
+    };
+  });
+}
+
+/** Lista de todas as categorias do catálogo de procedimentos (p/ a aba Categorias mostrar 0). */
+export async function fetchCategoriasProcedimentos(): Promise<string[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("procedimentos")
+    .select("categoria")
+    .not("categoria", "is", null);
+  if (error) {
+    console.error("[fetchCategoriasProcedimentos] Erro:", error.message);
     return [];
   }
-
-  const byClinica: Record<string, { orcamentosFechados: boolean; orcamentosAbertos: boolean; tratamentos: boolean }> = {};
-  (clinicas ?? []).forEach((c) => {
-    byClinica[c.id] = { orcamentosFechados: false, orcamentosAbertos: false, tratamentos: false };
+  const set = new Set<string>();
+  (data ?? []).forEach((r) => {
+    const c = (r as { categoria: string | null }).categoria;
+    if (c) set.add(c);
   });
-  (batches ?? []).forEach((b) => {
-    const id = b.clinica_id as string;
-    if (!byClinica[id]) return;
-    if (b.tipo === "orcamentos_fechados") byClinica[id].orcamentosFechados = true;
-    if (b.tipo === "orcamentos_abertos") byClinica[id].orcamentosAbertos = true;
-    if (b.tipo === "tratamentos_executados") byClinica[id].tratamentos = true;
-  });
-
-  return (clinicas ?? []).map((c) => ({
-    clinicaId: c.id,
-    clinicaNome: c.nome,
-    orcamentosFechados: byClinica[c.id]?.orcamentosFechados ?? false,
-    orcamentosAbertos: byClinica[c.id]?.orcamentosAbertos ?? false,
-    tratamentos: byClinica[c.id]?.tratamentos ?? false,
-  }));
+  return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
 }
 
 /** KPIs do parceiro para o mês (RLS filtra pela clínica do usuário) */

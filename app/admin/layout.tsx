@@ -22,7 +22,7 @@ const ADMIN_SIDEBAR_GROUPS_BASE = [
       { href: "/admin/fechamento", label: "Fechamento do Mês", badge: 0 as number },
       { href: "/admin/pagamentos", label: "Projeção de recebimentos" },
       { href: "/admin/inadimplencia", label: "Inadimplência" },
-      { href: "/admin/repasses", label: "Repasses" },
+      { href: "/admin/repasses", label: "Conta Corrente" },
       { href: "/admin/comissoes-dentista", label: "Comissões Dentista" },
       { href: "/admin/comissoes", label: "Comissões Médicos" },
       { href: "/admin/despesas", label: "Despesas" },

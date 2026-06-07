@@ -26,6 +26,7 @@ contexto.txt
 
 # Claude Code (pessoal — nao commitar)
 .claude/settings.local.json
+.claude/settings.json
 CLAUDE.local.md
 
 # Sistema

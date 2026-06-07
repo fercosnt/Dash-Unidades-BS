@@ -3,7 +3,8 @@ import {
   fetchDreAdmin,
   fetchRepasseAdmin,
   fetchRankingClinicas,
-  fetchStatusUploads,
+  fetchSyncStatus,
+  fetchCategoriasProcedimentos,
   fetchChartDataAdmin,
   fetchChartLiquidoAdmin,
   fetchOrcamentosFechados,
@@ -13,6 +14,7 @@ import {
   fetchTratamentosVendidos,
   fetchTratamentosEvolucao,
 } from "@/lib/dashboard-queries";
+import { fetchSaldosParceiros } from "@/lib/saldo-parceiro-queries";
 import { autoCalcResumoSeNecessario } from "@/lib/resumo-staleness";
 import { getClinicasAtivas } from "../upload/actions";
 import { fetchMesesFechados } from "../configuracoes/fechamento/actions";
@@ -39,8 +41,10 @@ export default async function AdminDashboardPage({
     kpis,
     dre,
     repasse,
-    ranking,
-    status,
+    rankingGeral,
+    syncStatus,
+    categoriasProcedimentos,
+    saldos,
     chartData,
     chartLiquido,
     orcamentosFechados,
@@ -55,8 +59,10 @@ export default async function AdminDashboardPage({
     fetchKpisAdminV2(mes, clinicaId || undefined),
     fetchDreAdmin(mes, clinicaId || undefined),
     fetchRepasseAdmin(mes, clinicaId || undefined),
-    fetchRankingClinicas(mes, clinicaId || undefined),
-    fetchStatusUploads(mes, clinicaId || undefined),
+    fetchRankingClinicas("all"),
+    fetchSyncStatus(),
+    fetchCategoriasProcedimentos(),
+    fetchSaldosParceiros(),
     fetchChartDataAdmin(mes, 12, clinicaId || undefined),
     fetchChartLiquidoAdmin(mes, 12, clinicaId || undefined),
     fetchOrcamentosFechados(mes, clinicaId || undefined),
@@ -76,8 +82,10 @@ export default async function AdminDashboardPage({
       initialKpis={kpis}
       initialDre={dre}
       initialRepasse={repasse}
-      initialRanking={ranking}
-      initialStatus={status}
+      rankingGeral={rankingGeral}
+      syncStatus={syncStatus}
+      saldos={saldos}
+      categoriasProcedimentos={categoriasProcedimentos}
       initialChartData={chartData}
       initialChartLiquido={chartLiquido}
       initialOrcamentosFechados={orcamentosFechados}

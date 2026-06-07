@@ -5,7 +5,6 @@ import {
   Pie,
   Cell,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from "recharts";
 import { useState } from "react";
@@ -27,13 +26,15 @@ const COLORS = [
 
 type Props = {
   data: ProcedimentoRankingItem[];
+  /** Todas as categorias do catálogo — exibidas na aba Categorias mesmo com 0 execuções. */
+  categoriasCatalogo?: string[];
   className?: string;
 };
 
-export function ChartProcedimentosPizza({ data, className = "" }: Props) {
+export function ChartProcedimentosPizza({ data, categoriasCatalogo = [], className = "" }: Props) {
   const [viewMode, setViewMode] = useState<"procedimento" | "categoria">("procedimento");
 
-  // Agrupar por categoria
+  // Agrupar por categoria — seedando todas as categorias do catálogo (mesmo com 0)
   const categorias = data.reduce<Record<string, { qtde: number; custoTotal: number }>>((acc, item) => {
     const cat = item.categoria || "Sem categoria";
     if (!acc[cat]) acc[cat] = { qtde: 0, custoTotal: 0 };
@@ -41,6 +42,9 @@ export function ChartProcedimentosPizza({ data, className = "" }: Props) {
     acc[cat].custoTotal += item.custoTotal;
     return acc;
   }, {});
+  for (const cat of categoriasCatalogo) {
+    if (!categorias[cat]) categorias[cat] = { qtde: 0, custoTotal: 0 };
+  }
 
   const totalQtde = data.reduce((a, r) => a + r.quantidade, 0);
   const categoriaData = Object.entries(categorias)
@@ -143,12 +147,6 @@ export function ChartProcedimentosPizza({ data, className = "" }: Props) {
                     borderRadius: 8,
                     border: "1px solid #E8E9E8",
                   }}
-                />
-                <Legend
-                  wrapperStyle={{ fontSize: 11 }}
-                  formatter={(value: string) =>
-                    value.length > 20 ? `${value.slice(0, 20)}…` : value
-                  }
                 />
               </PieChart>
             </ResponsiveContainer>

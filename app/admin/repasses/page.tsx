@@ -1,22 +1,27 @@
-import { fetchRepassesPendentes, fetchRepassesFeitos } from "@/lib/repasse-queries";
-import { fetchDebitosAtivos } from "@/lib/debito-queries";
-import { RepassesClient } from "./RepassesClient";
+import { fetchContaCorrente } from "@/lib/saldo-parceiro-queries";
+import { getClinicasAtivas } from "../upload/actions";
+import { ContaCorrenteClient } from "./RepassesClient";
 
-export default async function RepassesPage() {
-  const [pendentes, feitos, debitosAtivos] = await Promise.all([
-    fetchRepassesPendentes(),
-    fetchRepassesFeitos(),
-    fetchDebitosAtivos(),
-  ]);
+export default async function ContaCorrentePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ clinica?: string }>;
+}) {
+  const params = await searchParams;
+  const clinicas = await getClinicasAtivas();
+  const clinicaId = params.clinica || clinicas[0]?.id || "";
+  const conta = clinicaId ? await fetchContaCorrente(clinicaId) : null;
+
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-white">Repasses Mensais</h2>
+        <h2 className="text-xl font-semibold text-white">Conta Corrente</h2>
         <p className="mt-1 text-sm text-white/80">
-          Registre a transferência mensal para cada clínica parceira.
+          Saldo único do parceiro — abre com a taxa de implementação e é alimentado pelo resultado
+          mensal (caixa real). Negativo = parceiro deve à BS.
         </p>
       </div>
-      <RepassesClient pendentes={pendentes} feitos={feitos} debitosAtivos={debitosAtivos} />
+      <ContaCorrenteClient clinicas={clinicas} clinicaSelecionada={clinicaId} conta={conta} />
     </div>
   );
 }

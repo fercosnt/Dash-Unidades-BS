@@ -6,8 +6,9 @@ import { ClinicaSelector } from "@/components/dashboard/ClinicaSelector";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { ChartFaturamentoRecebimento } from "@/components/dashboard/ChartFaturamentoRecebimento";
 import { ChartEvolucaoLiquido } from "@/components/dashboard/ChartEvolucaoLiquido";
-import { StatusUploads } from "@/components/dashboard/StatusUploads";
 import { RankingClinicas } from "@/components/dashboard/RankingClinicas";
+import { SyncStatusClinicas } from "./SyncStatusClinicas";
+import { SaldoParceiros } from "./SaldoParceiros";
 import { DreCascata } from "@/components/dashboard/DreCascata";
 import { RepasseMes } from "@/components/dashboard/RepasseMes";
 import { ChartVendasEvolucao } from "@/components/dashboard/ChartVendasEvolucao";
@@ -18,8 +19,6 @@ import {
   fetchKpisAdminV2,
   fetchDreAdmin,
   fetchRepasseAdmin,
-  fetchRankingClinicas,
-  fetchStatusUploads,
   fetchChartDataAdmin,
   fetchChartLiquidoAdmin,
   fetchOrcamentosFechados,
@@ -28,14 +27,15 @@ import {
   fetchProcedimentosRanking,
   fetchTratamentosVendidos,
   fetchTratamentosEvolucao,
+  type SyncStatusItem,
 } from "@/lib/dashboard-queries";
+import type { SaldoParceiro } from "@/lib/saldo-parceiro-queries";
 import { formatCurrency } from "@/lib/utils/formatting";
 import type {
   KpisAdminV2,
   DreAdminData,
   RepasseAdminData,
   RankingClinica,
-  UploadStatusItem,
   ChartDataAdminPoint,
   ChartLiquidoAdminPoint,
   OrcamentoFechadoItem,
@@ -54,8 +54,10 @@ type DashboardClientProps = {
   initialKpis: KpisAdminV2;
   initialDre: DreAdminData;
   initialRepasse: RepasseAdminData;
-  initialRanking: RankingClinica[];
-  initialStatus: UploadStatusItem[];
+  rankingGeral: RankingClinica[];
+  syncStatus: SyncStatusItem[];
+  saldos: SaldoParceiro[];
+  categoriasProcedimentos: string[];
   initialChartData: ChartDataAdminPoint[];
   initialChartLiquido: ChartLiquidoAdminPoint[];
   initialOrcamentosFechados: OrcamentoFechadoItem[];
@@ -80,8 +82,10 @@ export function DashboardClient({
   initialKpis,
   initialDre,
   initialRepasse,
-  initialRanking,
-  initialStatus,
+  rankingGeral,
+  syncStatus,
+  saldos,
+  categoriasProcedimentos,
   initialChartData,
   initialChartLiquido,
   initialOrcamentosFechados,
@@ -99,8 +103,6 @@ export function DashboardClient({
   const [kpis, setKpis] = useState(initialKpis);
   const [dre, setDre] = useState(initialDre);
   const [repasse, setRepasse] = useState(initialRepasse);
-  const [ranking, setRanking] = useState(initialRanking);
-  const [status, setStatus] = useState(initialStatus);
   const [chartData, setChartData] = useState(initialChartData);
   const [chartLiquido, setChartLiquido] = useState(initialChartLiquido);
   const [orcamentosFechados, setOrcamentosFechados] = useState(initialOrcamentosFechados);
@@ -120,8 +122,6 @@ export function DashboardClient({
       fetchKpisAdminV2(mes, clinicaId || undefined),
       fetchDreAdmin(mes, clinicaId || undefined),
       fetchRepasseAdmin(mes, clinicaId || undefined),
-      fetchRankingClinicas(mes, clinicaId || undefined),
-      fetchStatusUploads(mes, clinicaId || undefined),
       fetchChartDataAdmin(mesParaGraficos, 12, clinicaId || undefined),
       fetchChartLiquidoAdmin(mesParaGraficos, 12, clinicaId || undefined),
       fetchOrcamentosFechados(mes, clinicaId || undefined),
@@ -130,12 +130,10 @@ export function DashboardClient({
       fetchProcedimentosRanking(mes, clinicaId || undefined),
       fetchTratamentosVendidos(mes, clinicaId || undefined),
       fetchTratamentosEvolucao(mes === "all" ? initialMes : mes, 6, clinicaId || undefined),
-    ]).then(([k, d, rp, r, s, cd, cl, of, oa, ev, proc, tv, te]) => {
+    ]).then(([k, d, rp, cd, cl, of, oa, ev, proc, tv, te]) => {
       setKpis(k);
       setDre(d);
       setRepasse(rp);
-      setRanking(r);
-      setStatus(s);
       setChartData(cd);
       setChartLiquido(cl);
       setOrcamentosFechados(of);
@@ -436,14 +434,19 @@ export function DashboardClient({
 
           {/* ── ABA PROCEDIMENTOS ── */}
           {activeTab === "procedimentos" && (
-            <ChartProcedimentosPizza data={procedimentos} className="w-full" />
+            <ChartProcedimentosPizza
+              data={procedimentos}
+              categoriasCatalogo={categoriasProcedimentos}
+              className="w-full"
+            />
           )}
 
-          {/* ── ABA CLÍNICAS ── */}
+          {/* ── ABA CLÍNICAS ── (ranking faturamento / status sync / saldo por parceiro) */}
           {activeTab === "clinicas" && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <RankingClinicas items={ranking} />
-              <StatusUploads items={status} />
+            <div className="space-y-6">
+              <RankingClinicas items={rankingGeral} subtitle="Acumulado — todas as competências" />
+              <SyncStatusClinicas items={syncStatus} />
+              <SaldoParceiros saldos={saldos} />
             </div>
           )}
         </>

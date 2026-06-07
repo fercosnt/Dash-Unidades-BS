@@ -33,7 +33,8 @@ Dashboard multi-tenant para gestão financeira das clínicas parceiras da Beauty
 app/
 ├── (auth)/login          # Login (sem auth)
 ├── admin/                # Painel admin (Beauty Smile)
-│   ├── dashboard/        # KPIs + gráficos + ranking
+│   ├── dashboard/        # KPIs + gráficos; abas Resumo/Vendas/Procedimentos/Clínicas
+│                         # (aba Clínicas = ranking acumulado + status sync + saldo por parceiro)
 │   ├── clinicas/[id]/    # Drill-down por clínica (4 abas)
 │   ├── upload/           # Sincronização Clinicorp (status + histórico de sync)
 │   ├── despesas/         # 3 abas: Recebíveis (caixa) + Faturamento (DRE BS) + Despesas
@@ -152,6 +153,19 @@ RESULTADO BS (base caixa):
 - Calculada sobre **valor bruto** do orçamento (`valor_total`)
 - Percentual configurável por médico (`percentual_comissao`)
 
+### Conta corrente do parceiro
+Modelo de **conta única** por parceiro (substitui o repasse mensal isolado, que misturava caixa com competência e gerava negativos absurdos). Fonte de verdade: `PRD/PRD.md`.
+
+- **Saldo de abertura** = `−valor_total` da `debito_parceiro` ativa ("Taxa de Implementação"; FIXO, não usa `valor_pago`); ou 0 se não houver dívida. Hirata abre em −250.000.
+- **Resultado mensal** (RPC `calcular_resultado_mensal_parceiro`) = `(1 − %BS) × (recebido_caixa_do_mês − custos_do_mês)`, por mês-calendário desde a 1ª atividade. `recebido` = pagamentos não-crédito-parcelado (`data_pagamento`) + parcelas de cartão `recebido` (`mes_recebimento`). `custos` = soma do `resumo_mensal` nos meses com venda, ou **só a mão de obra fixa** (`clinicas_parceiras.custo_mao_de_obra`) nos meses sem venda.
+- **Saldo** = abertura + Σ resultados + Σ pagamentos de implementação (−, parceiro→BS via `abatimentos_debito` com `repasse_id` null = evento `+`) − Σ repasses (`repasses_mensais`).
+- **Convenção de sinal:** negativo = parceiro deve à BS; positivo = BS deve ao parceiro. Modelo **franquia**: parceiro nunca aporta; **só saca com saldo > 0** (`registrarRepasse` bloqueia `saldo ≤ 0` e `valor > saldo`).
+- **Saldo decomposto na UI (RF-10):** taxa a amortizar / resultado operacional acumulado / saldo + competência acumulada (`Σ valor_clinica`, referência).
+- **Calote (v1):** prejuízo compartilhado 40/60 (cai no resultado); venda só lança com ≥30% pago, então calote puro não ocorre.
+- **Deep module:** `fetchContaCorrente(clinicaId) → { saldo, podeRepassar, operacionalAcumulado, extrato, dividaImplementacao, competenciaAcumulada }` (RPC + função pura `montarExtrato`).
+- **Segurança:** RPC é `SECURITY DEFINER` com guard de tenant (admin OU própria clínica); `repasses_mensais` tem policy de leitura do parceiro (migration 024). Saldo é **derivado** (nunca materializado) — recálculo do `resumo_mensal` mantém consistência.
+- **Telas:** `/admin/repasses` ("Conta Corrente": seletor + saldo + extrato + registrar repasse/pagamento de implementação); aba "Conta Corrente" em `/parceiro/financeiro` (read-only); card de saldo nos dashboards. A config "Débitos parceiros" só **cadastra/edita** a taxa.
+
 ### Multi-tenancy
 - **RLS no Supabase** isola dados por `clinica_id` — admin vê tudo, parceiro vê só sua clínica
 - Functions `auth_clinica_id()` e `is_admin()` usadas nas policies
@@ -209,11 +223,18 @@ npm run test:e2e  # Playwright
 | `lib/despesas-queries.ts` | Queries de despesas, taxas reais, DRE BS e DRE Recebíveis |
 | `components/dashboard/DreBsUnidade.tsx` | Componente visual do DRE Beauty Smile (faturamento) |
 | `components/dashboard/DreRecebiveis.tsx` | Componente visual do DRE Recebíveis (visão caixa) |
+| `lib/saldo-parceiro-queries.ts` | Conta corrente: `fetchContaCorrente` + `fetchSaldosParceiros` |
+| `lib/utils/extrato-parceiro.ts` | Função pura `montarExtrato` (saldo corrido; com teste) |
+| `lib/auth/parceiro-clinica.ts` | `getClinicaIdDoParceiro` (resolve clínica do parceiro logado) |
+| `components/conta-corrente/ContaCorrenteView.tsx` | Saldo decomposto + extrato (compartilhado admin/parceiro) |
+| `app/admin/repasses/` | Tela admin "Conta Corrente" (saldo, extrato, repasse, pagamento impl.) |
+| `app/admin/dashboard/SaldoParceiros.tsx` / `SyncStatusClinicas.tsx` | Aba Clínicas: saldo por parceiro + status do sync (`sync_logs`) |
+| `components/dashboard/ChartProcedimentosPizza.tsx` | Procedimentos realizados (sem legenda; aba Categorias mostra todo o catálogo) |
 | `components/upload/SyncStatusPanel.tsx` | Painel de status de sincronização Clinicorp |
 | `app/api/cron/clinicorp-sync/route.ts` | Endpoint Vercel Cron (sync diário) |
 | `supabase/migrations/` | 20+ migrations SQL (schema + RLS + sync_logs + etc.) |
 | `supabase/seed.sql` | Dados de teste (admin, parceiro, clínica, etc.) |
-| `types/database.types.ts` | Types gerados do Supabase (25 tabelas, 2 views, 5 RPCs, 6 enums) |
+| `types/database.types.ts` | Types gerados do Supabase (25 tabelas, 2 views, 6 RPCs, 6 enums) |
 | `eslint.config.mjs` | ESLint 9 flat config (Next.js + TypeScript + React Hooks) |
 | `ROADMAP.md` | O que foi feito e o que falta |
 | `decisions.md` | Log de decisões arquiteturais |

@@ -1,10 +1,6 @@
 import { fetchKpisParceiro, fetchChartParceiro } from "@/lib/dashboard-queries";
 import { ParceiroDashboardClient } from "./ParceiroDashboardClient";
-
-function getDefaultMes(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-}
+import { SaldoCard } from "./SaldoCard";
 
 export default async function ParceiroDashboardPage() {
   const mes = "all";
@@ -14,10 +10,13 @@ export default async function ParceiroDashboardPage() {
   ]);
 
   return (
-    <ParceiroDashboardClient
-      initialMes={mes}
-      initialKpis={kpis}
-      initialChart={chartData}
-    />
+    <div className="space-y-6">
+      <SaldoCard />
+      <ParceiroDashboardClient
+        initialMes={mes}
+        initialKpis={kpis}
+        initialChart={chartData}
+      />
+    </div>
   );
 }
