@@ -17,6 +17,7 @@ import { autoCalcResumoSeNecessario } from "@/lib/resumo-staleness";
 import { getClinicasAtivas } from "../upload/actions";
 import { fetchMesesFechados } from "../configuracoes/fechamento/actions";
 import { DashboardClient } from "./DashboardClient";
+import { SaldoParceiros } from "./SaldoParceiros";
 
 function getDefaultMes(): string {
   const d = new Date();
@@ -70,8 +71,10 @@ export default async function AdminDashboardPage({
   ]);
 
   return (
-    <DashboardClient
-      initialMes={mes}
+    <div className="space-y-6">
+      <SaldoParceiros />
+      <DashboardClient
+        initialMes={mes}
       initialClinicaId={clinicaId}
       initialKpis={kpis}
       initialDre={dre}
@@ -86,8 +89,9 @@ export default async function AdminDashboardPage({
       initialProcedimentos={procedimentos}
       initialTratamentosVendidos={tratamentosVendidos}
       initialTratamentosEvolucao={tratamentosEvolucao}
-      clinicas={clinicas}
-      mesesFechados={mesesFechados}
-    />
+        clinicas={clinicas}
+        mesesFechados={mesesFechados}
+      />
+    </div>
   );
 }
