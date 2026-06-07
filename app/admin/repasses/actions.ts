@@ -46,9 +46,12 @@ export async function registrarRepasse(input: unknown) {
   return { ok: true };
 }
 
-/** Desfaz um repasse (RF-05). No modelo único não há abatimento vinculado: só remove o registro. */
+/** Desfaz um repasse (RF-05). O modelo novo não vincula abatimento a repasse, mas dados
+ * legados (fluxo antigo darBaixaRepasse) podem ter abatimentos_debito.repasse_id apontando
+ * p/ este repasse; como a FK é RESTRICT, removê-los antes evita erro de FK no delete. */
 export async function desfazerRepasse(id: string) {
   const { supabase } = await requireAdmin();
+  await supabase.from("abatimentos_debito").delete().eq("repasse_id", id);
   const { error } = await supabase.from("repasses_mensais").delete().eq("id", id);
   if (error) return { ok: false, error: error.message };
   return { ok: true };

@@ -8,13 +8,20 @@ function formatDateTime(iso: string | null): string {
   return `${d[2]}/${d[1]}/${d[0]} ${t}`;
 }
 
+// Valores reais de sync_logs.status (CHECK migration 020): running | success | error | skipped.
 function statusBadge(status: string | null): { label: string; cls: string } {
-  if (status === "sucesso" || status === "ok" || status === "concluido")
-    return { label: "OK", cls: "bg-green-50 text-green-700" };
-  if (status === "erro" || status === "falha")
-    return { label: "Erro", cls: "bg-red-50 text-red-700" };
-  if (!status) return { label: "—", cls: "bg-neutral-100 text-neutral-500" };
-  return { label: status, cls: "bg-amber-50 text-amber-700" };
+  switch (status) {
+    case "success":
+      return { label: "OK", cls: "bg-green-50 text-green-700" };
+    case "error":
+      return { label: "Erro", cls: "bg-red-50 text-red-700" };
+    case "running":
+      return { label: "Rodando", cls: "bg-blue-50 text-blue-700" };
+    case "skipped":
+      return { label: "Pulado", cls: "bg-neutral-100 text-neutral-500" };
+    default:
+      return { label: "—", cls: "bg-neutral-100 text-neutral-500" };
+  }
 }
 
 /** Status do sync Clinicorp por clínica (substitui o painel legado de uploads XLSX). */

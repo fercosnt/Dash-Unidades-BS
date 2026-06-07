@@ -17,14 +17,6 @@ export type RankingClinica = {
   ativo: boolean;
 };
 
-export type UploadStatusItem = {
-  clinicaId: string;
-  clinicaNome: string;
-  orcamentosFechados: boolean;
-  orcamentosAbertos: boolean;
-  tratamentos: boolean;
-};
-
 export type KpisAdmin = {
   faturamentoBruto: number;
   totalRecebidoMes: number;

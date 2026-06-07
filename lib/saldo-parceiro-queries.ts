@@ -51,10 +51,13 @@ export async function fetchContaCorrente(clinicaId: string): Promise<ContaCorren
         .select("id, descricao, valor_total, valor_pago, data_inicio")
         .eq("clinica_id", clinicaId)
         .eq("status", "ativo")
-        .maybeSingle(),
+        .order("data_inicio", { ascending: true })
+        .limit(1),
     ]);
 
-  const d = debito as Record<string, unknown> | null;
+  // limit(1) em vez de maybeSingle: se houver >1 débito ativo, maybeSingle daria erro
+  // (data null) e o saldo perderia a abertura silenciosamente, burlando a trava de repasse.
+  const d = (debito as Record<string, unknown>[] | null)?.[0] ?? null;
   const saldoInicial = d ? -Number(d.valor_total) : 0;
   const mesAbertura = d ? String(d.data_inicio).slice(0, 7) : "2026-01";
 

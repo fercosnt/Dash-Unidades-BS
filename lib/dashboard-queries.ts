@@ -5,7 +5,6 @@ import { firstDayOfMonth, lastDayOfMonth } from "@/lib/utils/date-helpers";
 import type {
   KpisAdmin,
   RankingClinica,
-  UploadStatusItem,
   KpisParceiro,
   ChartParceiroPoint,
   ChartDataAdminPoint,
@@ -231,57 +230,6 @@ async function fetchRankingClinicasResumoGeral(supabase: Awaited<ReturnType<type
       ativo: c.ativo ?? true,
     }))
     .sort((a, b) => b.faturamentoBruto - a.faturamentoBruto);
-}
-
-export async function fetchStatusUploads(mesReferencia: string, clinicaId?: string): Promise<UploadStatusItem[]> {
-  const supabase = await createSupabaseServerClient();
-  let clinicasQuery = supabase
-    .from("clinicas_parceiras")
-    .select("id, nome")
-    .order("nome");
-  if (clinicaId) clinicasQuery = clinicasQuery.eq("id", clinicaId);
-  const { data: clinicas, error: errClinicas } = await clinicasQuery;
-  if (errClinicas) {
-    console.error("[fetchStatusUploads] Erro ao buscar clinicas_parceiras:", errClinicas.message);
-    return [];
-  }
-
-  let query = supabase
-    .from("upload_batches")
-    .select("clinica_id, tipo")
-    .eq("status", "concluido");
-
-  if (mesReferencia !== "all") {
-    const start = firstDayOfMonth(mesReferencia);
-    const end = lastDayOfMonth(mesReferencia);
-    query = query.gte("mes_referencia", start).lte("mes_referencia", end);
-  }
-
-  const { data: batches, error: errBatches } = await query;
-  if (errBatches) {
-    console.error("[fetchStatusUploads] Erro ao buscar upload_batches:", errBatches.message);
-    return [];
-  }
-
-  const byClinica: Record<string, { orcamentosFechados: boolean; orcamentosAbertos: boolean; tratamentos: boolean }> = {};
-  (clinicas ?? []).forEach((c) => {
-    byClinica[c.id] = { orcamentosFechados: false, orcamentosAbertos: false, tratamentos: false };
-  });
-  (batches ?? []).forEach((b) => {
-    const id = b.clinica_id as string;
-    if (!byClinica[id]) return;
-    if (b.tipo === "orcamentos_fechados") byClinica[id].orcamentosFechados = true;
-    if (b.tipo === "orcamentos_abertos") byClinica[id].orcamentosAbertos = true;
-    if (b.tipo === "tratamentos_executados") byClinica[id].tratamentos = true;
-  });
-
-  return (clinicas ?? []).map((c) => ({
-    clinicaId: c.id,
-    clinicaNome: c.nome,
-    orcamentosFechados: byClinica[c.id]?.orcamentosFechados ?? false,
-    orcamentosAbertos: byClinica[c.id]?.orcamentosAbertos ?? false,
-    tratamentos: byClinica[c.id]?.tratamentos ?? false,
-  }));
 }
 
 export type SyncStatusItem = {
