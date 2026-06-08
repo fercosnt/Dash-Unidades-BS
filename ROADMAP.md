@@ -271,7 +271,8 @@ Substitui o repasse mensal isolado (misturava caixa com competência → negativ
 
 ### Testes
 - ~~Validação RLS com usuário parceiro real~~ ✅ **feito (2026-06-07)** — ver [`docs/auditoria-rls-2026-06.md`](docs/auditoria-rls-2026-06.md). Isolamento de leitura aprovado; furos de escrita em 3 RPCs SECURITY DEFINER + sync_logs corrigidos (migration 026). Pendente decisão: remapear parceiro de teste (aponta p/ clínica inexistente) + ligar leaked password protection.
-- Testes E2E com Playwright (`npm run test:e2e`) — 🟡 **scaffold criado (2026-06-07)**: `playwright.config.ts` + `e2e/` (auth, autorização/RLS, smoke admin+parceiro; 31 testes, read-only contra dev local + Supabase prod). Credenciais em `.env.e2e` (ver `.env.example`). **Falta:** rodar a suíte com credenciais reais e (provável) corrigir o redirect do `AdminLayout` engolido por `try/catch` (parceiro não é barrado de `/admin`).
+- ~~Testes E2E com Playwright~~ ✅ **feito (2026-06-07)**: `playwright.config.ts` + `e2e/` (auth, autorização/RLS, smoke admin+parceiro). **31/31 verdes** (`npm run test:e2e`, contra build de produção local + Supabase prod, read-only). Credenciais em `.env.e2e` (ver `.env.example`). O E2E **pegou 1 bug de segurança** (parceiro não era barrado de `/admin` — redirect do `AdminLayout` engolido por `try/catch`) → **corrigido**.
+  - 🐛 **Achado pendente (separado):** `/admin/comissoes` loga `Could not find the table 'public.pagamentos_comissao'` — `fetchComissoesMedicos` consulta tabela inexistente (página degrada, mas a feature de comissões médicas não funciona). Investigar.
 
 ### Operacional
 - Notificações Telegram via WF4 (bot n8n)
