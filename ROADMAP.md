@@ -252,14 +252,14 @@ Substitui o repasse mensal isolado (misturava caixa com competência → negativ
 
 ## Próximos Passos
 
-### 1. Cron Vercel (sync diário automático)
-- O cron `GET /api/cron/clinicorp-sync` está no `vercel.json` e deployado, mas **não dispara** (`sync_logs` vazio, sem runtime logs).
-- Investigar no painel Vercel: **Cron Jobs** (habilitado? última execução?) + env var **`CRON_SECRET`** (a rota retorna 401 antes de logar se não bater) + plano.
-- Com a BASE_URL já corrigida, ao destravar o cron o sync diário (orçamentos + pagamentos) volta a funcionar sozinho.
+### 1. Cron Vercel (sync diário automático) — ✅ resolvido (2026-06-07)
+- **Causa raiz:** o Cron Job **disparava** todo dia 06:00 UTC, mas a env var **`CRON_SECRET` não existia** em Production → a Vercel não enviava o header `Authorization` → a rota retornava **401 antes de logar** (por isso `sync_logs` ficava vazio). O `vercel.json` e o agendamento sempre estiveram corretos.
+- **Fix:** `CRON_SECRET` criado em Production via CLI + **redeploy** (env var só é lida pela function após redeploy). Validado: sem Bearer → 401; com Bearer → 200 + sync real (mai `skipped`/fechado, jun `success`); registros gravados em `sync_logs` com `trigger='cron'`.
+- **Pendente relacionado:** `NODE_ENV` está setado manualmente como env var na Vercel (Prod/Preview/Dev) — gera warning "NODE_ENV was incorrectly set to a non-standard value" e pode estar rodando produção em modo dev. Remover a env var `NODE_ENV` da Vercel (a plataforma já define `production` sozinha).
 
 ### 2. Auditoria detalhada de números e cálculos — ✅ feito (2026-06-07, PR #7)
 - Auditoria do caixa/repasse concluída (ver `docs/auditoria-numeros-2026-06.md`): split 60/40 confere; bugs do débito no caixa e "A Receber" stale corrigidos em `lib/resumo-calculo.ts`; conta corrente bate o anchor da Hirata.
-- Pendente menor: DRE BS/Recebíveis (`lib/despesas-queries.ts`) ainda não reauditado com casos reais.
+- ~~Pendente menor: DRE BS/Recebíveis ainda não reauditado com casos reais.~~ ✅ **feito (2026-06-07)** — ver [`docs/auditoria-dre-2026-06.md`](docs/auditoria-dre-2026-06.md). Via mês específico correta; 2 bugs do modo "Resumo Geral" corrigidos (DRE Recebíveis zerado + taxa real = 0 inflando resultado em R$3.183,06 all-time).
 
 ### 3. Arrumar dashboard e view do parceiro — ✅ feito (2026-06-07, PR #7)
 - Dashboard admin revisado: aba Clínicas (ranking acumulado + status do sync + saldo por parceiro), Procedimentos sem legenda + categorias completas.
@@ -270,8 +270,8 @@ Substitui o repasse mensal isolado (misturava caixa com competência → negativ
 ## Pendente — Outros
 
 ### Testes
-- Validação RLS com usuário parceiro real
-- Testes E2E com Playwright (`npm run test:e2e`)
+- ~~Validação RLS com usuário parceiro real~~ ✅ **feito (2026-06-07)** — ver [`docs/auditoria-rls-2026-06.md`](docs/auditoria-rls-2026-06.md). Isolamento de leitura aprovado; furos de escrita em 3 RPCs SECURITY DEFINER + sync_logs corrigidos (migration 026). Pendente decisão: remapear parceiro de teste (aponta p/ clínica inexistente) + ligar leaked password protection.
+- Testes E2E com Playwright (`npm run test:e2e`) — 🟡 **scaffold criado (2026-06-07)**: `playwright.config.ts` + `e2e/` (auth, autorização/RLS, smoke admin+parceiro; 31 testes, read-only contra dev local + Supabase prod). Credenciais em `.env.e2e` (ver `.env.example`). **Falta:** rodar a suíte com credenciais reais e (provável) corrigir o redirect do `AdminLayout` engolido por `try/catch` (parceiro não é barrado de `/admin`).
 
 ### Operacional
 - Notificações Telegram via WF4 (bot n8n)
