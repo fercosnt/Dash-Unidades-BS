@@ -1,20 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { PeriodoSelector } from "@/components/dashboard/PeriodoSelector";
 import { ClinicaSelector } from "@/components/dashboard/ClinicaSelector";
 import { KpiCard } from "@/components/dashboard/KpiCard";
-import { ChartFaturamentoRecebimento } from "@/components/dashboard/ChartFaturamentoRecebimento";
-import { ChartEvolucaoLiquido } from "@/components/dashboard/ChartEvolucaoLiquido";
 import { RankingClinicas } from "@/components/dashboard/RankingClinicas";
 import { SyncStatusClinicas } from "./SyncStatusClinicas";
 import { SaldoParceiros } from "./SaldoParceiros";
 import { DreCascata } from "@/components/dashboard/DreCascata";
 import { RepasseMes } from "@/components/dashboard/RepasseMes";
-import { ChartVendasEvolucao } from "@/components/dashboard/ChartVendasEvolucao";
-import { ChartProcedimentosPizza } from "@/components/dashboard/ChartProcedimentosPizza";
 import { TabelaTratamentosVendidos } from "@/components/dashboard/TabelaTratamentosVendidos";
-import { ChartTratamentosEvolucao } from "@/components/dashboard/ChartTratamentosEvolucao";
 import {
   fetchKpisAdminV2,
   fetchDreAdmin,
@@ -45,6 +41,31 @@ import type {
   TratamentoVendidoItem,
   TratamentosEvolucaoData,
 } from "@/types/dashboard.types";
+
+// Charts (Recharts) carregados sob demanda — tira a lib do bundle inicial do dashboard.
+function ChartSkeleton() {
+  return <div className="h-64 animate-pulse rounded-xl bg-neutral-100" />;
+}
+const ChartFaturamentoRecebimento = dynamic(
+  () => import("@/components/dashboard/ChartFaturamentoRecebimento").then((m) => m.ChartFaturamentoRecebimento),
+  { ssr: false, loading: ChartSkeleton },
+);
+const ChartEvolucaoLiquido = dynamic(
+  () => import("@/components/dashboard/ChartEvolucaoLiquido").then((m) => m.ChartEvolucaoLiquido),
+  { ssr: false, loading: ChartSkeleton },
+);
+const ChartVendasEvolucao = dynamic(
+  () => import("@/components/dashboard/ChartVendasEvolucao").then((m) => m.ChartVendasEvolucao),
+  { ssr: false, loading: ChartSkeleton },
+);
+const ChartProcedimentosPizza = dynamic(
+  () => import("@/components/dashboard/ChartProcedimentosPizza").then((m) => m.ChartProcedimentosPizza),
+  { ssr: false, loading: ChartSkeleton },
+);
+const ChartTratamentosEvolucao = dynamic(
+  () => import("@/components/dashboard/ChartTratamentosEvolucao").then((m) => m.ChartTratamentosEvolucao),
+  { ssr: false, loading: ChartSkeleton },
+);
 
 type Tab = "resumo" | "vendas" | "procedimentos" | "clinicas";
 
