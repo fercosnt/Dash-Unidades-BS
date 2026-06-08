@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { formatCurrency } from "@/lib/utils/formatting";
+import { useModalDialog } from "@/components/shared/useModalDialog";
 
 function formatDate(s: string): string {
   if (!s) return "";
@@ -26,6 +27,7 @@ export function EstornarPagamentoModal({
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const panelRef = useModalDialog<HTMLDivElement>(onClose);
 
   async function handleConfirm() {
     setError(null);
@@ -51,10 +53,15 @@ export function EstornarPagamentoModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="estornar-modal-title"
+        tabIndex={-1}
+        className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl outline-none"
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="text-lg font-semibold text-neutral-900 mb-2">Estornar pagamento</h3>
+        <h3 id="estornar-modal-title" className="text-lg font-semibold text-neutral-900 mb-2">Estornar pagamento</h3>
         <p className="text-neutral-600 text-sm mb-4">
           Tem certeza que deseja estornar o pagamento de <strong>{formatCurrency(valor)}</strong> de{" "}
           <strong>{formatDate(dataPagamento)}</strong>? Esta ação não pode ser desfeita.

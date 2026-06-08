@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { criarProcedimentoRapido } from "@/app/admin/upload/revisao/actions";
+import { useModalDialog } from "@/components/shared/useModalDialog";
 
 type Props = {
   onCreated: (proc: { id: string; nome: string }) => void;
@@ -12,6 +13,7 @@ export function CreateProcedureModal({ onCreated, onClose }: Props) {
   const [nome, setNome] = useState("");
   const [criando, setCriando] = useState(false);
   const [erro, setErro] = useState("");
+  const panelRef = useModalDialog<HTMLDivElement>(onClose);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -30,8 +32,16 @@ export function CreateProcedureModal({ onCreated, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-        <h3 className="text-lg font-semibold text-neutral-900 mb-4">Criar novo procedimento</h3>
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="criar-proc-modal-title"
+        tabIndex={-1}
+        className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl outline-none"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 id="criar-proc-modal-title" className="text-lg font-semibold text-neutral-900 mb-4">Criar novo procedimento</h3>
         <form onSubmit={handleSubmit}>
           <label className="block text-sm font-medium text-neutral-700 mb-2">Nome do procedimento</label>
           <input
