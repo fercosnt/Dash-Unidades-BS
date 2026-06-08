@@ -114,6 +114,7 @@ RECEITA BS (bruta):
 = Resultado da Unidade p/ Beauty Smile
 ```
 > **Comissão Dentista entra como despesa da BS:** desde 2026-06 a comissão da dentista é uma linha **dentro** do grupo de Despesas (soma no Total Despesas), não mais uma dedução separada. Aparece assim nos dois DREs (Recebíveis e Faturamento) e também na aba **Despesas** (linha read-only). Resultado final inalterado.
+> **O dentista aparece em 3 linhas — proposital, não é dupla contagem:** (1) **Mão de Obra** (R$6.000/mês) = o que a BS **cobra do parceiro** pelo dentista → entra como **receita** (`resumo_mensal.total_custo_mao_obra`); (2) **Salário Dentista** = o que a BS **paga** ao dentista (pode diferir dos 6k) → **despesa** (`despesas_operacionais`); (3) **Comissão Dentista** = % sobre tudo que vende na unidade, **pago pela BS** (não pela parceria) → **despesa** (`comissoes_dentista`). Margem da BS no dentista = `6.000 − salário − comissão`.
 
 ### DRE Recebíveis (aba Recebíveis)
 Visão caixa — mesma estrutura do Faturamento, usando `totalRecebido` no lugar de `faturamento_bruto`:
