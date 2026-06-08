@@ -65,26 +65,32 @@ export default async function AdminLayout({
     redirect("/login");
   }
 
-  let displayName = user.email ?? "Admin";
-  let userRole = "Administrador";
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("nome, email, role")
+    .eq("id", user.id)
+    .single();
+
+  // Guard de papel: não-admin NÃO acessa a área admin.
+  // IMPORTANTE: fora de try/catch — redirect() funciona lançando NEXT_REDIRECT, e
+  // um catch que não re-lança engoliria o redirect (era o bug pego pelo E2E).
+  // Fail-closed: sem perfil admin confirmado, manda para a área do parceiro.
+  if (profile?.role !== "admin") {
+    redirect("/parceiro/dashboard");
+  }
+
+  const authDisplayName = typeof user?.user_metadata?.display_name === "string"
+    ? user.user_metadata.display_name
+    : "";
+  const displayName = profile?.nome || authDisplayName || "Admin";
+  const userRole = "Administrador";
+
+  // Contador de pendentes é não-crítico: se falhar, segue com 0.
   let pendentes = 0;
   try {
-    const [profileResult, pendentesCount] = await Promise.all([
-      supabase.from("profiles").select("nome, email, role").eq("id", user.id).single(),
-      countPendentesRevisao(),
-    ]);
-    const profile = profileResult.data;
-    if (profile?.role !== "admin") {
-      redirect("/parceiro/dashboard");
-    }
-    pendentes = pendentesCount;
-    const authDisplayName = typeof user?.user_metadata?.display_name === "string"
-      ? user.user_metadata.display_name
-      : "";
-    displayName = profile?.nome || authDisplayName || "Admin";
-    userRole = profile?.role === "admin" ? "Administrador" : "Parceiro";
+    pendentes = await countPendentesRevisao();
   } catch {
-    // Se falhar perfil ou contador, segue com o que temos
+    // não-crítico
   }
 
   const groups = ADMIN_SIDEBAR_GROUPS_BASE.map((group) => ({
