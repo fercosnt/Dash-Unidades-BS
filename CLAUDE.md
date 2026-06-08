@@ -219,6 +219,7 @@ npm run test:e2e  # Playwright
 | `lib/utils/xlsx-parser.ts` | Parse de XLSX com ExcelJS |
 | `lib/utils/xlsx-transforms.ts` | Transformações dos dados brutos |
 | `lib/auth/require-admin.ts` | Guard de autorização admin para Server Actions |
+| `types/action-result.ts` | `ActionResult<T>` + helpers `ok()`/`fail()` — retorno padrão das Server Actions de mutação (`res.ok` / `res.error` / `res.data`). Adoção incremental: actions antigas com shape ad-hoc seguem funcionando |
 | `lib/utils/date-helpers.ts` | Helpers centralizados de data (firstDayOfMonth, lastDayOfMonth) |
 | `lib/utils/formatting.ts` | Formatação centralizada (formatCurrency, parseCurrencyBR, etc.) |
 | `lib/despesas-queries.ts` | Queries de despesas, taxas reais, DRE BS e DRE Recebíveis |

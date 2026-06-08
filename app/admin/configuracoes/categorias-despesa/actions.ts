@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { ok, fail, type ActionResult } from "@/types/action-result";
 
 export type CategoriaRow = {
   id: string;
@@ -33,9 +34,9 @@ export async function fetchTodasCategorias(): Promise<CategoriaRow[]> {
 }
 
 /** Cria uma nova categoria de despesa */
-export async function criarCategoria(input: unknown) {
+export async function criarCategoria(input: unknown): Promise<ActionResult> {
   const parsed = CriarCategoriaSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  if (!parsed.success) return fail(parsed.error.issues[0].message);
   const { supabase } = await requireAdmin();
 
   const { error } = await supabase
@@ -43,18 +44,18 @@ export async function criarCategoria(input: unknown) {
     .insert({ nome: parsed.data.nome.trim() });
 
   if (error) {
-    if (error.code === "23505") return { ok: false, error: "Já existe uma categoria com esse nome." };
-    return { ok: false, error: error.message };
+    if (error.code === "23505") return fail("Já existe uma categoria com esse nome.");
+    return fail(error.message);
   }
 
   revalidatePath("/admin/configuracoes/categorias-despesa");
-  return { ok: true };
+  return ok();
 }
 
 /** Edita o nome de uma categoria */
-export async function editarCategoria(input: unknown) {
+export async function editarCategoria(input: unknown): Promise<ActionResult> {
   const parsed = EditarCategoriaSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  if (!parsed.success) return fail(parsed.error.issues[0].message);
   const { supabase } = await requireAdmin();
 
   const { error } = await supabase
@@ -63,18 +64,18 @@ export async function editarCategoria(input: unknown) {
     .eq("id", parsed.data.id);
 
   if (error) {
-    if (error.code === "23505") return { ok: false, error: "Já existe uma categoria com esse nome." };
-    return { ok: false, error: error.message };
+    if (error.code === "23505") return fail("Já existe uma categoria com esse nome.");
+    return fail(error.message);
   }
 
   revalidatePath("/admin/configuracoes/categorias-despesa");
-  return { ok: true };
+  return ok();
 }
 
 /** Ativa ou desativa uma categoria */
-export async function toggleCategoria(id: string, ativo: boolean) {
+export async function toggleCategoria(id: string, ativo: boolean): Promise<ActionResult> {
   const idParsed = z.string().uuid().safeParse(id);
-  if (!idParsed.success) return { ok: false, error: "ID inválido." };
+  if (!idParsed.success) return fail("ID inválido.");
   const { supabase } = await requireAdmin();
 
   const { error } = await supabase
@@ -82,8 +83,8 @@ export async function toggleCategoria(id: string, ativo: boolean) {
     .update({ ativo })
     .eq("id", id);
 
-  if (error) return { ok: false, error: error.message };
+  if (error) return fail(error.message);
 
   revalidatePath("/admin/configuracoes/categorias-despesa");
-  return { ok: true };
+  return ok();
 }
