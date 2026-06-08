@@ -20,7 +20,7 @@ test.describe("Autorização — parceiro", () => {
   test("parceiro acessa o próprio dashboard", async ({ page }) => {
     await page.goto("/parceiro/dashboard");
     await expect(page).toHaveURL(/\/parceiro\/dashboard/);
-    await expect(page.locator("h1, h2").first()).toBeVisible();
+    await expect(page.locator("h1, h2, h3").first()).toBeVisible();
   });
 });
 
@@ -30,6 +30,6 @@ test.describe("Autorização — admin", () => {
   test("admin acessa a área admin", async ({ page }) => {
     await page.goto("/admin/dashboard");
     await expect(page).toHaveURL(/\/admin\/dashboard/);
-    await expect(page.locator("h1, h2").first()).toBeVisible();
+    await expect(page.locator("h1, h2, h3").first()).toBeVisible();
   });
 });

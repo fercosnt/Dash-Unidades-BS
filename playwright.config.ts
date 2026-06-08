@@ -61,11 +61,13 @@ export default defineConfig({
     },
   ],
 
-  // Sobe o dev server local automaticamente (reaproveita se já estiver rodando).
+  // Sobe um BUILD DE PRODUÇÃO local (pré-compilado): rápido e sem o flakiness do
+  // cold-compile do `next dev`. Continua usando o .env.local (Supabase prod).
+  // Reaproveita um servidor já rodando em 3000 (ex.: `npm run build && npm start`).
   webServer: {
-    command: "npm run dev",
+    command: "npm run build && npm run start",
     url: BASE_URL,
     reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
+    timeout: 240_000,
   },
 });

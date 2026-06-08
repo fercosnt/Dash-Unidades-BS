@@ -27,7 +27,7 @@ export async function login(page: Page, email: string, password: string) {
   await page.locator("#password").fill(password);
   await page.getByRole("button", { name: /entrar|login|acessar/i }).click();
   // middleware redireciona para /admin/dashboard ou /parceiro/dashboard
-  await page.waitForURL(/\/(admin|parceiro)\/dashboard/, { timeout: 15_000 });
+  await page.waitForURL(/\/(admin|parceiro)\/dashboard/, { timeout: 30_000 });
 }
 
 /** Páginas principais do admin (smoke). */
@@ -78,6 +78,6 @@ export async function assertPageLoads(page: Page, path: string) {
     page.getByText(/Application error|Internal Server Error|This page could not be found/i),
   ).toHaveCount(0);
 
-  // Renderizou algum heading (conteúdo real).
-  await expect(page.locator("h1, h2").first()).toBeVisible();
+  // Renderizou algum heading (conteúdo real). Inclui h3: o /admin/dashboard usa h3.
+  await expect(page.locator("h1, h2, h3").first()).toBeVisible();
 }
