@@ -1,5 +1,4 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { getConfigVigente } from "@/app/admin/configuracoes/financeiro/actions";
 import { firstDayOfMonth, lastDayOfMonth } from "@/lib/utils/date-helpers";
 
 function round2(n: number): number {
@@ -14,14 +13,23 @@ export async function calcularEPersistirResumo(
   clinicaId: string,
   mesReferencia: string
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const config = await getConfigVigente();
+  const admin = createSupabaseAdminClient();
+
+  // Admin client (não a sessão do usuário): o recálculo roda no cron e em scripts, sem cookies.
+  const { data: config, error: errConfig } = await admin
+    .from("configuracoes_financeiras")
+    .select("taxa_cartao_percentual, imposto_nf_percentual, percentual_beauty_smile")
+    .is("vigencia_fim", null)
+    .maybeSingle();
+  if (errConfig) {
+    return { ok: false, error: "Erro ao buscar parâmetros financeiros: " + errConfig.message };
+  }
   if (!config) {
     return { ok: false, error: "Configure os parâmetros financeiros (Configurações > Financeiro) antes de calcular o resumo." };
   }
 
   const start = firstDayOfMonth(mesReferencia);
   const end = lastDayOfMonth(mesReferencia);
-  const admin = createSupabaseAdminClient();
 
   const { data: clinica, error: errClinica } = await admin
     .from("clinicas_parceiras")
