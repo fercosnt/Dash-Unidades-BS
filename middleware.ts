@@ -1,7 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { caminhoInternoSeguro } from "@/lib/oauth/redirect";
 
 export async function middleware(request: NextRequest) {
+  // Metadados OAuth (RFC 9728) do conector MCP: públicos, sem sessão
+  if (request.nextUrl.pathname.startsWith("/.well-known/")) {
+    return NextResponse.next();
+  }
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -55,6 +61,10 @@ export async function middleware(request: NextRequest) {
   }
 
   if (user && isLogin) {
+    // Login com retorno (ex.: consentimento OAuth do conector MCP)
+    const next = caminhoInternoSeguro(request.nextUrl.searchParams.get("next"));
+    if (next !== "/") return NextResponse.redirect(new URL(next, request.url));
+
     const { data: profile } = await supabase
       .from("profiles")
       .select("role")
@@ -71,6 +81,7 @@ export async function middleware(request: NextRequest) {
 
   if (!user && !isLogin && !isPublic) {
     const redirect = new URL("/login", request.url);
+    redirect.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(redirect);
   }
 

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { caminhoInternoSeguro } from "@/lib/oauth/redirect";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -27,8 +28,9 @@ export default function LoginPage() {
       return;
     }
 
-    // Redirecionamento com reload completo para o servidor usar a nova sessão (evita cache com usuário anterior)
-    window.location.href = "/";
+    // Redirecionamento com reload completo para o servidor usar a nova sessão (evita cache com usuário anterior).
+    // `?next=` preserva o retorno (ex.: consentimento OAuth do conector MCP); só caminho interno.
+    window.location.href = caminhoInternoSeguro(new URLSearchParams(window.location.search).get("next"));
   }
 
   return (

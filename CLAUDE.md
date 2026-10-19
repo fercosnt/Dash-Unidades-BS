@@ -182,6 +182,13 @@ Modelo de **conta única** por parceiro (substitui o repasse mensal isolado, que
 **Recálculo** — `calcularEPersistirResumo()` chamado direto após sync (sem n8n roundtrip). Lê custos de `tratamentos_executados` (preenchido manualmente via planilha).
 **⚠️ Não sincronizar jan/fev:** esses meses têm orçamentos digitados à mão sem `clinicorp_treatment_id` → o sync criaria duplicatas. Meses com orçamentos vindos do Clinicorp (com treatment_id) são seguros.
 
+## Fechamento via Claude (API + conector MCP)
+
+Plugin Claude `bs-fechamento` (marketplace do Fernando) faz o fechamento mensal guiado. Regras de orquestração em **`lib/fechamento/acoes.ts`** (fonte única), usadas por:
+- **REST** `app/api/fechamento/[acao]/route.ts` — Bearer = access token Supabase de admin (plugin 0.1.0).
+- **MCP remoto** `POST /api/mcp` (Streamable HTTP stateless, `@modelcontextprotocol/sdk` 1.x) — plugin 0.2.0 / conector do Claude. Tools em `lib/fechamento/mcp/ferramentas.ts` (`confirmar=false` = prévia). Auth = token do **OAuth 2.1 Server do Supabase** + `profiles.role='admin'`; sem token → 401 com `WWW-Authenticate` → `/.well-known/oauth-protected-resource[/api/mcp]` (RFC 9728, authorization server = `<SUPABASE_URL>/auth/v1`).
+- **Consentimento** `app/oauth/consent` (authorization path do Supabase): só admin aprova; `redirect_uri` do cliente só `claude.ai`/`claude.com`/loopback (`lib/oauth/redirect.ts`). Login aceita `?next=` (só caminho interno).
+
 ## n8n
 
 Workflows ativos:
@@ -225,6 +232,8 @@ npm run test:e2e  # Playwright
 | `lib/despesas-queries.ts` | Queries de despesas, taxas reais, DRE BS e DRE Recebíveis |
 | `components/dashboard/DreBsUnidade.tsx` | Componente visual do DRE Beauty Smile (faturamento) |
 | `components/dashboard/DreRecebiveis.tsx` | Componente visual do DRE Recebíveis (visão caixa) |
+| `lib/fechamento/acoes.ts` | Ações do fechamento (status, catálogo, procedimentos, despesas, comissão, fechar) — compartilhadas REST + MCP |
+| `app/api/mcp/route.ts` | Conector MCP remoto do fechamento (OAuth Supabase) |
 | `lib/saldo-parceiro-queries.ts` | Conta corrente: `fetchContaCorrente` + `fetchSaldosParceiros` |
 | `lib/utils/extrato-parceiro.ts` | Função pura `montarExtrato` (saldo corrido; com teste) |
 | `lib/auth/parceiro-clinica.ts` | `getClinicaIdDoParceiro` (resolve clínica do parceiro logado) |
