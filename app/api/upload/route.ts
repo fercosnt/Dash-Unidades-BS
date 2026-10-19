@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     }
 
     // Bloquear upload para meses fechados
-    const mesFechado = await isMesFechado(mes_referencia.slice(0, 7));
+    const mesFechado = await isMesFechado(mes_referencia.slice(0, 7), clinica_id);
     if (mesFechado) {
       return NextResponse.json(
         { error: `O mês ${mes_referencia.slice(0, 7)} está fechado. Reabra em Configurações > Fechamento de Mês antes de fazer upload.` },

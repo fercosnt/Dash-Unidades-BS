@@ -49,7 +49,7 @@ export async function syncClinicaMonth(
   const admin = createSupabaseAdminClient();
 
   // Verificar mês fechado
-  const mesFechado = await isMesFechado(mesReferencia.slice(0, 7));
+  const mesFechado = await isMesFechado(mesReferencia.slice(0, 7), clinicaId);
   if (mesFechado) {
     return {
       dryRun: false,

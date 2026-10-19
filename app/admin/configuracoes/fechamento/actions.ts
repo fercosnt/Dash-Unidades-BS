@@ -2,7 +2,7 @@
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { calcularEPersistirResumo } from "@/lib/resumo-calculo";
+import { buscarFechamentoVigente, fecharMesClinica, reabrirMesClinica } from "@/lib/fechamento/fechar";
 import { firstDayOfMonth, lastDayOfMonth } from "@/lib/utils/date-helpers";
 
 const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -156,8 +156,13 @@ export async function fecharMes(mesReferencia: string): Promise<{
   const falhas: { clinicaId: string; error: string }[] = [];
   let sucesso = 0;
 
+  // Fecha clínica a clínica (registra em `fechamentos`); clínica já fechada conta como sucesso
   for (const clinicaId of ids) {
-    const result = await calcularEPersistirResumo(clinicaId, mesReferencia);
+    if (await buscarFechamentoVigente(admin, clinicaId, mesReferencia)) {
+      sucesso++;
+      continue;
+    }
+    const result = await fecharMesClinica(admin, { clinicaId, mes: mesReferencia, userId });
     if (result.ok) {
       sucesso++;
     } else {
@@ -165,32 +170,26 @@ export async function fecharMes(mesReferencia: string): Promise<{
     }
   }
 
-  // Marcar como fechado
-  const start = firstDayOfMonth(mesReferencia);
-  const end = lastDayOfMonth(mesReferencia);
-  await admin
-    .from("resumo_mensal")
-    .update({ fechado_em: new Date().toISOString(), fechado_por: userId })
-    .gte("mes_referencia", start)
-    .lte("mes_referencia", end);
-
   return { ok: falhas.length === 0, sucesso, total: ids.length, falhas };
 }
 
 export async function reabrirMes(mesReferencia: string): Promise<{ ok: boolean }> {
-  await requireAdmin();
+  const userId = await requireAdmin();
   const admin = createSupabaseAdminClient();
 
-  const start = firstDayOfMonth(mesReferencia);
-  const end = lastDayOfMonth(mesReferencia);
+  const { data: clinicas } = await admin.from("clinicas_parceiras").select("id").eq("ativo", true);
 
-  const { error } = await admin
-    .from("resumo_mensal")
-    .update({ fechado_em: null, fechado_por: null })
-    .gte("mes_referencia", start)
-    .lte("mes_referencia", end);
-
-  return { ok: !error };
+  let ok = true;
+  for (const c of clinicas ?? []) {
+    const r = await reabrirMesClinica(admin, {
+      clinicaId: c.id,
+      mes: mesReferencia,
+      userId,
+      motivo: "Reaberto pela tela de fechamento (todas as clínicas)",
+    });
+    if (!r.ok) ok = false;
+  }
+  return { ok };
 }
 
 /** Retorna lista de meses fechados (formato YYYY-MM) para uso no PeriodoSelector */
@@ -217,17 +216,23 @@ export async function fetchMesesFechados(): Promise<string[]> {
     .map(([mes]) => mes);
 }
 
-/** Verifica se um mês específico está fechado (para bloqueio de upload) */
-export async function isMesFechado(mesReferencia: string): Promise<boolean> {
+/**
+ * Verifica se um mês está fechado (bloqueio de upload/sync).
+ * Com clinicaId: só aquela clínica. Sem: todas as clínicas com resumo no mês.
+ */
+export async function isMesFechado(mesReferencia: string, clinicaId?: string): Promise<boolean> {
   const admin = createSupabaseAdminClient();
   const start = firstDayOfMonth(mesReferencia);
   const end = lastDayOfMonth(mesReferencia);
 
-  const { data } = await admin
+  let query = admin
     .from("resumo_mensal")
     .select("fechado_em")
     .gte("mes_referencia", start)
     .lte("mes_referencia", end);
+  if (clinicaId) query = query.eq("clinica_id", clinicaId);
+
+  const { data } = await query;
 
   if (!data?.length) return false;
   return data.every((r) => r.fechado_em != null);

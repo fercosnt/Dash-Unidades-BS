@@ -1,6 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Sidebar } from "@/components/shared/Sidebar";
 import { Header } from "@/components/shared/Header";
+import { SyncAlertBanner } from "@/components/shared/SyncAlertBanner";
 import { countPendentesRevisao } from "./upload/revisao/actions";
 import { redirect } from "next/navigation";
 
@@ -105,6 +106,7 @@ export default async function AdminLayout({
       <Sidebar groups={groups} variant="admin" />
       <div className="flex flex-1 flex-col min-w-0 pr-2 print:pr-0">
         <Header userName={displayName} userRole={userRole} variant="admin" />
+        <SyncAlertBanner />
         <main className="flex-1 p-6 scrollbar-light overflow-y-auto print:p-0 print:overflow-visible">{children}</main>
       </div>
     </div>

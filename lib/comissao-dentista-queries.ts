@@ -1,5 +1,6 @@
 "use server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { calcularEPersistirComissaoDentista } from "@/lib/comissao-dentista-calculo";
 
 export type ComissaoDentistaItem = {
   id: string;
@@ -132,74 +133,7 @@ export async function calcularComissaoDentista(dentistaId: string, mes: string) 
   if (!dentistaData) return { ok: false, error: "Dentista não encontrada ou inativa." };
   const clinicaId = (dentistaData as Record<string, unknown>).clinica_id as string;
 
-  const start = `${mes}-01`;
-  const [y, m] = mes.split("-").map(Number);
-  const end = `${mes}-${String(new Date(y, m, 0).getDate()).padStart(2, "0")}`;
-
-  const [configRes, vendas, resumo] = await Promise.all([
-    supabase.from("config_comissao_dentista").select("*").is("vigencia_fim", null).maybeSingle(),
-    supabase
-      .from("orcamentos_fechados")
-      .select("id")
-      .eq("clinica_id", clinicaId)
-      .gt("valor_total", 0) // cortesia (R$ 0) não conta como venda para o tier
-      .gte("mes_referencia", start)
-      .lte("mes_referencia", end),
-    supabase
-      .from("resumo_mensal")
-      .select("faturamento_bruto")
-      .eq("clinica_id", clinicaId)
-      .gte("mes_referencia", start)
-      .lte("mes_referencia", end)
-      .maybeSingle(),
-  ]);
-
-  if (configRes.error) {
-    console.error("[calcularComissaoDentista] Erro ao buscar config_comissao_dentista:", configRes.error.message);
-    return { ok: false, error: "Erro ao buscar configuração: " + configRes.error.message };
-  }
-  if (vendas.error) {
-    console.error("[calcularComissaoDentista] Erro ao buscar orcamentos_fechados:", vendas.error.message);
-    return { ok: false, error: "Erro ao buscar vendas: " + vendas.error.message };
-  }
-  if (resumo.error) {
-    console.error("[calcularComissaoDentista] Erro ao buscar resumo_mensal:", resumo.error.message);
-    return { ok: false, error: "Erro ao buscar resumo mensal: " + resumo.error.message };
-  }
-
-  const config = configRes.data as Record<string, unknown> | null;
-  if (!config) return { ok: false, error: "Configuração de tiers não encontrada." };
-
-  const qtdeVendas = (vendas.data ?? []).length;
-  const faturamentoBruto = Number((resumo.data as Record<string, unknown> | null)?.faturamento_bruto ?? 0);
-
-  let tierAplicado = 3;
-  let percentual = Number(config.tier3_percentual);
-  if (qtdeVendas <= Number(config.tier1_limite)) {
-    tierAplicado = 1;
-    percentual = Number(config.tier1_percentual);
-  } else if (qtdeVendas <= Number(config.tier2_limite)) {
-    tierAplicado = 2;
-    percentual = Number(config.tier2_percentual);
-  }
-
-  const valorComissao = Math.round(faturamentoBruto * (percentual / 100) * 100) / 100;
-
-  const { error } = await supabase.from("comissoes_dentista").upsert(
-    {
-      clinica_id: clinicaId,
-      dentista_id: dentistaId,
-      mes_referencia: start,
-      qtde_vendas: qtdeVendas,
-      tier_aplicado: tierAplicado,
-      percentual,
-      base_calculo: faturamentoBruto,
-      valor_comissao: valorComissao,
-      config_id: config.id as string,
-    },
-    { onConflict: "clinica_id,dentista_id,mes_referencia" }
-  );
-
-  if (error) return { ok: false, error: error.message };
-  return { ok: true, valorComissao, tier: tierAplicado };
+  const r = await calcularEPersistirComissaoDentista(supabase, dentistaId, clinicaId, mes);
+  if (!r.ok) return { ok: false, error: r.error };
+  return { ok: true, valorComissao: r.valorComissao, tier: r.tier };
 }
