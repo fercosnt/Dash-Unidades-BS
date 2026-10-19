@@ -37,7 +37,7 @@ async function handler(request: Request) {
     );
   }
 
-  return atenderRequisicaoMcp(request, { ctx: { admin: auth.admin, userId: auth.userId }, email: auth.email });
+  return atenderRequisicaoMcp(request, { ctx: { admin: auth.admin, userId: auth.userId, usuario: auth.usuario }, email: auth.email });
 }
 
 export { handler as GET, handler as POST, handler as DELETE };

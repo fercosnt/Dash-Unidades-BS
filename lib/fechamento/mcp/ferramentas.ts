@@ -30,6 +30,7 @@ export type DepsFerramentas = Pick<
   | "recalcularResumo"
   | "fecharMes"
   | "reabrirMes"
+  | "relatorioMensal"
 >;
 
 export type Ambiente = { ctx: ContextoFechamento; email: string | null; deps: DepsFerramentas };
@@ -115,6 +116,30 @@ const bsStatus = ferramenta({
   executar: async ({ clinica, mes }, amb, catalogo) => {
     const c = resolverClinica((await catalogo()).clinicas, clinica);
     return { clinica: c.nome, ...(await amb.deps.statusFechamento(amb.ctx, { clinica_id: c.id, mes })) };
+  },
+});
+
+const USO_RELATORIO = {
+  parceiro:
+    "Relatório do PARCEIRO: só dados que a clínica pode ver (o servidor já removeu tudo que é interno). Pode ser enviado à clínica.",
+  interno:
+    "Relatório INTERNO Beauty Smile — CONFIDENCIAL. Nunca enviar à clínica nem usar como base do relatório do parceiro (para isso, chame tipo='parceiro').",
+} as const;
+
+const bsRelatorio = ferramenta({
+  nome: "bs_relatorio",
+  descricao:
+    "Dados do relatório mensal de uma clínica. tipo='parceiro': SÓ o que a clínica pode ver — vendas, cálculo do split (custos, líquido, 60/40), recebido, inadimplência, conta corrente e comparativo com o mês anterior; é a ÚNICA base permitida para o relatório enviado à clínica. tipo='interno': tudo isso + DREs Beauty Smile (faturamento e caixa), despesas, margem do dentista, decisões/divergências do fechamento, pendências e alertas — confidencial.",
+  shape: {
+    clinica: pClinica,
+    mes: pMes,
+    tipo: z.enum(["interno", "parceiro"]).describe("'parceiro' = para enviar à clínica; 'interno' = gestão Beauty Smile (confidencial)"),
+  },
+  somenteLeitura: true,
+  executar: async ({ clinica, mes, tipo }, amb, catalogo) => {
+    const c = resolverClinica((await catalogo()).clinicas, clinica);
+    const relatorio = await amb.deps.relatorioMensal(amb.ctx, { clinica_id: c.id, mes, tipo });
+    return { uso: USO_RELATORIO[tipo], ...relatorio };
   },
 });
 
@@ -379,6 +404,7 @@ export const FERRAMENTAS: Ferramenta[] = [
   bsConexao,
   bsCatalogo,
   bsStatus,
+  bsRelatorio,
   bsMapearProcedimentos,
   bsGravarProcedimentos,
   bsCriarRegra,

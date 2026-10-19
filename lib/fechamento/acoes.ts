@@ -5,10 +5,19 @@ import { mapearProcedimentos, type RegraProcedimento } from "@/lib/fechamento/ma
 import { calcularEPersistirResumo } from "@/lib/resumo-calculo";
 import { calcularEPersistirComissaoDentista } from "@/lib/comissao-dentista-calculo";
 import { syncClinicaMonth } from "@/lib/clinicorp-sync";
+import { ErroRelatorio, montarRelatorio, type Relatorio } from "@/lib/fechamento/relatorio";
 import { firstDayOfMonth } from "@/lib/utils/date-helpers";
-import { schemaClinicaMes, schemasAcao, type AcaoPost, type ClinicaMes, type InputAcao } from "@/lib/fechamento/schemas";
+import {
+  schemaClinicaMes,
+  schemaRelatorio,
+  schemasAcao,
+  type AcaoPost,
+  type ClinicaMes,
+  type InputAcao,
+  type InputRelatorio,
+} from "@/lib/fechamento/schemas";
 
-export { schemaClinicaMes, schemasAcao, type AcaoPost, type InputAcao };
+export { schemaClinicaMes, schemaRelatorio, schemasAcao, type AcaoPost, type InputAcao };
 
 /**
  * Ações do fechamento mensal — fonte única das regras de orquestração usadas pela
@@ -19,7 +28,12 @@ export { schemaClinicaMes, schemasAcao, type AcaoPost, type InputAcao };
  * status HTTP sugerido). Erros inesperados sobem como `Error` comum.
  */
 
-export type ContextoFechamento = { admin: SupabaseClient; userId: string };
+export type ContextoFechamento = {
+  admin: SupabaseClient;
+  userId: string;
+  /** Client com o token do próprio admin — para RPCs com guard `is_admin()` (ex.: conta corrente). */
+  usuario?: SupabaseClient;
+};
 
 export class ErroFechamento extends Error {
   constructor(
@@ -79,6 +93,20 @@ export async function mapearProcedimentosMes({ admin }: ContextoFechamento, inpu
     (catalogo.data ?? []).map((p) => ({ ...p, custo_fixo: Number(p.custo_fixo) })),
     input.clinica_id
   );
+}
+
+/**
+ * Relatório mensal da clínica. `tipo: "parceiro"` só traz a whitelist do que a clínica pode
+ * ver (garantido em `lib/fechamento/relatorio.ts`); `tipo: "interno"` acrescenta DREs BS,
+ * margem do dentista, decisões/divergências, pendências e alertas.
+ */
+export async function relatorioMensal({ admin, usuario }: ContextoFechamento, input: InputRelatorio): Promise<Relatorio> {
+  try {
+    return await montarRelatorio(admin, input.clinica_id, input.mes, input.tipo, { rpc: usuario });
+  } catch (e) {
+    if (e instanceof ErroRelatorio) throw new ErroFechamento(e.message, e.status);
+    throw e;
+  }
 }
 
 // ---------- escrita ----------

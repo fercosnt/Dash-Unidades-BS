@@ -58,6 +58,7 @@ function criarAmbiente() {
     recalcularResumo: jest.fn().mockResolvedValue({ ok: true }),
     fecharMes: jest.fn().mockResolvedValue({ ok: true, fechamentoId: "f-1" }),
     reabrirMes: jest.fn().mockResolvedValue({ ok: true, fechamentoId: "f-1" }),
+    relatorioMensal: jest.fn().mockImplementation(async (_ctx, input: { tipo: string; mes: string }) => ({ tipo: input.tipo, mes: input.mes })),
   };
   const amb: Ambiente = {
     ctx: { admin: {} as Ambiente["ctx"]["admin"], userId: "user-1" },
@@ -68,7 +69,7 @@ function criarAmbiente() {
 }
 
 describe("FERRAMENTAS", () => {
-  it("expõe as 13 tools da 0.1.0 menos bs_ler_planilha", () => {
+  it("expõe as 13 tools da 0.1.0 menos bs_ler_planilha, mais bs_relatorio", () => {
     expect(FERRAMENTAS.map((f) => f.nome).sort()).toEqual(
       [
         "bs_catalogo",
@@ -82,6 +83,7 @@ describe("FERRAMENTAS", () => {
         "bs_mapear_procedimentos",
         "bs_recalcular",
         "bs_reabrir",
+        "bs_relatorio",
         "bs_status",
         "bs_sync",
       ].sort()
@@ -211,6 +213,20 @@ describe("tools → ações", () => {
 
     await executarFerramenta("bs_reabrir", { clinica: "Hirata", mes: "2026-09", motivo: "ajuste", confirmar: true }, amb);
     expect(deps.reabrirMes).toHaveBeenCalledWith(amb.ctx, { clinica_id: CLINICA_ID, mes: "2026-09", motivo: "ajuste" });
+  });
+
+  it("bs_relatorio exige tipo, resolve a clínica e marca o uso do relatório", async () => {
+    const { amb, deps } = criarAmbiente();
+    await expect(executarFerramenta("bs_relatorio", { clinica: "Hirata", mes: "2026-09" }, amb)).rejects.toThrow();
+    await expect(executarFerramenta("bs_relatorio", { clinica: "Hirata", mes: "2026-09", tipo: "todos" }, amb)).rejects.toThrow();
+    expect(deps.relatorioMensal).not.toHaveBeenCalled();
+
+    const r = await executarFerramenta("bs_relatorio", { clinica: "hirata", mes: "2026-09", tipo: "parceiro" }, amb);
+    expect(deps.relatorioMensal).toHaveBeenCalledWith(amb.ctx, { clinica_id: CLINICA_ID, mes: "2026-09", tipo: "parceiro" });
+    expect(r).toMatchObject({ tipo: "parceiro", uso: expect.stringMatching(/PARCEIRO/) });
+
+    const i = await executarFerramenta("bs_relatorio", { clinica: "Hirata", mes: "2026-09", tipo: "interno" }, amb);
+    expect(i).toMatchObject({ tipo: "interno", uso: expect.stringMatching(/CONFIDENCIAL/) });
   });
 
   it("valida input com o schema da tool", async () => {

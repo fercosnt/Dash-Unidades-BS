@@ -188,6 +188,7 @@ Plugin Claude `bs-fechamento` (marketplace do Fernando) faz o fechamento mensal 
 - **REST** `app/api/fechamento/[acao]/route.ts` — Bearer = access token Supabase de admin (plugin 0.1.0).
 - **MCP remoto** `POST /api/mcp` (Streamable HTTP stateless, `@modelcontextprotocol/sdk` 1.x) — plugin 0.2.0 / conector do Claude. Tools em `lib/fechamento/mcp/ferramentas.ts` (`confirmar=false` = prévia). Auth = token do **OAuth 2.1 Server do Supabase** + `profiles.role='admin'`; sem token → 401 com `WWW-Authenticate` → `/.well-known/oauth-protected-resource[/api/mcp]` (RFC 9728, authorization server = `<SUPABASE_URL>/auth/v1`).
 - **Consentimento** `app/oauth/consent` (authorization path do Supabase): só admin aprova; `redirect_uri` do cliente só `claude.ai`/`claude.com`/loopback (`lib/oauth/redirect.ts`). Login aceita `?next=` (só caminho interno).
+- **Relatórios** `lib/fechamento/relatorio.ts` → tool `bs_relatorio(clinica, mes, tipo)` + `GET /api/fechamento/relatorio?clinica_id&mes&tipo`. `tipo` obrigatório: **`parceiro`** = whitelist zod (`schemaRelatorioParceiro`, descarta chave não declarada) e nem consulta despesas/comissão dentista/taxa real/decisões; **`interno`** = parceiro + DREs BS, margem do dentista, decisões/divergências, pendências e alertas. A separação é no servidor (teste prova que o parceiro não vaza). A RPC da conta corrente tem guard `is_admin()` que barra o service_role → o relatório chama a RPC com o client do **token do próprio admin** (`clienteDoUsuario` em `lib/fechamento/auth.ts`, `ctx.usuario`).
 
 ## n8n
 
@@ -229,12 +230,12 @@ npm run test:e2e  # Playwright
 | `types/action-result.ts` | `ActionResult<T>` + helpers `ok()`/`fail()` — retorno padrão das Server Actions de mutação (`res.ok` / `res.error` / `res.data`). Adoção incremental: actions antigas com shape ad-hoc seguem funcionando |
 | `lib/utils/date-helpers.ts` | Helpers centralizados de data (firstDayOfMonth, lastDayOfMonth) |
 | `lib/utils/formatting.ts` | Formatação centralizada (formatCurrency, parseCurrencyBR, etc.) |
-| `lib/despesas-queries.ts` | Queries de despesas, taxas reais, DRE BS e DRE Recebíveis |
+| `lib/despesas-queries.ts` | Queries de despesas, taxas reais, DRE BS e DRE Recebíveis (wrappers com a sessão; o cálculo mora em `lib/dre-calculo.ts`, client por parâmetro) |
 | `components/dashboard/DreBsUnidade.tsx` | Componente visual do DRE Beauty Smile (faturamento) |
 | `components/dashboard/DreRecebiveis.tsx` | Componente visual do DRE Recebíveis (visão caixa) |
 | `lib/fechamento/acoes.ts` | Ações do fechamento (status, catálogo, procedimentos, despesas, comissão, fechar) — compartilhadas REST + MCP |
 | `app/api/mcp/route.ts` | Conector MCP remoto do fechamento (OAuth Supabase) |
-| `lib/saldo-parceiro-queries.ts` | Conta corrente: `fetchContaCorrente` + `fetchSaldosParceiros` |
+| `lib/saldo-parceiro-queries.ts` | Conta corrente: `fetchContaCorrente` + `fetchSaldosParceiros` (núcleo em `lib/conta-corrente.ts` → `montarContaCorrente(db, clinicaId, { rpc, estrito })`) |
 | `lib/utils/extrato-parceiro.ts` | Função pura `montarExtrato` (saldo corrido; com teste) |
 | `lib/auth/parceiro-clinica.ts` | `getClinicaIdDoParceiro` (resolve clínica do parceiro logado) |
 | `components/conta-corrente/ContaCorrenteView.tsx` | Saldo decomposto + extrato (compartilhado admin/parceiro) |

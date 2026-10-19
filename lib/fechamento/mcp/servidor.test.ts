@@ -30,7 +30,8 @@ describe("servidor MCP (Streamable HTTP stateless)", () => {
 
     const lista = await atenderRequisicaoMcp(rpc({ jsonrpc: "2.0", id: 2, method: "tools/list" }), amb, deps);
     const tools = (await lista.json()).result.tools as { name: string; inputSchema: { properties?: Record<string, unknown> } }[];
-    expect(tools).toHaveLength(13);
+    expect(tools).toHaveLength(14);
+    expect(tools.find((t) => t.name === "bs_relatorio")?.inputSchema.properties).toHaveProperty("tipo");
     expect(tools.find((t) => t.name === "bs_mapear_procedimentos")?.inputSchema.properties).toHaveProperty("linhas");
 
     const chamada = await atenderRequisicaoMcp(rpc({ jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "bs_conexao", arguments: {} } }), amb, deps);

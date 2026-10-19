@@ -8,6 +8,9 @@ import { z } from "zod";
 const mes = z.string().regex(/^\d{4}-\d{2}$/, "mes deve ser YYYY-MM");
 export const schemaClinicaMes = z.object({ clinica_id: z.string().uuid(), mes });
 
+/** Relatório mensal: `tipo` é obrigatório (sem padrão) para nunca gerar o interno por engano. */
+export const schemaRelatorio = schemaClinicaMes.extend({ tipo: z.enum(["interno", "parceiro"]) });
+
 export const schemaLinhaPlanilha = z.object({
   data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   paciente: z.string().min(1),
@@ -65,3 +68,4 @@ export const schemasAcao = {
 export type AcaoPost = keyof typeof schemasAcao;
 export type InputAcao<A extends AcaoPost> = z.infer<(typeof schemasAcao)[A]>;
 export type ClinicaMes = z.infer<typeof schemaClinicaMes>;
+export type InputRelatorio = z.infer<typeof schemaRelatorio>;

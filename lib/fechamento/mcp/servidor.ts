@@ -8,7 +8,8 @@ const VERSAO = "0.2.0";
 
 const INSTRUCOES =
   "Fechamento mensal das clínicas parceiras da Beauty Smile no Dash Unidades BS. " +
-  "Comece por bs_status (clínica + mês YYYY-MM). Tools que gravam recebem `confirmar`: primeiro chame com " +
+  "Comece por bs_status (clínica + mês YYYY-MM). Relatórios: bs_relatorio com tipo 'parceiro' (único que pode ir " +
+  "para a clínica) ou 'interno' (confidencial, gestão BS). Tools que gravam recebem `confirmar`: primeiro chame com " +
   "confirmar=false, mostre a prévia à pessoa e só repita com confirmar=true depois do OK explícito. " +
   "Planilhas do Clinicorp: o Claude lê o .xlsx e envia as `linhas` (o servidor não acessa arquivos).";
 

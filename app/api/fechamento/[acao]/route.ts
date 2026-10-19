@@ -4,7 +4,9 @@ import {
   acoesPost,
   catalogoFechamento,
   ErroFechamento,
+  relatorioMensal,
   schemaClinicaMes,
+  schemaRelatorio,
   schemasAcao,
   statusFechamento,
   type AcaoPost,
@@ -18,6 +20,7 @@ import {
  *
  *   GET  /api/fechamento/status?clinica_id&mes        checklist do mês
  *   GET  /api/fechamento/catalogo?clinica_id          procedimentos, regras, médicos, categorias, dentistas
+ *   GET  /api/fechamento/relatorio?clinica_id&mes&tipo relatório mensal (tipo = interno | parceiro)
  *   POST /api/fechamento/sync                          re-sync Clinicorp do mês
  *   POST /api/fechamento/mapear-procedimentos          planilha → catálogo (não grava)
  *   POST /api/fechamento/procedimentos                 substitui os procedimentos do mês
@@ -45,7 +48,7 @@ function respostaErro(acao: string, err: unknown) {
 export async function GET(request: Request, { params }: { params: Promise<{ acao: string }> }) {
   const auth = await requireAdminBearer(request);
   if (!auth.ok) return auth.response;
-  const ctx: ContextoFechamento = { admin: auth.admin, userId: auth.userId };
+  const ctx: ContextoFechamento = { admin: auth.admin, userId: auth.userId, usuario: auth.usuario };
   const { acao } = await params;
   const url = new URL(request.url);
   const clinicaId = url.searchParams.get("clinica_id") ?? "";
@@ -61,6 +64,16 @@ export async function GET(request: Request, { params }: { params: Promise<{ acao
       return json(await catalogoFechamento(ctx, clinicaId));
     }
 
+    if (acao === "relatorio") {
+      const parsed = schemaRelatorio.safeParse({
+        clinica_id: clinicaId,
+        mes: url.searchParams.get("mes") ?? "",
+        tipo: url.searchParams.get("tipo") ?? "",
+      });
+      if (!parsed.success) return json({ error: parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ") }, 400);
+      return json(await relatorioMensal(ctx, parsed.data));
+    }
+
     return json({ error: `Ação GET desconhecida: ${acao}` }, 404);
   } catch (err) {
     return respostaErro(acao, err);
@@ -70,7 +83,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ acao
 export async function POST(request: Request, { params }: { params: Promise<{ acao: string }> }) {
   const auth = await requireAdminBearer(request);
   if (!auth.ok) return auth.response;
-  const ctx: ContextoFechamento = { admin: auth.admin, userId: auth.userId };
+  const ctx: ContextoFechamento = { admin: auth.admin, userId: auth.userId, usuario: auth.usuario };
   const { acao } = await params;
 
   if (!(acao in schemasAcao)) return json({ error: `Ação POST desconhecida: ${acao}` }, 404);
