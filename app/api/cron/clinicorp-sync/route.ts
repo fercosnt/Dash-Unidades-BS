@@ -18,6 +18,17 @@ export async function GET(request: Request) {
 
   const admin = createSupabaseAdminClient();
 
+  // Auto-recebimento das parcelas de cartão (substitui o n8n WF3, que parou em jun/26
+  // quando a migration 026 restringiu a RPC ao service_role). Roda antes do sync para
+  // o recálculo do resumo já enxergar as parcelas do mês como recebidas.
+  const { data: parcelasRecebidas, error: autoRecError } = await admin.rpc(
+    "auto_receber_parcelas_cartao",
+    {}
+  );
+  if (autoRecError) {
+    console.error("[cron] auto_receber_parcelas_cartao:", autoRecError.message);
+  }
+
   // Buscar clínicas ativas com credenciais Clinicorp
   const { data: clinicas, error: clinicasError } = await admin
     .from("clinicas_parceiras")
@@ -103,6 +114,7 @@ export async function GET(request: Request) {
 
   return NextResponse.json({
     synced_at: new Date().toISOString(),
+    parcelas_recebidas: autoRecError ? `erro: ${autoRecError.message}` : parcelasRecebidas,
     clinicas: clinicas.length,
     meses,
     results,
