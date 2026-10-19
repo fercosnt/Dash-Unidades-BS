@@ -31,6 +31,9 @@ export interface SyncResponse {
   result?: ClinicorpSyncResult;
   skipped?: boolean;
   skipReason?: string;
+  /** undefined quando o recálculo não foi pedido (dryRun / skipRecalculate) */
+  recalculoOk?: boolean;
+  recalculoErro?: string;
 }
 
 /**
@@ -405,16 +408,22 @@ export async function syncClinicaMonth(
   }
 
   // Recalcular resumo mensal automaticamente
+  let recalculoOk: boolean | undefined;
+  let recalculoErro: string | undefined;
   if (!options.skipRecalculate) {
     try {
       const calcResult = await calcularEPersistirResumo(clinicaId, mesReferencia);
+      recalculoOk = calcResult.ok;
       if (!calcResult.ok) {
+        recalculoErro = calcResult.error;
         console.error("[clinicorp-sync] Erro no recálculo:", calcResult.error);
       }
     } catch (err) {
-      console.error("[clinicorp-sync] Erro no recálculo:", err instanceof Error ? err.message : err);
+      recalculoOk = false;
+      recalculoErro = err instanceof Error ? err.message : String(err);
+      console.error("[clinicorp-sync] Erro no recálculo:", recalculoErro);
     }
   }
 
-  return { dryRun: false, result };
+  return { dryRun: false, result, recalculoOk, recalculoErro };
 }

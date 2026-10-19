@@ -28,8 +28,10 @@ export async function calcularEPersistirResumo(
     return { ok: false, error: "Configure os parâmetros financeiros (Configurações > Financeiro) antes de calcular o resumo." };
   }
 
-  const start = firstDayOfMonth(mesReferencia);
-  const end = lastDayOfMonth(mesReferencia);
+  // Aceita "YYYY-MM" ou "YYYY-MM-DD" (o sync passa o 1º dia do mês)
+  const mes = mesReferencia.slice(0, 7);
+  const start = firstDayOfMonth(mes);
+  const end = lastDayOfMonth(mes);
 
   const { data: clinica, error: errClinica } = await admin
     .from("clinicas_parceiras")

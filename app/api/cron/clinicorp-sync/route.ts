@@ -68,7 +68,14 @@ export async function GET(request: Request) {
         }
 
         const r = response.result!;
-        await updateSyncLog(admin, logId, "success", r);
+        await updateSyncLog(
+          admin,
+          logId,
+          "success",
+          r,
+          response.recalculoErro ? `Recálculo: ${response.recalculoErro}` : undefined,
+          response.recalculoOk ?? false
+        );
         results.push({
           clinica: clinica.nome,
           mes,
@@ -128,7 +135,8 @@ async function updateSyncLog(
   logId: string,
   status: "success" | "error" | "skipped",
   result?: { orcamentos_fechados_inseridos: number; orcamentos_abertos_inseridos: number; pagamentos_inseridos: number; tratamentos_inseridos: number } | null,
-  errorMessage?: string
+  errorMessage?: string,
+  recalculoOk = false
 ): Promise<void> {
   if (!logId) return;
   await admin
@@ -140,7 +148,7 @@ async function updateSyncLog(
       orcamentos_abertos_inseridos: result?.orcamentos_abertos_inseridos ?? 0,
       pagamentos_inseridos: result?.pagamentos_inseridos ?? 0,
       tratamentos_inseridos: result?.tratamentos_inseridos ?? 0,
-      recalculo_ok: status === "success",
+      recalculo_ok: recalculoOk,
       error_message: errorMessage ?? null,
     })
     .eq("id", logId);
