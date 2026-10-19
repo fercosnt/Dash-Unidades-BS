@@ -173,27 +173,46 @@ export async function syncClinicaMonth(
     tratamentos_inseridos: 0,
   };
 
-  // Criar upload batch para rastreabilidade
+  // Upload batch para rastreabilidade. Há UNIQUE (clinica_id, mes_referencia, tipo):
+  // o sync roda todo dia, então reaproveita o batch do mês se já existir
+  // (antes inseria sempre e abortava o sync inteiro a partir do 2º dia com novidade).
   let batchId: string | null = null;
+  let batchTotalAnterior = 0;
   if (novosFechados.length > 0 || novosAbertos.length > 0) {
-    const { data: batch, error: batchError } = await admin
+    const { data: existente, error: existenteError } = await admin
       .from("upload_batches")
-      .insert({
-        clinica_id: clinicaId,
-        mes_referencia: mesReferencia,
-        tipo: "orcamentos_fechados",
-        arquivo_nome: `clinicorp_sync_${mesReferencia}`,
-        status: "processando",
-        total_registros: novosFechados.length + novosAbertos.length,
-        uploaded_by: options.userId ?? null,
-      })
-      .select("id")
-      .single();
+      .select("id, total_registros")
+      .eq("clinica_id", clinicaId)
+      .eq("mes_referencia", mesReferencia)
+      .eq("tipo", "orcamentos_fechados")
+      .maybeSingle();
 
-    if (batchError || !batch) {
-      throw new Error(batchError?.message ?? "Erro ao criar batch");
+    if (existenteError) throw new Error(existenteError.message);
+
+    if (existente) {
+      batchId = existente.id;
+      batchTotalAnterior = Number(existente.total_registros ?? 0);
+      await admin.from("upload_batches").update({ status: "processando" }).eq("id", batchId);
+    } else {
+      const { data: batch, error: batchError } = await admin
+        .from("upload_batches")
+        .insert({
+          clinica_id: clinicaId,
+          mes_referencia: mesReferencia,
+          tipo: "orcamentos_fechados",
+          arquivo_nome: `clinicorp_sync_${mesReferencia}`,
+          status: "processando",
+          total_registros: novosFechados.length + novosAbertos.length,
+          uploaded_by: options.userId ?? null,
+        })
+        .select("id")
+        .single();
+
+      if (batchError || !batch) {
+        throw new Error(batchError?.message ?? "Erro ao criar batch");
+      }
+      batchId = batch.id;
     }
-    batchId = batch.id;
   }
 
   // Inserir orçamentos fechados
@@ -378,7 +397,9 @@ export async function syncClinicaMonth(
       .update({
         status: "concluido",
         total_registros:
-          result.orcamentos_fechados_inseridos + result.orcamentos_abertos_inseridos,
+          batchTotalAnterior +
+          result.orcamentos_fechados_inseridos +
+          result.orcamentos_abertos_inseridos,
       })
       .eq("id", batchId);
   }

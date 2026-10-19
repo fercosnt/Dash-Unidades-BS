@@ -116,7 +116,8 @@ export function transformEstimates(estimates: ClinicorpEstimate[]): {
       fechados.push({
         paciente_nome: nome,
         valor_total: est.Amount,
-        data_fechamento: extractDate(est.CreateDate),
+        // Fechamento = aprovação (CreateDate é quando o orçamento foi criado, às vezes meses antes)
+        data_fechamento: extractDate(est.ApprovedDate) ?? extractDate(est.CreateDate),
         profissional: est.ProfessionalName || null,
         paciente_telefone: est.PatientMobilePhone || null,
         procedimentos_texto: procTexto,

@@ -26,6 +26,7 @@ export interface ClinicorpEstimate {
   Amount: number;
   Status: "APPROVED" | "OPEN" | "FOLLOW_UP" | "REJECTED";
   CreateDate: string; // ISO
+  ApprovedDate?: string; // ISO — só em APPROVED; é a data que o /estimates/list filtra
   BusinessId: number;
   ProfessionalId: number;
   ProfessionalName: string;
