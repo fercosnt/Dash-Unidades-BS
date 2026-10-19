@@ -142,6 +142,7 @@ export async function calcularComissaoDentista(dentistaId: string, mes: string) 
       .from("orcamentos_fechados")
       .select("id")
       .eq("clinica_id", clinicaId)
+      .gt("valor_total", 0) // cortesia (R$ 0) não conta como venda para o tier
       .gte("mes_referencia", start)
       .lte("mes_referencia", end),
     supabase
